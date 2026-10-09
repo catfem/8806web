@@ -1,4 +1,7 @@
-import { SITE, BUDGET, PARTS, SEASONS, GOALS, CALENDAR, PLACES, EXCHANGES, OUTREACH, MEDIA, SPONSORS } from './data.js';
+import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, EXCHANGES, OUTREACH, MEDIA, SPONSORS } from './data.js';
+
+// Seasons marked `draft` (results not yet confirmed) stay off the page and out of every count.
+const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -34,9 +37,22 @@ const awardsOf = (season) => season.awards.filter((a) => !a.result);
 const N = {
   awards: SEASONS.reduce((n, s) => n + awardsOf(s).length, 0),
   seasons: SEASONS.length,
+  regionals: SEASONS.reduce((n, s) => n + (s.regionals || 1), 0),
   outreach: OUTREACH.length,
   exchanges: EXCHANGES.length,
 };
+
+// Where we've competed, in season order: "New Taipei City, Hawaii, Istanbul and Arizona".
+const PLACES_PLAYED = SEASONS.flatMap((s) => s.places || [])
+  .filter((p, i, all) => all.findIndex((q) => q.en === p.en) === i);
+const ABROAD = PLACES_PLAYED.filter((p) => p.en !== 'New Taipei City');
+const joinList = (list, l) => {
+  const names = list.map((p) => (l === 'zh' ? p.zh : p.en));
+  if (l === 'zh') return names.join('、');
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+};
+const outreachYears = OUTREACH.map((o) => +o.date.slice(0, 4));
+const OUTREACH_RANGE = `${Math.min(...outreachYears)}–\u2060${Math.max(...outreachYears)}`;
 const zhNum = (n) => {
   const d = '零一二三四五六七八九';
   if (n < 10) return d[n];
@@ -49,6 +65,12 @@ function fillCounts() {
     $$(`.js-n-${k}`).forEach((el) => { el.textContent = n; });
     $$(`.js-n-${k}-zh`).forEach((el) => { el.textContent = zhNum(n); });
   });
+  // Place lists and the outreach year range follow the same pattern.
+  $$('.js-places').forEach((el) => { el.textContent = joinList(PLACES_PLAYED, 'en'); });
+  $$('.js-places-zh').forEach((el) => { el.textContent = joinList(PLACES_PLAYED, 'zh'); });
+  $$('.js-abroad').forEach((el) => { el.textContent = joinList(ABROAD, 'en'); });
+  $$('.js-abroad-zh').forEach((el) => { el.textContent = joinList(ABROAD, 'zh'); });
+  $$('.js-outreach-range').forEach((el) => { el.textContent = OUTREACH_RANGE; });
 }
 
 // ============================================================ i18n
@@ -56,11 +78,11 @@ function fillCounts() {
 const META = {
   en: {
     title: `FRC Team 8806 · ${N.awards} awards in ${N.seasons} seasons · Partner with us`,
-    desc: `45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, ${N.awards} FRC awards, regionals in Taiwan, Hawaii, Türkiye and Arizona. See what sponsors get and where every NT$ goes.`,
+    desc: `45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, ${N.awards} FRC awards, ${N.regionals} regionals in ${joinList(PLACES_PLAYED, 'en')}. See what sponsors get and where every NT$ goes.`,
   },
   'zh-Hant': {
     title: `FRC 8806 崇光高中機器人隊 · ${zhNum(N.seasons)}個賽季、${zhNum(N.awards)}座獎項 · 成為贊助夥伴`,
-    desc: `FRC 第 8806 隊（OLPDL）— 新北市崇光高中 45 位學生。2022 年新秀賽季奪下聯盟冠軍，${zhNum(N.seasons)}個賽季 ${N.awards} 座 FRC 獎項，足跡遍及台灣、夏威夷、土耳其與亞利桑那。看看贊助效益與每一塊錢的去向。`,
+    desc: `FRC 第 8806 隊（OLPDL）— 新北市崇光高中 45 位學生。2022 年新秀賽季奪下聯盟冠軍，${zhNum(N.seasons)}個賽季 ${N.awards} 座 FRC 獎項，${N.regionals} 場區域賽足跡遍及${joinList(PLACES_PLAYED, 'zh')}。看看贊助效益與每一塊錢的去向。`,
   },
 };
 
@@ -156,7 +178,9 @@ function renderSeasons() {
       : `${t(s.event)} ${s.year}`;
     return `
     <article class="season">
-      <img class="season__img" src="assets/img/${s.img}" alt="${esc(alt)}" loading="lazy" width="640" height="480">
+      ${s.img
+        ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(alt)}" loading="lazy" width="640" height="480">`
+        : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>'}
       <div class="season__body">
         <p class="season__year">${s.year}</p>
         <p class="season__event">${esc(t(s.event))}</p>
@@ -190,7 +214,7 @@ function initMarquee() {
 const keepTail = (s) => { const [a, b] = s.split(' — '); return b ? `${esc(a)} — <span class="nowrap">${esc(b)}</span>` : esc(s); };
 
 function renderImpact() {
-  $('#outreach-log').innerHTML = OUTREACH.map((o) => `<li><time datetime="${o.date}">${fmtDate(o.date)}</time><span>${keepTail(t(o.t))}</span></li>`).join('');
+  $('#outreach-log').innerHTML = OUTREACH.map((o) => `<li><time datetime="${o.date}">${fmtDate(o.date)}</time><span>${keepTail(t(o.t))}${o.note ? `<small>${esc(t(o.note))}</small>` : ''}</span></li>`).join('');
   // Events the team hosted are told in the #partner callout; this list is press coverage only.
   $('#media-list').innerHTML = MEDIA.filter((m) => !m.hosted).map((m) => `
     <div class="media-item">
@@ -704,6 +728,7 @@ function initShowcase() {
 $$('.js-outreach-count').forEach((el) => { el.dataset.count = el.textContent = N.outreach; });
 $('#kpi-exchanges').dataset.count = $('#kpi-exchanges').textContent = N.exchanges;
 $('#score-awards').dataset.count = $('#score-awards').textContent = N.awards;
+$('#score-regionals').dataset.count = $('#score-regionals').textContent = N.regionals;
 
 onLang(fillCounts);
 onLang(renderSeasons);

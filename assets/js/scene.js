@@ -138,7 +138,7 @@ async function warmUp(renderer, scene, camera, idle) {
 //   glow: floor ring; sway: idle camera sway (rad); spin: roller speed
 //   cycle: amplitude of the slow elevator cycle (elevator travel = elevator .. elevator + 2 * cycle)
 const VIEWS = {
-  build: { az: 0.85, el: 0.2, dist: 4.1, md: 4.6, tx: 0, ty: 0.68, tz: 0, elevator: 0.15, cycle: 0.16, intake: 1, explode: 0, xray: 0.82, lift: 0.11, hot: 0, glow: 0.45, sway: 0.25, spin: 1 },
+  build: { az: 0.85, el: 0.2, dist: 4.1, md: 4.6, tx: 0, ty: 0.68, tz: 0, elevator: 0.15, cycle: 0.16, intake: 1, explode: 0, xray: 0, lift: 0, hot: 0, glow: 0.45, sway: 0.25, spin: 1 },
   price: { az: 0.78, el: 0.32, dist: 5.2, md: 6.6, tx: 0, ty: 0.95, tz: 0, elevator: 0, cycle: 0, intake: 1, explode: 1, xray: 0, lift: 0, hot: 1, glow: 0, sway: 0.1, spin: 0 },
   // the elevator is raised so the end effector clears the sponsor panel
   logo: { az: -1.4, el: 0.08, dist: 1.6, md: 1.2, tx: -0.2, ty: 0.55, tz: -0.18, elevator: 0.62, cycle: 0, intake: 0, explode: 0, xray: 0, lift: 0, hot: 0, glow: 0, sway: 0.18, spin: 0 },

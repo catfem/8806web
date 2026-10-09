@@ -40,8 +40,9 @@ python3 -m http.server 8000
 ## Editing content
 
 - **Numbers, budget, sponsor items, seasons, calendar, exchanges, outreach, media, sponsors, contacts:** `assets/js/data.js`. The budget totals and the chart are computed from the line items there.
-- **Counts that follow the data:** the award and season counts ("7 awards in 4 seasons" in the headline, the *Proven* reason, the scoreboard and the page title) and the outreach / exchange counts are computed from `SEASONS`, `OUTREACH` and `EXCHANGES`, so adding a season updates them. Only the static `<title>` and `<meta>` description in `index.html` (what crawlers and link previews read before JavaScript runs) need a manual edit. "6 regionals" in the scoreboard is plain text.
-- **Seasons:** in `SEASONS`, `result: true` marks a placing that isn't an award (e.g. "Top 8 alliance"), `star` highlights the big results, and `at` names the regional when a season had more than one.
+- **Counts that follow the data:** the award and season counts ("7 awards in 4 seasons" in the headline, the *Proven* reason, the scoreboard and the page title) and the outreach / exchange counts are computed from `SEASONS`, `OUTREACH` and `EXCHANGES`, so adding a season updates them. The number of regionals and the list of places ("New Taipei City, Hawaii, Istanbul and Arizona") come from each season's `regionals` and `places`, and the outreach year range comes from the `OUTREACH` dates. Only the static `<title>` and `<meta>` description in `index.html` (what crawlers and link previews read before JavaScript runs) need a manual edit.
+- **Seasons:** in `SEASONS`, `result: true` marks a placing that isn't an award (e.g. "Top 8 alliance"), `star` highlights the big results, `at` names the regional when a season had more than one, `regionals` is how many regionals the team played that season and `places` where. A season with `draft: true` is hidden and left out of every count — use it to prepare results before they are confirmed. A season with no `img` gets a branded placeholder tile.
+- **Outreach:** an `OUTREACH` entry can carry a `note` (shown in smaller text under the event).
 - **Page copy:** `index.html`. Each translatable element has its English text inline and the Chinese in a `data-zh="…"` attribute next to it.
 - **Contact settings** (`SITE` in `data.js`):
   - `email`: leave it empty to hide the e-mail buttons. Fill it in to enable "Send by e-mail" for pledges.
@@ -85,7 +86,8 @@ A custom model is auto-scaled and centred. It keeps the three camera views and g
 
 - **Budget totals:** the proposal's line items add up to NT$11,650,000 (NT$3,650,000 without team travel), but the proposal states NT$11,570,000 / NT$3,570,000. The site shows the sums of the line items. Fix the line item that's off in `data.js`.
 - **"No.1 in Taiwan · top 100 in the world"** comes from the proposal (綜合能力：全台第一 世界百強). It appears once, as a cited line under the Results grid, and nowhere in the title or share tags. Confirm the source and season before using it publicly.
-- **Results are only as current as the 2025 proposal.** Add the latest season to `SEASONS` (the headline counts update themselves) before showing the site to sponsors. The goals row ("Next, we're going for…") lists the goals from the proposal; update `GOALS` when the team sets new ones.
+- **2026 season is a draft.** The team confirmed it competed at the 2026 Shanghai Regional. The 2026 entry in `SEASONS` lists awards found by web search that still need the team's confirmation, so it has `draft: true` and does not show yet. Confirm the awards (and any other 2026 regional), add a photo, then remove `draft: true` — the headline counts and place lists update themselves.
+- **2026 team exchanges** are not in `EXCHANGES` yet. The goals row ("Next, we're going for…") lists the goals from the proposal; update `GOALS` when the team sets new ones.
 - Photos and sponsor names are taken from the team's own proposal.
 
 ## Credits

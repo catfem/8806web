@@ -74,25 +74,30 @@ export const PARTS = [
 // ---------------------------------------------------------------------------
 // Each season's awards. `result: true` marks a placing that is not an award; `star` highlights the
 // biggest results; `at` names the regional when a season had more than one.
-// The headline counts ("7 awards in 4 seasons") are computed from this list.
-const ISTANBUL = { en: 'Istanbul', zh: '伊斯坦堡' };
+// `regionals` and `places` feed the "N regionals in …" lines.
+// The headline counts ("7 awards in 4 seasons") and place lists are computed from this list.
+// `draft: true` keeps a season off the page (and out of every count) until its results are confirmed.
 const NEW_TAIPEI = { en: 'New Taipei City', zh: '新北市' };
+const HAWAII = { en: 'Hawaii', zh: '夏威夷' };
+const ISTANBUL = { en: 'Istanbul', zh: '伊斯坦堡' };
+const ARIZONA = { en: 'Arizona', zh: '亞利桑那' };
+const SHANGHAI = { en: 'Shanghai', zh: '上海' };
 export const SEASONS = [
-  { year: 2022, img: 'award-2022.webp',
+  { year: 2022, img: 'award-2022.webp', regionals: 1, places: [NEW_TAIPEI],
     event: { en: 'New Taipei City Regional', zh: '新北市區域賽' },
     note: { en: 'Rookie season', zh: '新秀球季' },
     awards: [
       { en: 'Regional Winner', zh: '聯盟冠軍獎', star: true },
       { en: 'Rookie Inspiration Award', zh: '新秀啟發獎' },
     ] },
-  { year: 2023, img: 'award-2023.webp',
+  { year: 2023, img: 'award-2023.webp', regionals: 1, places: [HAWAII],
     event: { en: 'Hawaii Regional', zh: '夏威夷區域賽' },
     note: { en: 'Across the Pacific', zh: '橫越太平洋' },
     awards: [
       { en: 'Top 8 alliance', zh: '挺進前八強', result: true },
       { en: 'Team Spirit Award', zh: '團隊精神獎' },
     ] },
-  { year: 2024, img: 'award-2024.webp',
+  { year: 2024, img: 'award-2024.webp', regionals: 2, places: [ISTANBUL],
     event: { en: 'Istanbul & Bosphorus Regionals', zh: '伊斯坦堡 & 博斯普魯斯區域賽' },
     note: { en: '8–1 in Istanbul qualifications', zh: '伊斯坦堡資格賽 8 勝 1 敗' },
     awards: [
@@ -100,12 +105,22 @@ export const SEASONS = [
       { en: 'Innovation in Control Award', zh: '創新控制獎', at: ISTANBUL },
       { en: 'Creativity Award', zh: '創造力獎', at: { en: 'Bosphorus', zh: '博斯普魯斯' } },
     ] },
-  { year: 2025, img: 'g-arizona-team.webp',
+  { year: 2025, img: 'g-arizona-team.webp', regionals: 2, places: [NEW_TAIPEI, ARIZONA],
     event: { en: 'New Taipei City & Arizona East Regionals', zh: '新北市 & 亞利桑那東區域賽' },
     note: { en: 'Two regionals, two continents', zh: '兩場區域賽、橫跨兩大洲' },
     awards: [
       { en: 'Top 8 alliance', zh: '挺進前八強', result: true, at: NEW_TAIPEI },
       { en: 'Imagery Award', zh: '榮譽意象獎', at: NEW_TAIPEI },
+    ] },
+  // 2026 — DRAFT. The team confirmed it competed in Shanghai. The awards below come from web searches of
+  // FRC Events / The Blue Alliance that could not be checked directly; confirm (and add any 2026 event the
+  // team attended in Istanbul), add a 2026 photo, then delete `draft: true`.
+  { year: 2026, draft: true, img: '', regionals: 1, places: [SHANGHAI],
+    event: { en: 'Shanghai Regional', zh: '上海區域賽' },
+    note: { en: 'March 12–15, 2026', zh: '2026 年 3 月 12–15 日' },
+    awards: [
+      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true, at: SHANGHAI },
+      { en: 'Industrial Design Award', zh: '工業設計獎', at: SHANGHAI },
     ] },
 ];
 
@@ -148,7 +163,7 @@ export const EXCHANGES = [
   { date: '2024-10-27', teams: '#8569', where: { en: 'Taiwan', zh: '台灣' } },
   { date: '2024-07-04', teams: '#6941', where: { en: 'Shanghai', zh: '上海' } },
   { date: '2024-06-15', teams: { en: '14 Taiwanese teams', zh: '14 支台灣隊伍' }, where: { en: 'Taiwan', zh: '台灣' } },
-  { date: '2024-03-04', teams: '#6232 #6436', where: { en: 'Istanbul, Türkiye', zh: '土耳其' } },
+  { date: '2024-03-04', teams: '#6232 #6436', where: { en: 'Istanbul', zh: '伊斯坦堡' } },
   { date: '2024-01-23', teams: '#6436', where: { en: 'Online', zh: '線上' } },
   { date: '2024-01-12', teams: '#6232', where: { en: 'Online', zh: '線上' } },
   { date: '2023-12-10', teams: '#8569', where: { en: 'Taiwan', zh: '台灣' } },
@@ -161,6 +176,11 @@ export const EXCHANGES = [
 
 // ---------------------------------------------------------------------------
 export const OUTREACH = [
+  { date: '2026-06-06', t: { en: 'Outreach booth in Kaohsiung', zh: '高雄擺攤推廣' } },
+  { date: '2026-05-16', report: true,
+    t: { en: 'Thank-you & awards ceremony — season results presented to parents, sponsors and the public', zh: '感謝會暨頒獎典禮 — 向家長、贊助夥伴與公眾報告本季成果' },
+    note: { en: 'In the school auditorium, open to the public; Zhongzheng Elementary students and their parents came too.', zh: '於崇光禮堂舉辦並對外開放，中正國小的學生與家長也到場參與。' } },
+  { date: '2026-03-21', t: { en: 'micro:bit class for elementary students at OLP', zh: '邀請國小生到崇光學習 micro:bit' } },
   { date: '2025-05-24', t: { en: 'Emerging-tech program booth, Songshan Cultural Park', zh: '新興科技計畫 松菸擺攤' } },
   { date: '2025-04-28', t: { en: 'FRC experience day — Zhuole & Zhongzheng Elementary', zh: 'FRC 體驗 — 卓樂國小 & 中正國小' } },
   { date: '2025-01-23', t: { en: 'OLP winter robotics camp', zh: '崇光冬令營' } },
