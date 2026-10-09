@@ -14,6 +14,8 @@ export const SITE = {
   conceptNotice: true,
   // Drop an optimized GLB here (see README) to replace the procedural robot.
   robotModelUrl: '',
+  // Link to the sponsorship proposal PDF; empty hides the button.
+  proposalUrl: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -70,6 +72,11 @@ export const PARTS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Each season's awards. `result: true` marks a placing that is not an award; `star` highlights the
+// biggest results; `at` names the regional when a season had more than one.
+// The headline counts ("7 awards in 4 seasons") are computed from this list.
+const ISTANBUL = { en: 'Istanbul', zh: '伊斯坦堡' };
+const NEW_TAIPEI = { en: 'New Taipei City', zh: '新北市' };
 export const SEASONS = [
   { year: 2022, img: 'award-2022.webp',
     event: { en: 'New Taipei City Regional', zh: '新北市區域賽' },
@@ -82,30 +89,30 @@ export const SEASONS = [
     event: { en: 'Hawaii Regional', zh: '夏威夷區域賽' },
     note: { en: 'Across the Pacific', zh: '橫越太平洋' },
     awards: [
-      { en: 'Top 8 alliance', zh: '挺進前八強' },
+      { en: 'Top 8 alliance', zh: '挺進前八強', result: true },
       { en: 'Team Spirit Award', zh: '團隊精神獎' },
     ] },
   { year: 2024, img: 'award-2024.webp',
     event: { en: 'Istanbul & Bosphorus Regionals', zh: '伊斯坦堡 & 博斯普魯斯區域賽' },
     note: { en: '8–1 in Istanbul qualifications', zh: '伊斯坦堡資格賽 8 勝 1 敗' },
     awards: [
-      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true },
-      { en: 'Innovation in Control Award', zh: '創新控制獎' },
-      { en: 'Creativity Award', zh: '創造力獎' },
+      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true, at: ISTANBUL },
+      { en: 'Innovation in Control Award', zh: '創新控制獎', at: ISTANBUL },
+      { en: 'Creativity Award', zh: '創造力獎', at: { en: 'Bosphorus', zh: '博斯普魯斯' } },
     ] },
-  { year: 2025, img: 'award-2025.webp',
+  { year: 2025, img: 'g-arizona-team.webp',
     event: { en: 'New Taipei City & Arizona East Regionals', zh: '新北市 & 亞利桑那東區域賽' },
     note: { en: 'Two regionals, two continents', zh: '兩場區域賽、橫跨兩大洲' },
     awards: [
-      { en: 'Top 8 alliance', zh: '挺進前八強' },
-      { en: 'Imagery Award', zh: '榮譽意象獎' },
+      { en: 'Top 8 alliance', zh: '挺進前八強', result: true, at: NEW_TAIPEI },
+      { en: 'Imagery Award', zh: '榮譽意象獎', at: NEW_TAIPEI },
     ] },
 ];
 
 export const GOALS = [
   { en: 'Regional Winner', zh: '聯盟冠軍獎' },
   { en: 'Impact Award', zh: '影響力獎' },
-  { en: 'Engineering Inspiration', zh: '工程啟發獎' },
+  { en: 'Engineering Inspiration Award', zh: '工程啟發獎' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -167,7 +174,8 @@ export const OUTREACH = [
 
 export const MEDIA = [
   { date: '2025-01-11', img: 'media-pts-2025.webp', t: { en: 'Featured by Public Television Service (PTS)', zh: '公共電視採訪' } },
-  { date: '2024-08', img: 'media-offseason-2024.webp', t: { en: 'Hosted the 2024 national FRC off-season event', zh: '舉辦 2024 全國高級中等學校 FRC 季後賽' } },
+  // hosted: an event the team ran, told in the "Partnership in action" callout rather than the press list
+  { date: '2024-08', img: 'media-offseason-2024.webp', hosted: true, t: { en: 'Hosted the 2024 national FRC off-season event', zh: '舉辦 2024 全國高級中等學校 FRC 季後賽' }, note: { en: 'with AMD', zh: '與 AMD 合作' } },
   { date: '2024-05-22', img: 'media-ner-2024.webp', t: { en: 'On air at National Education Radio', zh: '國立教育廣播電台專訪' } },
   { date: '2023-06-07', img: 'media-ner-2023.webp', t: { en: 'On air at National Education Radio', zh: '國立教育廣播電台專訪' } },
 ];
