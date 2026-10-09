@@ -85,9 +85,9 @@ A custom model is auto-scaled and centred. It keeps the three camera views and g
 ## Things to confirm before publishing
 
 - **Budget totals:** the proposal's line items add up to NT$11,650,000 (NT$3,650,000 without team travel), but the proposal states NT$11,570,000 / NT$3,570,000. The site shows the sums of the line items. Fix the line item that's off in `data.js`.
-- **"No.1 in Taiwan · top 100 in the world"** comes from the proposal (綜合能力：全台第一 世界百強). It appears once, as a cited line under the Results grid, and nowhere in the title or share tags. Confirm the source and season before using it publicly.
-- **2026 season is a draft.** The team confirmed it competed at the 2026 Shanghai Regional. The 2026 entry in `SEASONS` lists awards found by web search that still need the team's confirmation, so it has `draft: true` and does not show yet. Confirm the awards (and any other 2026 regional), add a photo, then remove `draft: true` — the headline counts and place lists update themselves.
-- **2026 team exchanges** are not in `EXCHANGES` yet. The goals row ("Next, we're going for…") lists the goals from the proposal; update `GOALS` when the team sets new ones.
+- **Ranking line:** the Results section says the 2025 proposal ranked the team's overall ability No.1 in Taiwan and that the team was once in the world's top 100 (it no longer is). Confirm whether "No.1 in Taiwan" is still current.
+- **2026 season is a draft.** The team confirmed it competed at the 2026 Shanghai Regional, so Shanghai already appears in the "regionals in …" lines and the regional count (attendance is read from every season, drafts included). The 2026 card and the award counts wait for the confirmed results: add the awards (and any other 2026 regional) to the 2026 entry in `SEASONS`, add a photo, then remove `draft: true`.
+- **2026 team exchanges** are not in `EXCHANGES` yet.
 - Photos and sponsor names are taken from the team's own proposal.
 
 ## Credits

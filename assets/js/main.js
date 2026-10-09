@@ -37,19 +37,22 @@ const awardsOf = (season) => season.awards.filter((a) => !a.result);
 const N = {
   awards: SEASONS.reduce((n, s) => n + awardsOf(s).length, 0),
   seasons: SEASONS.length,
-  regionals: SEASONS.reduce((n, s) => n + (s.regionals || 1), 0),
+  regionals: ALL_SEASONS.reduce((n, s) => n + (s.regionals || 1), 0),
   outreach: OUTREACH.length,
   exchanges: EXCHANGES.length,
 };
 
-// Where we've competed, in season order: "New Taipei City, Hawaii, Istanbul and Arizona".
-const PLACES_PLAYED = SEASONS.flatMap((s) => s.places || [])
+// Where we've competed, in season order: "New Taipei City, Hawaii, Istanbul, Arizona and Shanghai".
+// Attendance is a confirmed fact even for a draft season, so places and the regional count read every
+// season; awards and the season cards only read confirmed ones.
+const PLACES_PLAYED = ALL_SEASONS.flatMap((s) => s.places || [])
   .filter((p, i, all) => all.findIndex((q) => q.en === p.en) === i);
 const ABROAD = PLACES_PLAYED.filter((p) => p.en !== 'New Taipei City');
 const joinList = (list, l) => {
   const names = list.map((p) => (l === 'zh' ? p.zh : p.en));
-  if (l === 'zh') return names.join('、');
-  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  if (names.length < 2) return names.join('');
+  const last = names[names.length - 1];
+  return l === 'zh' ? `${names.slice(0, -1).join('、')}與${last}` : `${names.slice(0, -1).join(', ')} and ${last}`;
 };
 const outreachYears = OUTREACH.map((o) => +o.date.slice(0, 4));
 const OUTREACH_RANGE = `${Math.min(...outreachYears)}–\u2060${Math.max(...outreachYears)}`;
@@ -66,9 +69,12 @@ function fillCounts() {
     $$(`.js-n-${k}-zh`).forEach((el) => { el.textContent = zhNum(n); });
   });
   // Place lists and the outreach year range follow the same pattern.
-  $$('.js-places').forEach((el) => { el.textContent = joinList(PLACES_PLAYED, 'en'); });
+  // English names are kept whole ("New Taipei City" never splits); Chinese uses word-break: keep-all.
+  const keepNames = (list) => esc(joinList(list, 'en'))
+    .replace(new RegExp(list.map((p) => p.en).sort((x, y) => y.length - x.length).join('|'), 'g'), (n) => `<span class="nowrap">${n}</span>`);
+  $$('.js-places').forEach((el) => { el.innerHTML = keepNames(PLACES_PLAYED); });
   $$('.js-places-zh').forEach((el) => { el.textContent = joinList(PLACES_PLAYED, 'zh'); });
-  $$('.js-abroad').forEach((el) => { el.textContent = joinList(ABROAD, 'en'); });
+  $$('.js-abroad').forEach((el) => { el.innerHTML = keepNames(ABROAD); });
   $$('.js-abroad-zh').forEach((el) => { el.textContent = joinList(ABROAD, 'zh'); });
   $$('.js-outreach-range').forEach((el) => { el.textContent = OUTREACH_RANGE; });
 }
@@ -82,7 +88,7 @@ const META = {
   },
   'zh-Hant': {
     title: `FRC 8806 崇光高中機器人隊 · ${zhNum(N.seasons)}個賽季、${zhNum(N.awards)}座獎項 · 成為贊助夥伴`,
-    desc: `FRC 第 8806 隊（OLPDL）— 新北市崇光高中 45 位學生。2022 年新秀賽季奪下聯盟冠軍，${zhNum(N.seasons)}個賽季 ${N.awards} 座 FRC 獎項，${N.regionals} 場區域賽足跡遍及${joinList(PLACES_PLAYED, 'zh')}。看看贊助效益與每一塊錢的去向。`,
+    desc: `FRC 第 8806 隊（OLPDL）— 新北市崇光高中 45 位學生。2022 年新秀賽季奪下聯盟冠軍，${zhNum(N.seasons)}個賽季 ${N.awards} 座 FRC 獎項，${N.regionals} 場區域賽，足跡遍及${joinList(PLACES_PLAYED, 'zh')}。看看贊助效益與每一塊錢的去向。`,
   },
 };
 
@@ -186,7 +192,7 @@ function renderSeasons() {
         <p class="season__event">${esc(t(s.event))}</p>
         ${result ? `<p class="season__result">${esc(t(result))}${result.at ? ` · ${esc(t(result.at))}` : ''}</p>` : ''}
         <ul class="season__awards">${awardsOf(s).map((a) => `<li class="${a.star ? 'star' : ''}">${withVenue(a)}</li>`).join('')}</ul>
-        <p class="season__note">${esc(t(s.note))}</p>
+        ${s.note ? `<p class="season__note">${esc(t(s.note))}</p>` : ''}
       </div>
     </article>`;
   }).join('');
@@ -211,7 +217,8 @@ function initMarquee() {
 // ============================================================ impact
 
 // Keep the place after " — " (a school name) on one line.
-const keepTail = (s) => { const [a, b] = s.split(' — '); return b ? `${esc(a)} — <span class="nowrap">${esc(b)}</span>` : esc(s); };
+// Keep a short tail ("— Zhitan Elementary") on one line; long tails must be free to wrap.
+const keepTail = (s) => { const [a, b] = s.split(' — '); return b && b.length <= 28 ? `${esc(a)} — <span class="nowrap">${esc(b)}</span>` : esc(s); };
 
 function renderImpact() {
   $('#outreach-log').innerHTML = OUTREACH.map((o) => `<li><time datetime="${o.date}">${fmtDate(o.date)}</time><span>${keepTail(t(o.t))}${o.note ? `<small>${esc(t(o.note))}</small>` : ''}</span></li>`).join('');
