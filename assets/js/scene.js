@@ -25,9 +25,10 @@ function makeRenderer(canvas, maxDpr) {
 
   const key = new THREE.DirectionalLight(0xffffff, 2.2);
   key.position.set(1.6, 4.2, 2.4);
-  const rim = new THREE.DirectionalLight(0x6aa8ff, 2.6);
+  // Rims tuned for the charcoal page: a cool-neutral edge light and a faint warm one that echoes the amber accent.
+  const rim = new THREE.DirectionalLight(0xd6e0f5, 2.3);
   rim.position.set(-3, 2.5, -3.5);
-  const rim2 = new THREE.DirectionalLight(0x5ee1ff, 1.2);
+  const rim2 = new THREE.DirectionalLight(0xffc46b, 1.0);
   rim2.position.set(3.5, 1.5, -2.5);
   scene.add(key, rim, rim2);
   return { renderer, scene };
@@ -49,16 +50,16 @@ function contactShadow(size = 1.9) {
   return m;
 }
 
-// Floor ring that glows under the robot, a nod to the hero lighting of product pages.
+// Floor ring that glows under the robot, a nod to the hero lighting of product pages (amber, like the page accent).
 function floorGlow() {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
   const g = c.getContext('2d');
   const grd = g.createRadialGradient(128, 128, 60, 128, 128, 128);
-  grd.addColorStop(0, 'rgba(47,123,255,0)');
-  grd.addColorStop(0.82, 'rgba(47,123,255,0.22)');
-  grd.addColorStop(0.9, 'rgba(94,225,255,0.5)');
-  grd.addColorStop(1, 'rgba(47,123,255,0)');
+  grd.addColorStop(0, 'rgba(245,179,42,0)');
+  grd.addColorStop(0.82, 'rgba(245,179,42,0.12)');
+  grd.addColorStop(0.9, 'rgba(255,196,100,0.38)');
+  grd.addColorStop(1, 'rgba(245,179,42,0)');
   g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
   const tex = new THREE.CanvasTexture(c);
   const m = new THREE.Mesh(new THREE.PlaneGeometry(1.75, 1.75), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
