@@ -77,6 +77,18 @@ function fillCounts() {
   $$('.js-abroad').forEach((el) => { el.innerHTML = keepNames(ABROAD); });
   $$('.js-abroad-zh').forEach((el) => { el.textContent = joinList(ABROAD, 'zh'); });
   $$('.js-outreach-range').forEach((el) => { el.textContent = OUTREACH_RANGE; });
+  // Scoreboard cell for the newest season: "2026 — Regional Finalist in Shanghai, + 3 more awards".
+  const latest = [...SEASONS].sort((a, b) => b.year - a.year)[0];
+  const top = awardsOf(latest).find((a) => a.star) || awardsOf(latest)[0];
+  const more = awardsOf(latest).length - 1;
+  const year = $('#score-latest-year'), label = $('#score-latest');
+  if (year && top) {
+    year.textContent = latest.year;
+    const where = top.at ? (zh() ? top.at.zh : top.at.en) : '';
+    label.textContent = zh()
+      ? `${where}${where && !where.includes('·') ? '區域賽' : ''}${top.zh}${more > 0 ? `，本季再添 ${more} 座獎項` : ''}`
+      : `${top.en}${where ? ` in ${where}` : ''}${more > 0 ? `, plus ${more} more award${more > 1 ? 's' : ''} this season` : ''}`;
+  }
 }
 
 // ============================================================ i18n
@@ -176,26 +188,44 @@ function initCounters() {
 // "Regional Finalist · Istanbul": the venue is shown when a season had more than one regional.
 const withVenue = (a) => esc(t(a)) + (a.at ? `<small>${esc(t(a.at))}</small>` : '');
 
+// The newest season leads as a wide card; earlier seasons follow, newest first.
 function renderSeasons() {
-  $('#season-cards').innerHTML = SEASONS.map((s) => {
-    const result = s.awards.find((a) => a.result);
-    const alt = s.img === 'g-arizona-team.webp'
-      ? UI('Team 8806 at the 2025 Arizona East Regional', '第 8806 隊於 2025 亞利桑那東區域賽')
-      : `${t(s.event)} ${s.year}`;
-    return `
-    <article class="season">
-      ${s.img
-        ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(alt)}" loading="lazy" width="640" height="480">`
-        : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>'}
+  const ordered = [...SEASONS].sort((a, b) => b.year - a.year);
+  $('#season-cards').innerHTML = ordered.map((s, i) => {
+    const latest = i === 0;
+    const n = awardsOf(s).length;
+    const media = s.img
+      ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(alt(s))}" loading="lazy" width="640" height="480">`
+      : latest
+        ? `<div class="season__img season__stat"><span class="season__stat-year">${s.year}</span><span class="season__stat-num">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${UI(`${s.regionals || 1} regionals`, `${s.regionals || 1} 場區域賽`)}</span></div>`
+        : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>';
+    return renderSeason(s, media, latest);
+  }).join('');
+  renderGoalsAndLinks();
+}
+
+const alt = (s) => (s.img === 'g-arizona-team.webp'
+  ? UI('Team 8806 at the 2025 Arizona East Regional', '第 8806 隊於 2025 亞利桑那東區域賽')
+  : `${t(s.event)} ${s.year}`);
+
+function renderSeason(s, media, latest) {
+  const result = s.awards.find((a) => a.result);
+  return `
+    <article class="season${latest ? ' season--latest' : ''}">
+      ${media}
       <div class="season__body">
+        ${latest ? `<p class="season__badge">${UI('Latest season', '最新賽季')}</p>` : ''}
         <p class="season__year">${s.year}</p>
         <p class="season__event">${esc(t(s.event))}</p>
         ${result ? `<p class="season__result">${esc(t(result))}${result.at ? ` · ${esc(t(result.at))}` : ''}</p>` : ''}
         <ul class="season__awards">${awardsOf(s).map((a) => `<li class="${a.star ? 'star' : ''}">${withVenue(a)}</li>`).join('')}</ul>
+        ${(s.offseason || []).map((o) => `<p class="season__off"><span>${UI('Off-season', '季後賽')}</span>${esc(t(o))}</p>`).join('')}
         ${s.note ? `<p class="season__note">${esc(t(s.note))}</p>` : ''}
       </div>
     </article>`;
-  }).join('');
+}
+
+function renderGoalsAndLinks() {
   $('#goals').innerHTML = `
     <p class="goals__label">${UI('Next, we\'re going for', '接下來，我們的目標')}</p>
     <ul class="goals__list">${GOALS.map((g) => `<li>${esc(t(g))}</li>`).join('')}</ul>
@@ -216,7 +246,6 @@ function initMarquee() {
 
 // ============================================================ impact
 
-// Keep the place after " — " (a school name) on one line.
 // Keep a short tail ("— Zhitan Elementary") on one line; long tails must be free to wrap.
 const keepTail = (s) => { const [a, b] = s.split(' — '); return b && b.length <= 28 ? `${esc(a)} — <span class="nowrap">${esc(b)}</span>` : esc(s); };
 
@@ -591,6 +620,7 @@ function renderContact() {
     [SITE.facebook, 'Facebook'],
     [SITE.tba, 'The Blue Alliance'],
     [SITE.frcEvents, 'FRC Events'],
+    [SITE.github, 'GitHub'],
   ].map(([h, l]) => `<li><a href="${h}" target="_blank" rel="noopener">${esc(l)}</a></li>`).join('');
   $('#concept-notice').hidden = !SITE.conceptNotice;
 }

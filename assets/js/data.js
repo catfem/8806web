@@ -9,7 +9,8 @@ export const SITE = {
   facebook: 'https://www.facebook.com/search/top?q=FRC%20TEAM%208806',
   email: '',
   tba: 'https://www.thebluealliance.com/team/8806',
-  frcEvents: 'https://frc-events.firstinspires.org/2025/team/8806',
+  frcEvents: 'https://frc-events.firstinspires.org/2026/team/8806',
+  github: 'https://github.com/FRC8806',
   // Shows a one-line notice in the footer while this is a concept build.
   conceptNotice: true,
   // Drop an optimized GLB here (see README) to replace the procedural robot.
@@ -76,7 +77,9 @@ export const PARTS = [
 // biggest results; `at` names the regional when a season had more than one.
 // `regionals` and `places` feed the "N regionals in …" lines.
 // The headline counts ("7 awards in 4 seasons") and place lists are computed from this list.
-// `draft: true` keeps a season off the page (and out of every count) until its results are confirmed.
+// `draft: true` keeps a season off the page (and out of the award counts) until its results are confirmed.
+// `offseason` lists off-season results; they are shown on the card but not counted as FRC awards.
+// Results verified against FRC Events / The Blue Alliance data (Oct 2026).
 const NEW_TAIPEI = { en: 'New Taipei City', zh: '新北市' };
 const HAWAII = { en: 'Hawaii', zh: '夏威夷' };
 const ISTANBUL = { en: 'Istanbul', zh: '伊斯坦堡' };
@@ -96,7 +99,8 @@ export const SEASONS = [
     awards: [
       { en: 'Top 8 alliance', zh: '挺進前八強', result: true },
       { en: 'Team Spirit Award', zh: '團隊精神獎' },
-    ] },
+    ],
+    offseason: [{ en: 'Winner — Taiwan off-season event (July)', zh: '台灣季後賽 聯盟冠軍（7 月）' }] },
   { year: 2024, img: 'award-2024.webp', regionals: 2, places: [ISTANBUL],
     event: { en: 'Istanbul & Bosphorus Regionals', zh: '伊斯坦堡 & 博斯普魯斯區域賽' },
     note: { en: '8–1 in Istanbul qualifications', zh: '伊斯坦堡資格賽 8 勝 1 敗' },
@@ -112,13 +116,16 @@ export const SEASONS = [
       { en: 'Top 8 alliance', zh: '挺進前八強', result: true, at: NEW_TAIPEI },
       { en: 'Imagery Award', zh: '榮譽意象獎', at: NEW_TAIPEI },
     ] },
-  // 2026 — DRAFT. The team confirmed it competed in Shanghai, so Shanghai already counts in the
-  // "regionals in …" lines (attendance is read from every season, drafts included). The card and the
-  // award counts wait for the team's confirmed results: add the awards (and any other 2026 regional),
-  // a 2026 photo, then delete `draft: true`.
-  { year: 2026, draft: true, img: '', regionals: 1, places: [SHANGHAI],
-    event: { en: 'Shanghai Regional', zh: '上海區域賽' },
-    awards: [] },
+  // 2026: no photo yet — the card shows a stat panel until `img` is set.
+  { year: 2026, img: '', regionals: 3, places: [SHANGHAI, ISTANBUL],
+    event: { en: 'Shanghai, Haliç & Marmara Regionals', zh: '上海、伊斯坦堡 Haliç 與 Marmara 區域賽' },
+    note: { en: 'Alliance captain at both Istanbul regionals', zh: '伊斯坦堡兩場區域賽皆擔任聯盟隊長' },
+    awards: [
+      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true, at: SHANGHAI },
+      { en: 'Industrial Design Award', zh: '工業設計獎', at: SHANGHAI },
+      { en: 'Excellence in Engineering Award', zh: '卓越工程獎', at: { en: 'Haliç · Istanbul', zh: 'Haliç · 伊斯坦堡' } },
+      { en: 'Industrial Design Award', zh: '工業設計獎', at: { en: 'Marmara · Istanbul', zh: 'Marmara · 伊斯坦堡' } },
+    ] },
 ];
 
 export const GOALS = [
@@ -144,10 +151,10 @@ export const CALENDAR = [
 // Places the team has competed or exchanged with (lat, lon).
 export const PLACES = [
   { id: 'home', lat: 25.0, lon: 121.47, home: true, name: { en: 'New Taipei City', zh: '新北市' }, what: { en: 'Home', zh: '我們的主場' } },
-  { id: 'shanghai', lat: 31.23, lon: 121.47, name: { en: 'Shanghai', zh: '上海' }, what: { en: '2026 Regional · exchange with #6941', zh: '2026 區域賽 · 與 #6941 交流' } },
+  { id: 'shanghai', lat: 31.23, lon: 121.47, name: { en: 'Shanghai', zh: '上海' }, what: { en: '2026 Regional Finalist · #6941', zh: '2026 區域賽聯盟亞軍 · #6941' } },
   { id: 'hawaii', lat: 21.31, lon: -157.86, name: { en: 'Hawaii', zh: '夏威夷' }, what: { en: '2023 Regional · #4270', zh: '2023 區域賽 · #4270' } },
   { id: 'arizona', lat: 33.42, lon: -111.83, name: { en: 'Arizona', zh: '亞利桑那' }, what: { en: '2025 Regional · #6413 #6479', zh: '2025 區域賽 · #6413 #6479' } },
-  { id: 'istanbul', lat: 41.01, lon: 28.98, name: { en: 'Istanbul', zh: '伊斯坦堡' }, what: { en: '2024 Regionals · #6232 #6436', zh: '2024 區域賽 · #6232 #6436' } },
+  { id: 'istanbul', lat: 41.01, lon: 28.98, name: { en: 'Istanbul', zh: '伊斯坦堡' }, what: { en: '2024 & 2026 Regionals · #6232 #6436', zh: '2024、2026 區域賽 · #6232 #6436' } },
   { id: 'poland', lat: 51.25, lon: 22.57, name: { en: 'Poland', zh: '波蘭' }, what: { en: 'Online with #5883', zh: '與 #5883 線上交流' } },
 ];
 
