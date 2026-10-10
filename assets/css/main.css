@@ -423,7 +423,16 @@ html[data-lang="zh-Hant"] .callout h3 { letter-spacing: 0.01em; line-height: 1.2
 .benefit img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 /* screenshots are shown whole instead of cropped mid-text */
 .benefit img[src*="sp-recap"] { object-fit: contain; background: #fff; }
-.benefit img[src*="sp-post"] { object-fit: contain; background: #e8ebf0; padding: 12px 0; }
+/* Social thank-you tile: a mock post instead of a real one, so no past sponsor is shown as current. */
+.benefit__post {
+  aspect-ratio: 4 / 3; padding: 18px; display: flex; flex-direction: column; justify-content: center; gap: 12px;
+  background: linear-gradient(135deg, #14224a, #1f3a7a);
+  color: #fff;
+}
+.benefit__post-head { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.benefit__post-head img { width: 32px !important; height: 32px; aspect-ratio: 1 !important; border-radius: 50%; }
+.benefit__post-body { font-size: clamp(15px, 1.3vw, 18px); font-weight: 600; line-height: 1.35; text-wrap: balance; }
+.benefit__post-name { color: #8ec5ff; }
 .benefit figcaption { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 4px; }
 .benefit b { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
 .benefit span { font-size: 15px; color: var(--ink-2); line-height: 1.45; }

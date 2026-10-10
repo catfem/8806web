@@ -192,14 +192,13 @@ export const OUTREACH = [
 export const MEDIA = [
   { date: '2025-01-11', img: 'media-pts-2025.webp', t: { en: 'Featured by Public Television Service (PTS)', zh: '公共電視採訪' } },
   // hosted: an event the team ran, told in the "Partnership in action" callout rather than the press list
-  { date: '2024-08', img: 'media-offseason-2024.webp', hosted: true, t: { en: 'Hosted the 2024 national FRC off-season event', zh: '舉辦 2024 全國高級中等學校 FRC 季後賽' }, note: { en: 'with AMD', zh: '與 AMD 合作' } },
+  { date: '2024-08', img: 'media-offseason-2024.webp', hosted: true, t: { en: 'Hosted the 2024 national FRC off-season event', zh: '舉辦 2024 全國高級中等學校 FRC 季後賽' } },
   { date: '2024-05-22', img: 'media-ner-2024.webp', t: { en: 'On air at National Education Radio', zh: '國立教育廣播電台專訪' } },
   { date: '2023-06-07', img: 'media-ner-2023.webp', t: { en: 'On air at National Education Radio', zh: '國立教育廣播電台專訪' } },
 ];
 
 export const SPONSORS = [
   { en: 'Zebra Technologies', zh: 'Zebra' },
-  { en: 'AMD', zh: 'AMD' },
   { en: 'Pan-International', zh: 'Pan-International' },
   { en: 'New Taipei City Education Bureau', zh: '新北市政府教育局' },
   { en: 'Lions Clubs International', zh: '國際獅子會' },
