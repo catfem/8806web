@@ -122,7 +122,7 @@ function makeMaterials(hi) {
     rivet: std({ color: 0xc4c9d1, metalness: 1, roughness: 0.3 }),
     chain: std({ color: 0xffffff, metalness: 0.85, roughness: 0.38, map: chainTex, alphaTest: 0.45 }),
     dragChain: std({ color: 0x141518, metalness: 0.05, roughness: 0.62 }),
-    bumper: phys({ color: 0xffffff, metalness: 0, roughness: 0.92, sheen: 1, sheenRoughness: 0.42, sheenColor: new THREE.Color(0xff6b6b), transparent: true }),
+    bumper: phys({ color: 0xffffff, metalness: 0, roughness: 0.92, sheen: 1, sheenRoughness: 0.42, sheenColor: new THREE.Color(0x7aa6ff), transparent: true }),
     green: std({ color: 0x66d94a, metalness: 0, roughness: 0.55 }),
     pvc: phys({ color: 0xf1f0ea, metalness: 0, roughness: 0.38, clearcoat: 0.25, clearcoatRoughness: 0.4 }),
     ball: std({ color: 0x35c2a6, metalness: 0, roughness: 0.78 }),
@@ -529,7 +529,7 @@ function bumperGeometry(nc) {
 function bumperBase() {
   if (cache.bumperBase) return cache.bumperBase;
   const c = makeCanvas(1024, 1024), g = c.getContext('2d');
-  g.fillStyle = '#a3121c'; g.fillRect(0, 0, 1024, 1024);
+  g.fillStyle = '#1846b8'; g.fillRect(0, 0, 1024, 1024); // blue-alliance bumper fabric, matching the page accent
   // fabric grain: a small random tile used as a pattern (no read-back of the big canvas)
   const tile = makeCanvas(128, 128), tg = tile.getContext('2d'), img = tg.createImageData(128, 128), d = img.data, r = rng(3);
   for (let i = 0; i < d.length; i += 4) {
@@ -545,18 +545,18 @@ function bumperBase() {
     // ambient occlusion in the crease between the noodles and on the hidden faces
     const grd = g.createLinearGradient(0, y + 24, 0, y + 232);
     grd.addColorStop(0, 'rgba(0,0,0,0.1)'); grd.addColorStop(0.12, 'rgba(0,0,0,0)');
-    grd.addColorStop(0.44, 'rgba(0,0,0,0)'); grd.addColorStop(0.5, 'rgba(40,0,0,0.38)'); grd.addColorStop(0.56, 'rgba(0,0,0,0)');
+    grd.addColorStop(0.44, 'rgba(0,0,0,0)'); grd.addColorStop(0.5, 'rgba(0,6,40,0.38)'); grd.addColorStop(0.56, 'rgba(0,0,0,0)');
     grd.addColorStop(0.86, 'rgba(0,0,0,0)'); grd.addColorStop(1, 'rgba(0,0,0,0.22)');
     g.fillStyle = grd; g.fillRect(0, y + 24, 1024, 208);
     g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, y + 232, 1024, 24);
     // top & bottom seams with stitching
-    g.fillStyle = 'rgba(30,0,4,0.45)';
+    g.fillStyle = 'rgba(2,6,30,0.45)';
     g.fillRect(0, y + 22, 1024, 3); g.fillRect(0, y + 231, 1024, 3);
-    g.strokeStyle = 'rgba(255,190,190,0.42)'; g.lineWidth = 1.3; g.setLineDash([7, 5]);
+    g.strokeStyle = 'rgba(190,210,255,0.42)'; g.lineWidth = 1.3; g.setLineDash([7, 5]);
     [y + 31, y + 225].forEach((sy) => { g.beginPath(); g.moveTo(0, sy); g.lineTo(1024, sy); g.stroke(); });
     g.setLineDash([]);
     // corner seams at the band ends
-    g.fillStyle = 'rgba(30,0,4,0.35)';
+    g.fillStyle = 'rgba(2,6,30,0.35)';
     g.fillRect(0, y, 3, 256); g.fillRect(1021, y, 3, 256);
   }
   return (cache.bumperBase = c);
@@ -576,7 +576,7 @@ function drawBumper(ctx, w, h, sideLen, outerLen) {
     const size = 0.118 * pxV;
     ctx.font = `800 ${size}px ${FONT_STACK}`;
     ctx.lineJoin = 'round';
-    ctx.fillStyle = 'rgba(40,0,4,0.45)';
+    ctx.fillStyle = 'rgba(0,6,40,0.45)';
     ctx.fillText('8806', 0, size * 0.06 + 2);
     ctx.lineWidth = size * 0.05;
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';

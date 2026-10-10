@@ -82,7 +82,7 @@ export function drawSponsorPanel(ctx, w, h, name = '', sponsors = []) {
   // footer
   ctx.fillStyle = '#d5d9e1';
   ctx.fillRect(w / 2 - 60 * k, h - 150 * k, 120 * k, 5 * k);
-  ctx.fillStyle = '#c21d29';
+  ctx.fillStyle = '#1f63e0';
   ctx.font = `800 ${64 * k}px ${FONT_STACK}`;
   ctx.fillText('FRC 8806', w / 2, h - 62 * k);
 }

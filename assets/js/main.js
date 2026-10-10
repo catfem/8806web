@@ -54,8 +54,9 @@ const joinList = (list, l) => {
   const last = names[names.length - 1];
   return l === 'zh' ? `${names.slice(0, -1).join('、')}與${last}` : `${names.slice(0, -1).join(', ')} and ${last}`;
 };
-const outreachYears = OUTREACH.map((o) => +o.date.slice(0, 4));
-const OUTREACH_RANGE = `${Math.min(...outreachYears)}–\u2060${Math.max(...outreachYears)}`;
+const yearRange = (years) => `${Math.min(...years)}–\u2060${Math.max(...years)}`;
+const OUTREACH_RANGE = yearRange(OUTREACH.map((o) => +o.date.slice(0, 4)));
+const SEASON_RANGE = yearRange(SEASONS.map((s) => s.year));
 const zhNum = (n) => {
   const d = '零一二三四五六七八九';
   if (n < 10) return d[n];
@@ -77,6 +78,7 @@ function fillCounts() {
   $$('.js-abroad').forEach((el) => { el.innerHTML = keepNames(ABROAD); });
   $$('.js-abroad-zh').forEach((el) => { el.textContent = joinList(ABROAD, 'zh'); });
   $$('.js-outreach-range').forEach((el) => { el.textContent = OUTREACH_RANGE; });
+  $$('.js-season-range').forEach((el) => { el.textContent = SEASON_RANGE; });
   // Scoreboard cell for the newest season: "2026 — Regional Finalist in Shanghai, + 3 more awards".
   const latest = [...SEASONS].sort((a, b) => b.year - a.year)[0];
   const top = awardsOf(latest).find((a) => a.star) || awardsOf(latest)[0];
@@ -126,8 +128,10 @@ function applyLang() {
     el.alt = zh() ? el.dataset.zhAlt : el.dataset.enAlt;
   });
   const toggle = $('#lang-toggle');
+  // The name starts with the visible label (speech input), in the language it is written in.
   toggle.textContent = zh() ? 'EN' : '中文';
-  toggle.setAttribute('aria-label', zh() ? 'Switch to English' : '切換為中文');
+  toggle.lang = zh() ? 'en' : 'zh-Hant';
+  toggle.setAttribute('aria-label', zh() ? 'EN – Switch to English' : '中文 – 切換為中文');
   document.title = META[lang].title;
   $('meta[name="description"]').content = META[lang].desc;
   listeners.forEach((fn) => fn());
@@ -141,15 +145,80 @@ $('#lang-toggle').addEventListener('click', () => {
 
 // ============================================================ nav theme + reveal
 
-function initNav() {
-  const nav = $('#nav');
-  const sections = $$('main > section, footer');
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (e.isIntersecting) nav.classList.toggle('nav--light', /section--(light|gray)/.test(e.target.className));
+// Phone / tablet menu: a button in the nav opens the list of sections.
+function initMenu() {
+  const btn = $('#menu-toggle');
+  const menu = $('#menu');
+  const set = (open) => {
+    btn.setAttribute('aria-expanded', String(open));
+    menu.hidden = !open;
+  };
+  btn.addEventListener('click', () => set(menu.hidden));
+  menu.addEventListener('click', (e) => { if (e.target.closest('a')) set(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { set(false); btn.focus(); } });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target) && !btn.contains(e.target)) set(false); });
+  addEventListener('resize', () => { if (!menu.hidden && innerWidth > 1180) set(false); });
+}
+
+// Which section is being read: it names the right rail, lights its TOC entry and ruler tick, and
+// marks the matching nav / menu link. The rail itself only shows on wide screens (CSS).
+const RAIL_SECTIONS = ['top', 'results', 'partner', 'impact', 'team', 'robot', 'sponsor'];
+function initRail() {
+  const title = $('#rail-title');
+  const ruler = $('#ruler');
+  const marker = $('#ruler-marker');
+  const sections = RAIL_SECTIONS.map((id) => document.getElementById(id));
+  const tocLinks = $$('.rail__toc a');
+  let current = 'top';
+
+  // One labelled tick per section, at the scroll position where that section reaches the top.
+  ruler.insertAdjacentHTML('beforeend', RAIL_SECTIONS.map((id, i) => `<span class="ruler__tick" data-sec="${id}"><b>${String(i + 1).padStart(2, '0')}</b></span>`).join(''));
+  const ticks = $$('.ruler__tick', ruler);
+  let maxScroll = 1, rulerH = 0;
+  const layout = () => {
+    maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    rulerH = ruler.clientHeight;
+    sections.forEach((sec, i) => {
+      const y = Math.min(1, Math.max(0, (sec.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(root).scrollPaddingTop || 0)) / maxScroll));
+      ticks[i].style.top = (y * 100).toFixed(2) + '%';
     });
-  }, { rootMargin: `-${26}px 0px -${Math.max(0, innerHeight - 27)}px 0px` });
-  sections.forEach((s) => io.observe(s));
+    move();
+  };
+  let raf = 0;
+  const move = () => {
+    raf = 0;
+    const p = Math.min(1, Math.max(0, scrollY / maxScroll));
+    marker.style.transform = `translateY(${(p * rulerH).toFixed(1)}px)`;
+  };
+  addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(move); }, { passive: true });
+  addEventListener('resize', layout);
+  addEventListener('load', layout);
+  new ResizeObserver(() => layout()).observe($('#main'));
+  layout();
+
+  const name = () => tocLinks.find((a) => a.dataset.sec === current)?.textContent || '';
+  const paint = () => {
+    tocLinks.forEach((a) => a.setAttribute('aria-current', String(a.dataset.sec === current)));
+    ticks.forEach((t) => t.classList.toggle('is-active', t.dataset.sec === current));
+    $$('.nav__links a, .menu a').forEach((a) => a.setAttribute('aria-current', String(a.getAttribute('href') === `#${current}`)));
+  };
+  const setTitle = (instant) => {
+    if (instant || reducedMotion) { title.textContent = name(); return; }
+    title.classList.add('is-swap');
+    clearTimeout(setTitle.t);
+    setTitle.t = setTimeout(() => { title.textContent = name(); title.classList.remove('is-swap'); }, 180);
+  };
+  // A section is current while it crosses a line 35% down the viewport.
+  const io = new IntersectionObserver((entries) => {
+    const hit = entries.filter((e) => e.isIntersecting).at(-1);
+    if (!hit || hit.target.id === current) return;
+    current = hit.target.id;
+    paint();
+    setTitle(false);
+  }, { rootMargin: '-35% 0px -64% 0px' });
+  sections.forEach((sec) => io.observe(sec));
+  paint();
+  onLang(() => setTitle(true));
 }
 
 function initReveal() {
@@ -197,7 +266,7 @@ function renderSeasons() {
     const media = s.img
       ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(alt(s))}" loading="lazy" width="640" height="480">`
       : latest
-        ? `<div class="season__img season__stat"><span class="season__stat-year">${s.year}</span><span class="season__stat-num">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${UI(`${s.regionals || 1} regionals`, `${s.regionals || 1} 場區域賽`)}</span></div>`
+        ? `<div class="season__img season__stat"><span class="season__stat-year">${UI(`${s.year} season`, `${s.year} 賽季`)}</span><span><span class="season__stat-num">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${UI(`${s.regionals || 1} regionals`, `${s.regionals || 1} 場區域賽`)}</span></span></div>`
         : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>';
     return renderSeason(s, media, latest);
   }).join('');
@@ -214,8 +283,8 @@ function renderSeason(s, media, latest) {
     <article class="season${latest ? ' season--latest' : ''}">
       ${media}
       <div class="season__body">
-        ${latest ? `<p class="season__badge">${UI('Latest season', '最新賽季')}</p>` : ''}
-        <p class="season__year">${s.year}</p>
+        ${latest ? `<p class="badge season__badge">${UI('Latest season', '最新賽季')}</p>` : ''}
+        <h3 class="season__year">${s.year}</h3>
         <p class="season__event">${esc(t(s.event))}</p>
         ${result ? `<p class="season__result">${esc(t(result))}${result.at ? ` · ${esc(t(result.at))}` : ''}</p>` : ''}
         <ul class="season__awards">${awardsOf(s).map((a) => `<li class="${a.star ? 'star' : ''}">${withVenue(a)}</li>`).join('')}</ul>
@@ -227,9 +296,9 @@ function renderSeason(s, media, latest) {
 
 function renderGoalsAndLinks() {
   $('#goals').innerHTML = `
-    <p class="goals__label">${UI('Next, we\'re going for', '接下來，我們的目標')}</p>
-    <ul class="goals__list">${GOALS.map((g) => `<li>${esc(t(g))}</li>`).join('')}</ul>
-    <a class="btn btn--ghost" href="#sponsor">${UI('Help us get there', '幫助我們達成')}</a>`;
+    <p class="label goals__label">${UI('Next, we\'re going for', '接下來，我們的目標')}</p>
+    <ul class="cells goals__list">${GOALS.map((g) => `<li>${esc(t(g))}</li>`).join('')}</ul>
+    <a class="btn btn--ghost" href="#sponsor">${ICONS.arrow}<span>${UI('Help us get there', '幫助我們達成')}</span></a>`;
   $('#verify-links').innerHTML = [
     [SITE.tba, UI('Verify on The Blue Alliance ↗', '在 The Blue Alliance 查證 ↗')],
     [SITE.frcEvents, UI('FRC Events ↗', 'FRC Events 官方紀錄 ↗')],
@@ -286,7 +355,6 @@ function renderMap() {
     pins += `<circle class="map__halo" cx="${x}" cy="${y}" r="2.2"/><circle class="map__pin${p.home ? ' map__pin--home' : ''}" cx="${x}" cy="${y}" r="${p.home ? 1.6 : 1.2}"/>`;
   });
   svg.insertAdjacentHTML('beforeend', `
-    <defs><linearGradient id="arc-grad" x1="0" x2="1"><stop offset="0" stop-color="#2f7bff"/><stop offset="1" stop-color="#0aa2d8"/></linearGradient></defs>
     <path class="map__dots" d="${d}"/>
     <g>${arcs}</g><g>${pins}</g>`);
 
@@ -294,7 +362,7 @@ function renderMap() {
   const wrap = inner.parentElement;
   const labels = document.createElement('div');
   inner.appendChild(labels);
-  const pos = { home: 'below', istanbul: 'below', hawaii: 'below', shanghai: 'left', poland: '', arizona: '' };
+  const pos = { home: 'below', istanbul: 'below', hawaii: 'below', shanghai: '', poland: '', arizona: '' };
   onLang(() => {
     labels.innerHTML = PLACES.map((p) => {
       const [x, y] = proj(p);
@@ -316,12 +384,13 @@ function renderSeasonNow() {
   const cur = CALENDAR[pos];
   $('#now-month').textContent = monthName(m, true);
   if (cur) {
-    $('#now-title').innerHTML = UI(`We're in <span class="grad">${esc(t(cur.t))}</span>.`, `我們正在進行<span class="grad">${esc(t(cur.t))}</span>。`);
+    // The blue month cell below marks "now", so the title stays white (one accent per screen).
+    $('#now-title').innerHTML = UI(`We're in <em>${esc(t(cur.t))}</em>.`, `我們正在進行<wbr><em>${esc(t(cur.t))}</em>。`);
     $('#now-text').textContent = t(cur.d) + (zh() ? '' : ' ') + (pos <= order.indexOf(1)
       ? UI('What gets funded this month is what competes in March.', '這個月到位的資源，就是三月登上賽場的機器人。')
       : UI('The season is live — every contribution goes straight to the field.', '賽季進行中 — 每一份支持都直接送上賽場。'));
   } else {
-    $('#now-title').innerHTML = UI('It\'s the <span class="grad">off-season</span>.', '現在是<span class="grad">季後期</span>。');
+    $('#now-title').innerHTML = UI('It\'s the <em>off-season</em>.', '現在是<em>季後期</em>。');
     $('#now-text').textContent = UI('Off-season events, outreach and planning the next robot. Recruiting starts in August.', '季後賽、教育推廣與下一台機器人的規劃，八月開始招募新生。');
   }
   $('#months').innerHTML = CALENDAR.map((c, i) => {
@@ -339,6 +408,12 @@ const ICONS = {
   plane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5 4 11l1.5-1.5 7 1 4-4c1-1 2.5-1.5 3-1s0 2-1 3l-4 4 1 7L14 21l-2.5-6.5L8 18v2l-1.5 1L6 18l-3-.5L4 16h2z"/></svg>',
   student: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6"/></svg>',
   materials: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v4H3zM5 11v8h14v-8"/><path d="M9 15h6"/></svg>',
+  // 16px button icons
+  arrow: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>',
+  chat: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v8H7l-3 2.5V11H2.5z"/></svg>',
+  ext: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 3H3v10h10V9.5M9 3h4v4M13 3 7.5 8.5"/></svg>',
+  mail: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5h12v9H2zM2 4l6 5 6-5"/></svg>',
+  file: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/></svg>',
 };
 
 const MATERIALS = {
@@ -567,10 +642,10 @@ function renderBudget() {
 }
 
 function initBudget() {
-  const tabs = $$('[data-scope]');
-  tabs.forEach((b) => b.addEventListener('click', () => {
+  const toggles = $$('[data-scope]');
+  toggles.forEach((b) => b.addEventListener('click', () => {
     scope = b.dataset.scope;
-    tabs.forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    toggles.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     renderBudget();
   }));
   const tip = $('#bars-tip');
@@ -604,14 +679,14 @@ function initBudget() {
 function renderContact() {
   const ig = `https://www.instagram.com/${SITE.instagram}/`;
   const btns = [
-    `<a class="btn btn--primary" href="https://ig.me/m/${SITE.instagram}" target="_blank" rel="noopener">${UI('Message us on Instagram', '在 Instagram 私訊我們')}</a>`,
-    `<a class="btn btn--ghost" href="${SITE.facebook}" target="_blank" rel="noopener">Facebook</a>`,
-    SITE.email ? `<a class="btn btn--ghost" href="mailto:${SITE.email}">${UI('E-mail the team', '寄信給我們')}</a>` : '',
-    SITE.proposalUrl ? `<a class="btn btn--ghost" href="${esc(SITE.proposalUrl)}" target="_blank" rel="noopener" download>${UI('Download our sponsorship proposal (PDF)', '下載贊助企劃書（PDF）')}</a>` : '',
+    `<a class="btn btn--primary" href="https://ig.me/m/${SITE.instagram}" target="_blank" rel="noopener">${ICONS.chat}<span>${UI('Message us on Instagram', '在 Instagram 私訊我們')}</span></a>`,
+    `<a class="btn btn--ghost" href="${SITE.facebook}" target="_blank" rel="noopener">${ICONS.ext}<span>Facebook</span></a>`,
+    SITE.email ? `<a class="btn btn--ghost" href="mailto:${SITE.email}">${ICONS.mail}<span>${UI('E-mail the team', '寄信給我們')}</span></a>` : '',
+    SITE.proposalUrl ? `<a class="btn btn--ghost" href="${esc(SITE.proposalUrl)}" target="_blank" rel="noopener" download>${ICONS.file}<span>${UI('Download our sponsorship proposal (PDF)', '下載贊助企劃書（PDF）')}</span></a>` : '',
   ];
   $('#contact-buttons').innerHTML = btns.join('');
   const names = SPONSORS.map((s) => t(s));
-  $('#hero-sponsors').textContent = names.join(' · ');
+  $('#hero-sponsors').innerHTML = `<li class="cells__label">${UI('Partners', '合作夥伴')}</li>` + names.map((n) => `<li>${esc(n)}</li>`).join('');
   $('#contact-sponsors').textContent = zh()
     ? `與 ${names.slice(0, -1).join('、')}及${names.at(-1)}一起支持我們。`
     : `Join ${names.slice(0, -1).join(', ')} and ${names.at(-1)}.`;
@@ -744,7 +819,8 @@ function initShowcase() {
       if (engine.custom) initFlatShowcase(view3d, input);
       engine.setName(input.value.trim());
       input.addEventListener('input', () => engine.setName(input.value.trim()));
-      listeners.push(() => { engine.setLang(lang); engine.redrawText(); });
+      // onLang runs once now too: the language may have changed while the engine was loading.
+      onLang(() => { engine.setLang(lang); engine.redrawText(); });
       document.fonts?.ready.then(() => engine.redrawText());
     } catch (e) {
       console.error(e);
@@ -776,7 +852,8 @@ initPledge();
 initBudget();
 onLang(renderContact);
 applyLang();
-initNav();
+initMenu();
+initRail();
 initReveal();
 initCounters();
 initMarquee();

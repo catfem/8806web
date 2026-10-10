@@ -6,21 +6,31 @@ A concept fundraising website for **FRC Team 8806 — Our Lady of Providence Dre
 
 ## What's on the page
 
-The page is ordered by the questions a sponsor asks: *are they good → what do I get → is it a good cause → who are they → what does my money buy → how do I give*. Nothing is sticky or scroll-jacked.
+The page is ordered by the questions a sponsor asks: *are they good → what do I get → is it a good cause → who are they → what does my money buy → how do I give*. Nothing is scroll-jacked: the nav, the right rail and the phone dock are fixed, everything else scrolls normally.
 
 | # | Section | What it does |
 |---|---|---|
-| 1 | **Hero** (`#top`) | Proof and the ask in five seconds: "7 awards in 4 seasons. Built by 45 students.", the 2025 Imagery Award photo, a four-number scoreboard (7 awards · 6 regionals · 2022 Regional Winner · 9 outreach events), and a trust strip of current supporters and media. No 3D here, so the hero loads nothing heavy. |
-| 2 | **Results** (`#results`) | The newest season (2026) as a wide lead card — a stat panel until a 2026 photo is added — then one card per earlier season, newest first, with the awards as the headline (and the regional each was won at), off-season results, the team's goals in a dashed "not yet won" row, the "once in the world's top 100" line, and links to verify on The Blue Alliance and FRC Events. |
+| 1 | **Hero** (`#top`) | Proof and the ask in five seconds, centred like a product launch page: the crest as an app-icon tile, the `8806` badge with the OLPDL wordmark, the headline "11 awards. 5 seasons. Built by 45 students." (counts computed from `data.js`), three square buttons (Sponsor 8806 → pledge, What sponsors get, Instagram), a mono caption, the current supporters as a cell row, the press line, and a full-width four-number scoreboard (awards · regionals and where · the newest season · outreach events). No photo and no 3D here, so the hero loads nothing heavy. |
+| 2 | **Results** (`#results`) | The 2025 Imagery Award photo beside the intro, then the newest season (2026) as a wide row — a stat panel with a big blue award count until a 2026 photo is added — and one bordered cell per earlier season, newest first, with the awards as the headline (blue square = the big results; the regional each was won at), off-season results, the team's goals ("next, we're going for"), the "once in the world's top 100" line, and links to verify on The Blue Alliance and FRC Events. |
 | 3 | **Photo strip** | A 200 px marquee of season photos (static under reduced motion). |
-| 4 | **Why partner** (`#partner`) | Four reasons (Proven · Seen · Purposeful · Accountable), six sponsor benefits with photos (robot, uniforms, recap videos, social posts, progress reports, co-branded outreach) and the 2024 off-season event the team hosted. |
-| 5 | **Impact** (`#impact`) | Outreach and exchange numbers, the outreach log, press coverage (PTS, National Education Radio), the women-in-engineering goal, a dotted world map of every exchange, and the full exchange log. The off-season event the team hosted is told once, in the #partner callout. |
-| 6 | **Team** (`#team`) | The team photo with the motto, and the three subteams. Marketing is flagged as the sponsor's point of contact. |
+| 4 | **Why partner** (`#partner`) | Four reasons (Proven · Seen · Purposeful · Accountable) as bordered cells, six sponsor benefits with photos (robot, uniforms, recap videos, social posts, progress reports, co-branded outreach) and the 2024 off-season event the team hosted. |
+| 5 | **Impact** (`#impact`) | Outreach and exchange numbers, the outreach log, press coverage (PTS, National Education Radio), the women-in-engineering goal, a dotted world map of every exchange (blue flight arcs), and the full exchange log. The off-season event the team hosted is told once, in the #partner callout. |
+| 6 | **Team** (`#team`) | The team photo with the motto, the crest, and the three subteams. Marketing is flagged as the sponsor's point of contact. |
 | 7 | **Robot** (`#robot`) | The only 3D on the page: a click-driven viewer with three tabs. *Built by students* (x-ray drivetrain, steering swerve modules, elevator cycling), *Every part has a price* (exploded view with price tags that add the part to the pledge) and *Your logo here* (the camera frames the framed sponsor panel; type a company name to preview it above the six current supporters). Drag sideways to rotate. |
-| 8 | **The ask** (`#sponsor`) | A one-line "right now in the season" pill (calendar in a disclosure), the **Sponsor a part** pledge builder (most valuable item first; "Send" copies the pledge and opens an Instagram DM), the **budget** (full-season split bar, line items with % of total, scope toggle, tooltip, table) and the **contact** block. |
-| — | **Mobile dock** | On phones and small tablets (≤900 px) a bottom pill links to the pledge builder, or shows the pledge total with a Send button once something is in it. It hides on the hero, next to the inline cart and contact block, and whenever the parts list is under it. |
+| 8 | **The ask** (`#sponsor`) | The season clock ("right now: October — R&D & parts check" over a row of month cells, the current month in blue), then three numbered sub-blocks: **07.1 Sponsor a part** (most valuable item first; "Send" copies the pledge and opens an Instagram DM), **07.2 Budget** (full-season split bar, line items with % of total, scope toggle, tooltip, table) and **07.3 Contact**. |
+| — | **Mobile dock** | On phones and small tablets (≤900 px) a square bar along the bottom links to the pledge builder, or shows the pledge total with a Send button once something is in it. It hides on the hero, next to the inline cart and contact block, and whenever the parts list is under it. |
+| — | **Right rail** | On wide screens (≥1440 px) the gutter right of the content column shows the current section's name in big expanded capitals, a table of contents (click to jump) and a ruler with one numbered tick per section and a blue marker for the scroll position. Below 1180 px the nav links fold into a **Menu** button that opens the same list. |
 
 Everything is bilingual: English and Traditional Chinese (繁體中文). The page follows the browser language, has a toggle in the nav, and supports `?lang=zh` / `?lang=en` links.
+
+## Look
+
+A dark, technical product-page style (one content column framed by 1px rules, like an engineering drawing). Everything lives in `assets/css/main.css`; the tokens are on `:root`.
+
+- **Palette:** charcoal page `--bg #121316`, raised surface `--bg-2`, hairline rules `--rule`, text `--text` / `--muted` / `--dim` (every text colour is at least 4.5:1 on every surface; nothing on the page is set below 11 px), and one accent, cobalt blue `--accent #2a6df4` (with the lighter `--accent-text #6aa5ff` when the accent is text on the dark page), used sparingly: one word in a headline, the number badge, active states, chart bars, award markers and the focus ring. Team-travel bars are hatched in the same blue, so they differ from the build bars by pattern. The 3D robot matches: blue-alliance bumpers, a blue floor glow and a blue rim light. The team navy only appears in the crest and the 3D scene.
+- **Frame:** the column is at most 1280 px wide (with at least an 80 px empty gutter on the left while the rail shows) with full-height rules on both sides and small "+" ticks where section rules cross them. Every section starts with a 44 px strip (`.strip`: "02 / RESULTS" on the left, a mono meta line on the right) and every block inside a section is separated by a full-width rule. No rounded corners (except the crest's app-icon tile), no shadows, no blur.
+- **Type:** Archivo (variable, expanded `font-stretch: 112%`, weight 800) for headlines — sized in container units (`cqi`) so they follow the column, which the rail narrows; JetBrains Mono, uppercase and tracked, for short labels, nav, buttons, captions, strips and numbers; Inter for body text and for anything that reads as a sentence (scoreboard labels, notes, the legal line). Chinese uses Noto Sans TC (900 for headlines) with less tracking on mono labels.
+- **Components:** square buttons (`.btn--primary` white, `.btn--ghost` outlined), cell rows (`.cells`: bordered cells sharing their borders, used for partners, goals, tabs, the budget toggle (toggle buttons with `aria-pressed`) and chips), bordered grids (`.grid`: 1px gaps over the rule colour), photo|text rows (`.split`), and the badge + wordmark.
 
 ## Run locally
 
@@ -78,9 +88,9 @@ A custom model is auto-scaled and centred. It keeps the three camera views and g
 ## Performance & accessibility notes
 
 - Three.js is vendored (`assets/vendor/three`, r169, MIT) and only requested when you scroll near the robot section, so the hero doesn't pay for 3D (even the WebGL support check waits until then). There is one WebGL canvas on the page.
-- Web fonts never block the first paint: Inter loads in the background, and Noto Sans TC is only requested when the page is shown in Chinese.
-- Photos are WebP (~1.6 MB total, lazy-loaded except the hero photo, which is preloaded). They're small originals, so no photo is shown wider than about 1.3× its native width.
-- `prefers-reduced-motion` turns off camera sway, spinning parts, view transitions, the marquee and the count-up numbers.
+- Web fonts never block the first paint: Archivo, Inter and JetBrains Mono load in the background in one request (`media="print"` swap, `display=swap`), and Noto Sans TC is only requested, the same way, when the page is shown in Chinese.
+- Photos are WebP (~1.6 MB total) and all lazy-loaded; the hero shows only the crest mark (16 KB, also the nav logo). They're small originals, so no photo is shown wider than about 1.3× its native width.
+- `prefers-reduced-motion` turns off camera sway, spinning parts, view transitions, the marquee, the count-up numbers, the reveal fades and the rail's title fade.
 
 ## Things to confirm before publishing
 
