@@ -14,6 +14,8 @@ export const SITE = {
   conceptNotice: true,
   // Drop an optimized GLB here (see README) to replace the procedural robot.
   robotModelUrl: '',
+  // Link to the sponsorship proposal PDF; empty hides the button.
+  proposalUrl: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -70,42 +72,59 @@ export const PARTS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Each season's awards. `result: true` marks a placing that is not an award; `star` highlights the
+// biggest results; `at` names the regional when a season had more than one.
+// `regionals` and `places` feed the "N regionals in …" lines.
+// The headline counts ("7 awards in 4 seasons") and place lists are computed from this list.
+// `draft: true` keeps a season off the page (and out of every count) until its results are confirmed.
+const NEW_TAIPEI = { en: 'New Taipei City', zh: '新北市' };
+const HAWAII = { en: 'Hawaii', zh: '夏威夷' };
+const ISTANBUL = { en: 'Istanbul', zh: '伊斯坦堡' };
+const ARIZONA = { en: 'Arizona', zh: '亞利桑那' };
+const SHANGHAI = { en: 'Shanghai', zh: '上海' };
 export const SEASONS = [
-  { year: 2022, img: 'award-2022.webp',
+  { year: 2022, img: 'award-2022.webp', regionals: 1, places: [NEW_TAIPEI],
     event: { en: 'New Taipei City Regional', zh: '新北市區域賽' },
     note: { en: 'Rookie season', zh: '新秀球季' },
     awards: [
       { en: 'Regional Winner', zh: '聯盟冠軍獎', star: true },
       { en: 'Rookie Inspiration Award', zh: '新秀啟發獎' },
     ] },
-  { year: 2023, img: 'award-2023.webp',
+  { year: 2023, img: 'award-2023.webp', regionals: 1, places: [HAWAII],
     event: { en: 'Hawaii Regional', zh: '夏威夷區域賽' },
     note: { en: 'Across the Pacific', zh: '橫越太平洋' },
     awards: [
-      { en: 'Top 8 alliance', zh: '挺進前八強' },
+      { en: 'Top 8 alliance', zh: '挺進前八強', result: true },
       { en: 'Team Spirit Award', zh: '團隊精神獎' },
     ] },
-  { year: 2024, img: 'award-2024.webp',
+  { year: 2024, img: 'award-2024.webp', regionals: 2, places: [ISTANBUL],
     event: { en: 'Istanbul & Bosphorus Regionals', zh: '伊斯坦堡 & 博斯普魯斯區域賽' },
     note: { en: '8–1 in Istanbul qualifications', zh: '伊斯坦堡資格賽 8 勝 1 敗' },
     awards: [
-      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true },
-      { en: 'Innovation in Control Award', zh: '創新控制獎' },
-      { en: 'Creativity Award', zh: '創造力獎' },
+      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true, at: ISTANBUL },
+      { en: 'Innovation in Control Award', zh: '創新控制獎', at: ISTANBUL },
+      { en: 'Creativity Award', zh: '創造力獎', at: { en: 'Bosphorus', zh: '博斯普魯斯' } },
     ] },
-  { year: 2025, img: 'award-2025.webp',
+  { year: 2025, img: 'g-arizona-team.webp', regionals: 2, places: [NEW_TAIPEI, ARIZONA],
     event: { en: 'New Taipei City & Arizona East Regionals', zh: '新北市 & 亞利桑那東區域賽' },
     note: { en: 'Two regionals, two continents', zh: '兩場區域賽、橫跨兩大洲' },
     awards: [
-      { en: 'Top 8 alliance', zh: '挺進前八強' },
-      { en: 'Imagery Award', zh: '榮譽意象獎' },
+      { en: 'Top 8 alliance', zh: '挺進前八強', result: true, at: NEW_TAIPEI },
+      { en: 'Imagery Award', zh: '榮譽意象獎', at: NEW_TAIPEI },
     ] },
+  // 2026 — DRAFT. The team confirmed it competed in Shanghai, so Shanghai already counts in the
+  // "regionals in …" lines (attendance is read from every season, drafts included). The card and the
+  // award counts wait for the team's confirmed results: add the awards (and any other 2026 regional),
+  // a 2026 photo, then delete `draft: true`.
+  { year: 2026, draft: true, img: '', regionals: 1, places: [SHANGHAI],
+    event: { en: 'Shanghai Regional', zh: '上海區域賽' },
+    awards: [] },
 ];
 
 export const GOALS = [
   { en: 'Regional Winner', zh: '聯盟冠軍獎' },
   { en: 'Impact Award', zh: '影響力獎' },
-  { en: 'Engineering Inspiration', zh: '工程啟發獎' },
+  { en: 'Engineering Inspiration Award', zh: '工程啟發獎' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -125,7 +144,7 @@ export const CALENDAR = [
 // Places the team has competed or exchanged with (lat, lon).
 export const PLACES = [
   { id: 'home', lat: 25.0, lon: 121.47, home: true, name: { en: 'New Taipei City', zh: '新北市' }, what: { en: 'Home', zh: '我們的主場' } },
-  { id: 'shanghai', lat: 31.23, lon: 121.47, name: { en: 'Shanghai', zh: '上海' }, what: { en: 'Exchange with #6941', zh: '與 #6941 交流' } },
+  { id: 'shanghai', lat: 31.23, lon: 121.47, name: { en: 'Shanghai', zh: '上海' }, what: { en: '2026 Regional · exchange with #6941', zh: '2026 區域賽 · 與 #6941 交流' } },
   { id: 'hawaii', lat: 21.31, lon: -157.86, name: { en: 'Hawaii', zh: '夏威夷' }, what: { en: '2023 Regional · #4270', zh: '2023 區域賽 · #4270' } },
   { id: 'arizona', lat: 33.42, lon: -111.83, name: { en: 'Arizona', zh: '亞利桑那' }, what: { en: '2025 Regional · #6413 #6479', zh: '2025 區域賽 · #6413 #6479' } },
   { id: 'istanbul', lat: 41.01, lon: 28.98, name: { en: 'Istanbul', zh: '伊斯坦堡' }, what: { en: '2024 Regionals · #6232 #6436', zh: '2024 區域賽 · #6232 #6436' } },
@@ -141,7 +160,7 @@ export const EXCHANGES = [
   { date: '2024-10-27', teams: '#8569', where: { en: 'Taiwan', zh: '台灣' } },
   { date: '2024-07-04', teams: '#6941', where: { en: 'Shanghai', zh: '上海' } },
   { date: '2024-06-15', teams: { en: '14 Taiwanese teams', zh: '14 支台灣隊伍' }, where: { en: 'Taiwan', zh: '台灣' } },
-  { date: '2024-03-04', teams: '#6232 #6436', where: { en: 'Istanbul, Türkiye', zh: '土耳其' } },
+  { date: '2024-03-04', teams: '#6232 #6436', where: { en: 'Istanbul', zh: '伊斯坦堡' } },
   { date: '2024-01-23', teams: '#6436', where: { en: 'Online', zh: '線上' } },
   { date: '2024-01-12', teams: '#6232', where: { en: 'Online', zh: '線上' } },
   { date: '2023-12-10', teams: '#8569', where: { en: 'Taiwan', zh: '台灣' } },
@@ -154,6 +173,11 @@ export const EXCHANGES = [
 
 // ---------------------------------------------------------------------------
 export const OUTREACH = [
+  { date: '2026-06-06', t: { en: 'Outreach booth in Kaohsiung', zh: '高雄擺攤推廣' } },
+  { date: '2026-05-16',
+    t: { en: 'Thank-you & awards ceremony', zh: '感謝會暨頒獎典禮' },
+    note: { en: 'Season results presented to parents, sponsors and the public in the school auditorium; Zhongzheng Elementary students and their parents came too.', zh: '在崇光禮堂向家長、贊助夥伴與公眾報告本季成果；活動對外開放，中正國小的學生與家長也到場參與。' } },
+  { date: '2026-03-21', t: { en: 'micro:bit class for elementary students at OLP', zh: '邀請國小生到崇光學習 micro:bit' } },
   { date: '2025-05-24', t: { en: 'Emerging-tech program booth, Songshan Cultural Park', zh: '新興科技計畫 松菸擺攤' } },
   { date: '2025-04-28', t: { en: 'FRC experience day — Zhuole & Zhongzheng Elementary', zh: 'FRC 體驗 — 卓樂國小 & 中正國小' } },
   { date: '2025-01-23', t: { en: 'OLP winter robotics camp', zh: '崇光冬令營' } },
@@ -167,7 +191,8 @@ export const OUTREACH = [
 
 export const MEDIA = [
   { date: '2025-01-11', img: 'media-pts-2025.webp', t: { en: 'Featured by Public Television Service (PTS)', zh: '公共電視採訪' } },
-  { date: '2024-08', img: 'media-offseason-2024.webp', t: { en: 'Hosted the 2024 national FRC off-season event', zh: '舉辦 2024 全國高級中等學校 FRC 季後賽' } },
+  // hosted: an event the team ran, told in the "Partnership in action" callout rather than the press list
+  { date: '2024-08', img: 'media-offseason-2024.webp', hosted: true, t: { en: 'Hosted the 2024 national FRC off-season event', zh: '舉辦 2024 全國高級中等學校 FRC 季後賽' }, note: { en: 'with AMD', zh: '與 AMD 合作' } },
   { date: '2024-05-22', img: 'media-ner-2024.webp', t: { en: 'On air at National Education Radio', zh: '國立教育廣播電台專訪' } },
   { date: '2023-06-07', img: 'media-ner-2023.webp', t: { en: 'On air at National Education Radio', zh: '國立教育廣播電台專訪' } },
 ];

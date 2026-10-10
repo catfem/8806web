@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>FRC Team 8806 · Our Lady of Providence Dream League</title>
-  <meta name="description" content="FRC Team 8806 (OLPDL) — 45 students from Our Lady of Providence High School, New Taipei City, building competition robots and future engineers. Sponsor a part of our next robot.">
+  <title>FRC Team 8806 · 7 awards in 4 seasons · Partner with us</title>
+  <meta name="description" content="45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, 7 FRC awards, regionals in New Taipei City, Hawaii, Istanbul, Arizona and Shanghai. See what sponsors get and where every NT$ goes.">
   <meta name="theme-color" content="#05070d">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="FRC Team 8806 · Dream big, and never give up.">
-  <meta property="og:description" content="Put your name on our next robot. Sponsor FRC Team 8806 from New Taipei City, Taiwan.">
+  <meta property="og:title" content="FRC Team 8806 — 7 awards in 4 seasons. Partner with us.">
+  <meta property="og:description" content="45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, 7 FRC awards, regionals in New Taipei City, Hawaii, Istanbul, Arizona and Shanghai. See what sponsors get and where every NT$ goes.">
   <meta property="og:image" content="assets/img/og-image.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
@@ -17,8 +17,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+  <!-- Web fonts never block the first paint (system fonts show first); Noto Sans TC loads only for Chinese. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&amp;display=swap"></noscript>
   <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="preload" as="image" href="assets/img/award-2025.webp">
 
   <script>
     // Pick the language before first paint to avoid a flash of the wrong one.
@@ -30,12 +33,19 @@
       if (!l) try { l = localStorage.getItem('lang'); } catch (e) {}
       if (!l) l = /^zh/i.test(navigator.language || '') ? 'zh-Hant' : 'en';
       d.setAttribute('data-lang', l);
+      window.loadCJKFont = function () {
+        if (document.getElementById('font-tc')) return;
+        var f = document.createElement('link');
+        f.id = 'font-tc'; f.rel = 'stylesheet';
+        f.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap';
+        document.head.appendChild(f);
+      };
+      if (l === 'zh-Hant') window.loadCJKFont();
     })();
   </script>
   <script type="importmap">
     { "imports": { "three": "./assets/vendor/three/three.module.min.js", "three/addons/": "./assets/vendor/three/addons/" } }
   </script>
-  <link rel="modulepreload" href="assets/vendor/three/three.module.min.js">
   <script type="module" src="assets/js/main.js"></script>
 
   <script type="application/ld+json">
@@ -57,16 +67,16 @@
   <!-- ============================== NAV ============================== -->
   <header class="nav" id="nav">
     <div class="nav__inner">
-      <a class="nav__brand" href="#top" aria-label="FRC 8806 home">
+      <a class="nav__brand" href="#top" aria-label="FRC 8806 home" data-zh-aria="FRC 8806 首頁">
         <img src="assets/img/logo-160.webp" width="28" height="28" alt="">
         <span>8806</span>
       </a>
-      <nav class="nav__links" aria-label="Sections">
-        <a href="#robot" data-zh="機器人">Robot</a>
-        <a href="#record" data-zh="戰績">Record</a>
-        <a href="#team" data-zh="團隊">Team</a>
+      <nav class="nav__links" aria-label="Sections" data-zh-aria="頁面區塊">
+        <a href="#results" data-zh="戰績">Results</a>
+        <a href="#partner" data-zh="贊助效益">Benefits</a>
         <a href="#impact" data-zh="影響力">Impact</a>
-        <a href="#sponsor" data-zh="贊助">Sponsor</a>
+        <a href="#robot" data-zh="機器人">Robot</a>
+        <a href="#budget" data-zh="預算">Budget</a>
       </nav>
       <div class="nav__actions">
         <button class="nav__lang" id="lang-toggle" type="button" aria-label="Switch language">中文</button>
@@ -77,278 +87,207 @@
 
   <main id="main">
 
-    <!-- ============================== STORY (hero + 3D) ============================== -->
-    <section class="story" id="top" aria-label="FRC Team 8806 robot">
-      <div class="story__stage">
-        <div class="story__backdrop" aria-hidden="true">
-          <span class="story__num">8806</span>
-        </div>
-        <canvas class="story__canvas" id="robot-canvas" aria-label="Interactive 3D model of the team's robot" role="img"></canvas>
-        <img class="story__fallback" src="assets/img/g-match-reef.webp" alt="Team 8806's robot on the REEFSCAPE field" width="720" height="480">
-        <div class="hotspots" id="hotspots"></div>
-
-        <!-- Chapter 0 — hero -->
-        <div class="chapter chapter--hero" data-ch="0">
-          <div class="hero__top">
-            <p class="eyebrow" data-zh="FIRST® 機器人競賽 · 第 8806 隊">FIRST® Robotics Competition · Team 8806</p>
-            <h1 class="display">
-              <span data-zh="敢於夢想。">Dream big.</span><br>
-              <span class="grad" data-zh="永不放棄。">Never give up.</span>
-            </h1>
-          </div>
-          <div class="hero__bottom">
-          <p class="hero__sub" data-zh="我們是 OLPDL — 來自新北市崇光高中的 45 位學生，打造比賽機器人，也打造未來的工程師。">We are OLPDL — 45 students from Our Lady of Providence High School in New Taipei City, building competition robots and the engineers who build them.</p>
+    <!-- ============================== 1. HERO: proof + the ask ============================== -->
+    <section class="section--dark hero" id="top" aria-labelledby="hero-title">
+      <div class="hero__bg" aria-hidden="true"><span class="hero__num">8806</span></div>
+      <div class="wrap hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow" data-zh="FIRST® 機器人競賽 · 第 8806 隊 · 新北市">FIRST® Robotics Competition · Team 8806 · New Taipei City, Taiwan</p>
+          <h1 class="display hero__title" id="hero-title">
+            <span data-zh="<i class='js-n-seasons-zh'>四</i>個賽季，<i class='js-n-awards-zh'>七</i>座獎項。"><i class="js-n-awards">7</i> awards in <i class="js-n-seasons">4</i> seasons.</span>
+            <span class="grad" data-zh="45 位學生親手打造。">Built by 45 students.</span>
+          </h1>
+          <p class="hero__sub" data-zh="我們是來自新北市天主教崇光高中的 OLPDL。自 2022 年新秀賽季起，從新北主場一路征戰<i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i> — 下一季，讓你的品牌<span class='nowrap'>與我們同行</span>。">We're OLPDL from Our Lady of Providence High School in New Taipei City. Since our rookie season in 2022 we've competed at home and in <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i> — next season, your brand can come with us.</p>
           <div class="hero__cta">
-            <a class="btn btn--primary" href="#pledge" data-zh="認養一個零件">Sponsor a part</a>
-            <a class="btn btn--link" href="#robot" data-zh="看它如何運作">See it work</a>
-          </div>
-          </div>
-        </div>
-
-        <!-- Chapter 1 — drivetrain -->
-        <div class="chapter" data-ch="1" id="robot">
-          <p class="eyebrow" data-zh="底盤">Drivetrain</p>
-          <h2 class="chapter__title" data-zh="全向移動，<br>同時發生。">Moves every direction.<br>All at once.</h2>
-          <p class="chapter__text" data-zh="四組 swerve 模組各自擁有驅動與轉向馬達，讓機器人能同時平移、旋轉、衝刺 — 全由學生撰寫的 Java 程式控制。">Four swerve modules — each with its own drive and steering motor — let the robot strafe, spin and sprint at the same time, all controlled by student-written Java.</p>
-          <ul class="chips">
-            <li data-zh="Swerve 模組 ×4">Swerve modules ×4</li>
-            <li data-zh="Kraken 無刷馬達">Kraken brushless motors</li>
-            <li data-zh="里程計定位">Odometry</li>
-          </ul>
-        </div>
-
-        <!-- Chapter 2 — elevator -->
-        <div class="chapter" data-ch="2">
-          <p class="eyebrow" data-zh="升降機構">Elevator</p>
-          <h2 class="chapter__title" data-zh="為了更高<br>而生。">Built to<br>reach higher.</h2>
-          <p class="chapter__text" data-zh="多節升降機構把得分機構從地面送到最高目標 — 在 Onshape 中設計，並用雷射切割機與 CNC 親手加工。">A multi-stage elevator carries the scoring mechanism from the carpet to the top of the goal — designed in Onshape, then cut on our laser cutter and CNC.</p>
-          <ul class="chips">
-            <li data-zh="Onshape CAD">Onshape CAD</li>
-            <li data-zh="雷切 & CNC 加工">Laser & CNC machined</li>
-            <li data-zh="鋁材 + 碳纖維">Aluminium + carbon fibre</li>
-          </ul>
-        </div>
-
-        <!-- Chapter 3 — intake -->
-        <div class="chapter" data-ch="3">
-          <p class="eyebrow" data-zh="夾取機構">Intake</p>
-          <h2 class="chapter__title" data-zh="一碰，<br>就到手。">Touch it.<br>Own it.</h2>
-          <p class="chapter__text" data-zh="一排排綠色柔性輪在接觸瞬間抓住遊戲物件，再交給得分機構。">Rows of compliant green wheels grab a game piece the instant they touch it, then hand it to the scoring mechanism.</p>
-          <ul class="chips">
-            <li data-zh="柔性輪滾筒">Compliant-wheel rollers</li>
-            <li data-zh="可收折設計">Fold-away pivot</li>
-          </ul>
-        </div>
-
-        <!-- Chapter 4 — exploded -->
-        <div class="chapter" data-ch="4">
-          <p class="eyebrow" data-zh="拆解內部">Under the hood</p>
-          <h2 class="chapter__title" data-zh="每個零件都有價格，<br>也都有使命。">Every part has a price.<br>And a purpose.</h2>
-          <p class="chapter__text" data-zh="從 command-based Java、視覺辨識到路徑規劃，每個子系統都由學生設計、配線、撰寫程式。點擊價格標籤，認養那個零件。">Command-based Java, vision recognition, path planning — students design, wire and program every subsystem. Tap a price tag to sponsor that part.</p>
-        </div>
-
-        <!-- Chapter 5 — outro -->
-        <div class="chapter chapter--right" data-ch="5">
-          <p class="eyebrow" data-zh="8806 — 隨時準備出擊">8806 — Always ready to strike.</p>
-          <h2 class="chapter__title" data-zh="學生親手打造。<br>每一顆螺絲。">Built by students.<br>Every bolt.</h2>
-          <p class="chapter__text" data-zh="從九月的第一張草圖到三月的最後一場比賽，45 位學生親手設計、加工、配線、寫程式 — 然後把它帶到世界各地。">From the first sketch in September to the last match in March, 45 students design, machine, wire and code the robot themselves — then fly it across the world.</p>
-          <a class="btn btn--primary" href="#your-name" data-zh="把你的名字放上去">Put your name on it</a>
-        </div>
-
-        <ol class="story__dots" aria-hidden="true">
-          <li></li><li></li><li></li><li></li><li></li><li></li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- ============================== NUMBERS ============================== -->
-    <section class="section section--light numbers" aria-labelledby="numbers-title">
-      <div class="wrap">
-        <h2 class="section__kicker" id="numbers-title" data-reveal data-zh="四個賽季的成績單">Four seasons in numbers.</h2>
-        <div class="stats">
-          <div class="stat" data-reveal>
-            <div class="stat__value"><span data-count="45">45</span></div>
-            <div class="stat__label" data-zh="位學生成員，分屬行銷、工程與電控三組">student members across marketing, engineering and programming</div>
-          </div>
-          <div class="stat" data-reveal>
-            <div class="stat__value"><span data-count="7">7</span></div>
-            <div class="stat__label" data-zh="座 FRC 獎項，包含聯盟冠軍獎與創新控制獎">FRC awards, including Regional Winner and Innovation in Control</div>
-          </div>
-          <div class="stat" data-reveal>
-            <div class="stat__value"><span data-count="6">6</span></div>
-            <div class="stat__label" data-zh="場區域賽，足跡遍及台灣、夏威夷、土耳其與亞利桑那">regionals played in Taiwan, Hawaii, Türkiye and Arizona</div>
-          </div>
-          <div class="stat stat--wide" data-reveal>
-            <div class="stat__value stat__value--text"><span data-zh="全台第一">No.1 in Taiwan</span></div>
-            <div class="stat__label" data-zh="綜合能力排名 · 世界百強">overall team ranking · top 100 in the world</div>
+            <a class="btn btn--primary btn--lg" href="#sponsor" data-zh="成為贊助夥伴">Become a sponsor</a>
+            <a class="btn btn--link" href="#partner" data-zh="贊助效益">What sponsors get</a>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- ============================== RECORD ============================== -->
-    <section class="section section--dark record" id="record" aria-labelledby="record-title">
-      <div class="wrap">
-        <p class="eyebrow" data-reveal data-zh="戰績">Track record</p>
-        <h2 class="section__title" id="record-title" data-reveal data-zh="從新秀，<br>到世界舞台。">From rookies<br>to the world stage.</h2>
-        <p class="section__lead" data-reveal data-zh="2021 年成軍，2022 年首次參賽便奪下<strong>聯盟冠軍</strong>。此後每一季，我們都走得更遠。">Founded in 2021, we won the <strong>Regional</strong> in our very first season in 2022. Every season since, we've gone further.</p>
-      </div>
-      <div class="rail" data-reveal>
-        <div class="rail__track" id="season-cards"></div>
-      </div>
-      <div class="wrap rail__controls">
-        <button class="round-btn" type="button" data-rail="-1" aria-label="Previous">‹</button>
-        <button class="round-btn" type="button" data-rail="1" aria-label="Next">›</button>
-      </div>
-    </section>
-
-    <!-- ============================== GALLERY ============================== -->
-    <section class="gallery" aria-label="2025 season photos">
-      <div class="marquee" id="marquee">
-        <div class="marquee__track">
-          <img src="assets/img/g-match-reef.webp" alt="Robot 8806 at the REEFSCAPE reef" width="720" height="480" loading="lazy">
-          <img src="assets/img/g-pit-team.webp" alt="Team photo in the pit" width="560" height="374" loading="lazy">
-          <img src="assets/img/g-match-1.webp" alt="Robot 8806 driving with an algae ball" width="720" height="480" loading="lazy">
-          <img src="assets/img/g-stands.webp" alt="Team 8806 cheering in the stands" width="720" height="540" loading="lazy">
-          <img src="assets/img/g-pit-robot.webp" alt="Students tuning the robot in the pit" width="640" height="427" loading="lazy">
-          <img src="assets/img/g-judges.webp" alt="Students presenting to judges" width="640" height="480" loading="lazy">
-          <img src="assets/img/g-match-2.webp" alt="Robot 8806 on the field" width="720" height="480" loading="lazy">
-          <img src="assets/img/g-inspection.webp" alt="Robot inspection with the team" width="560" height="420" loading="lazy">
-          <img src="assets/img/g-arizona-team.webp" alt="Team 8806 at the Arizona East Regional" width="640" height="480" loading="lazy">
-          <img src="assets/img/g-team-pit.webp" alt="Team 8806 with their robot" width="800" height="533" loading="lazy">
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================== TEAM ============================== -->
-    <section class="section section--light team" id="team" aria-labelledby="team-title">
-      <div class="wrap">
-        <p class="eyebrow eyebrow--ink" data-reveal data-zh="團隊">The team</p>
-        <h2 class="section__title" id="team-title" data-reveal data-zh="一支隊伍，<br>三種超能力。">One team.<br>Three superpowers.</h2>
-        <p class="section__lead" data-reveal data-zh="OLPDL 不只是機器人社團，而是一間由學生經營的小型工程公司：行銷組募資與說故事、工程組設計與加工、電控組讓一切動起來。">OLPDL runs like a small, student-led engineering company: marketing raises funds and tells the story, engineering designs and machines, programming brings it all to life.</p>
-
-        <figure class="team__photo" data-reveal>
-          <img src="assets/img/team-2025.webp" alt="Team 8806 members in blue team jackets with their robot" width="800" height="600" loading="lazy">
-          <figcaption>“Dream big, and never give up.”<small data-zh="我們的隊訓，也是每一位成員加入時的承諾。">Our team motto — and the promise every member makes when they join.</small></figcaption>
+        <figure class="hero__photo">
+          <img src="assets/img/award-2025.webp" width="640" height="480" fetchpriority="high" alt="Team 8806 with the Imagery Award at the 2025 New Taipei City Regional" data-zh-alt="第 8806 隊於 2025 新北市區域賽獲頒榮譽意象獎">
+          <figcaption class="hero__chip"><span class="hero__chip-dot" aria-hidden="true"></span><span data-zh="2025 新北市區域賽 · 榮譽意象獎">2025 New Taipei City Regional · Imagery Award</span></figcaption>
         </figure>
 
-        <div class="subteams">
-          <article class="subteam" data-reveal>
-            <img src="assets/img/sub-marketing.webp" alt="Marketing students explaining the robot to a visitor" width="800" height="533" loading="lazy">
-            <div class="subteam__body">
-              <p class="subteam__tag" data-zh="行銷組">Marketing</p>
-              <h3 data-zh="讓世界聽見我們。">Tell the story.<br>Fund the dream.</h3>
-              <ul>
-                <li data-zh="募集資金與贊助夥伴關係">Fundraising & sponsor relations</li>
-                <li data-zh="影音、社群與各式媒體工作">Media, video & social</li>
-                <li data-zh="STEAM 教育推廣">STEAM outreach</li>
-                <li data-zh="撰寫企劃書與商業計劃">Proposals & business plan</li>
-              </ul>
-            </div>
-          </article>
-          <article class="subteam" data-reveal>
-            <img src="assets/img/sub-engineering.webp" alt="Engineering students working on the robot's bumpers" width="800" height="533" loading="lazy">
-            <div class="subteam__body">
-              <p class="subteam__tag" data-zh="工程組">Engineering</p>
-              <h3 data-zh="從草圖，<br>到金屬。">From sketch<br>to metal.</h3>
-              <ul>
-                <li data-zh="機器人設計與工程繪圖">Robot design & CAD drawings</li>
-                <li data-zh="大型機具操作與加工">Machine-tool operation</li>
-                <li data-zh="機械組裝">Mechanical assembly</li>
-                <li data-zh="測試與調整">Testing & iteration</li>
-              </ul>
-            </div>
-          </article>
-          <article class="subteam" data-reveal>
-            <img src="assets/img/sub-programming.webp" alt="A programming student coding at the pit station" width="800" height="533" loading="lazy">
-            <div class="subteam__body">
-              <p class="subteam__tag" data-zh="電控組">Programming</p>
-              <h3 data-zh="讓金屬<br>擁有思考。">Make metal<br>think.</h3>
-              <ul>
-                <li data-zh="JAVA 程式設計">Java (command-based)</li>
-                <li data-zh="電控元件連結與電路佈線">Electronics & wiring</li>
-                <li data-zh="視覺辨識">Vision recognition</li>
-                <li data-zh="路徑規劃">Path planning</li>
-              </ul>
-            </div>
-          </article>
+        <dl class="scoreboard">
+          <div class="score">
+            <dt class="score__num"><span data-count="7" id="score-awards">7</span></dt>
+            <dd class="score__label" data-zh="座 FRC 獎項（2022 起）">FRC awards since 2022</dd>
+          </div>
+          <div class="score">
+            <dt class="score__num"><span data-count="7" class="js-n-regionals" id="score-regionals">7</span></dt>
+            <dd class="score__label" data-zh="場區域賽 · <i class='js-places-zh'>新北市、夏威夷、伊斯坦堡、亞利桑那與上海</i>">regionals in <i class="js-places">New Taipei City, Hawaii, Istanbul, Arizona and Shanghai</i></dd>
+          </div>
+          <div class="score">
+            <dt class="score__num">2022</dt>
+            <dd class="score__label" data-zh="新秀賽季即奪聯盟冠軍">Regional Winner in our rookie season</dd>
+          </div>
+          <div class="score">
+            <dt class="score__num"><span data-count="12" class="js-outreach-count">12</span></dt>
+            <dd class="score__label" data-zh="場 STEAM 推廣活動（<i class='js-outreach-range'>2023–2026</i>）">STEAM outreach events, <i class="js-outreach-range">2023–2026</i></dd>
+          </div>
+        </dl>
+
+        <div class="trust">
+          <p><b data-zh="感謝支持">Supported by</b> <span id="hero-sponsors">Zebra Technologies · AMD · Pan-International · New Taipei City Education Bureau · Lions Clubs International · Our Lady of Providence High School</span></p>
+          <p><b data-zh="媒體報導">Featured by</b> <span data-zh="PTS 公共電視 · 國立教育廣播電台">Public Television Service (PTS) · National Education Radio</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== 2. RESULTS ============================== -->
+    <section class="section section--light results" id="results" aria-labelledby="results-title">
+      <div class="wrap section__head">
+        <div>
+          <p class="eyebrow eyebrow--ink" data-reveal data-zh="戰績">Track record</p>
+          <h2 class="section__title" id="results-title" data-reveal data-zh="從新秀，<br>到國際舞台。">From rookies<br>to the international stage.</h2>
+        </div>
+        <p class="section__lead" data-reveal data-zh="2021 年成軍，2022 年首次參賽便奪下<strong>聯盟冠軍</strong>；此後每一季，我們把 8806 帶到更遠的地方 — <i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i>。">Founded in 2021, we won the <strong>Regional</strong> in our very first season in 2022 — and every season since, we've taken 8806 further afield: <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i>.</p>
+      </div>
+      <div class="seasons" id="season-cards" data-reveal></div>
+      <div class="wrap">
+        <div class="goals" id="goals" data-reveal></div>
+        <div class="results__foot" data-reveal>
+          <p class="cite" data-zh="2025 贊助企劃書：綜合能力全台第一，並曾躋身世界百強。">Our 2025 sponsorship proposal ranked our overall ability No.1 in Taiwan — and we were once in the world's top 100.</p>
+          <p class="verify" id="verify-links"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== 3. PHOTO STRIP ============================== -->
+    <section class="gallery" aria-label="2025 season photos" data-zh-aria="2025 賽季照片">
+      <div class="marquee" id="marquee">
+        <div class="marquee__track">
+          <img src="assets/img/g-match-reef.webp" alt="Robot 8806 at the REEFSCAPE reef" data-zh-alt="8806 機器人在 REEFSCAPE 珊瑚礁前" width="720" height="480" loading="lazy">
+          <img src="assets/img/g-pit-team.webp" alt="Team photo in the pit" data-zh-alt="隊伍在維修區合照" width="560" height="374" loading="lazy">
+          <img src="assets/img/g-match-1.webp" alt="Robot 8806 driving with an algae ball" data-zh-alt="8806 機器人帶著藻球行進" width="720" height="480" loading="lazy">
+          <img src="assets/img/g-stands.webp" alt="Team 8806 cheering in the stands" data-zh-alt="第 8806 隊在看台上加油" width="720" height="540" loading="lazy">
+          <img src="assets/img/g-pit-robot.webp" alt="Students tuning the robot in the pit" data-zh-alt="學生在維修區調整機器人" width="640" height="427" loading="lazy">
+          <img src="assets/img/g-judges.webp" alt="Students presenting to judges" data-zh-alt="學生向評審簡報" width="640" height="480" loading="lazy">
+          <img src="assets/img/g-match-2.webp" alt="Robot 8806 on the field" data-zh-alt="8806 機器人在場上" width="720" height="480" loading="lazy">
+          <img src="assets/img/g-inspection.webp" alt="Robot inspection with the team" data-zh-alt="隊伍與機器人接受檢錄" width="560" height="420" loading="lazy">
+          <img src="assets/img/g-team-pit.webp" alt="Team 8806 with their robot" data-zh-alt="第 8806 隊與機器人合照" width="800" height="533" loading="lazy">
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== 4. WHY PARTNER ============================== -->
+    <section class="section section--gray partner" id="partner" aria-labelledby="partner-title">
+      <div class="wrap">
+        <p class="eyebrow eyebrow--ink" data-reveal data-zh="為什麼選擇 8806">Why partner with 8806</p>
+        <h2 class="section__title" id="partner-title" data-reveal data-zh="成就學生，<br>也成就你的品牌。">Good for students.<br>Good for your brand.</h2>
+
+        <ul class="reasons" data-reveal>
+          <li class="reason">
+            <b data-zh="實績證明">Proven</b>
+            <p data-zh="<i class='js-n-seasons-zh'>四</i>個賽季 <i class='js-n-awards'>7</i> 座 FRC 獎項，包含 2022 聯盟冠軍與 2024 聯盟亞軍。"><i class="js-n-awards">7</i> FRC awards in <i class="js-n-seasons">4</i> seasons, including Regional Winner (2022) and Regional Finalist (2024).</p>
+          </li>
+          <li class="reason">
+            <b data-zh="品牌曝光">Seen</b>
+            <p data-zh="你的標誌將隨機器人與隊服登上每一場賽事，並出現在賽事紀錄影片與社群貼文中。">Your logo rides on our robot and team uniforms to every event we attend, and into our recap videos and social posts.</p>
+          </li>
+          <li class="reason">
+            <b data-zh="社會影響">Purposeful</b>
+            <p data-zh="2023 年起舉辦 <i class='js-n-outreach'>12</i> 場 STEAM 推廣活動，並致力培育更多女性工程師。"><i class="js-n-outreach">12</i> STEAM outreach events since 2023, and a team committed to growing more women engineers.</p>
+          </li>
+          <li class="reason">
+            <b data-zh="透明負責">Accountable</b>
+            <p data-zh="定期回報進度，2026 年 5 月感謝會上<span class='nowrap'>當面報告整季成果</span>；預算逐項公開。">Regular progress reports, a season report in person at our May 2026 thank-you ceremony, and a budget itemized line by line.</p>
+            <a class="reason__link" href="#budget" data-zh="查看預算 ›">See the budget ›</a>
+          </li>
+        </ul>
+
+        <div class="benefits">
+          <div class="benefits__head" data-reveal>
+            <p class="eyebrow eyebrow--ink" data-zh="品牌形象建立">Brand-image building</p>
+            <h3 class="h3" data-zh="贊助夥伴的回饋。">What your brand gets back.</h3>
+          </div>
+          <div class="benefits__grid">
+            <figure class="benefit" data-reveal>
+              <img src="assets/img/sp-robot-logos.webp" alt="Sponsor logos printed on the robot" data-zh-alt="印在機器人上的贊助夥伴標誌" width="480" height="320" loading="lazy">
+              <figcaption><b data-zh="機器人曝光">On the robot</b><span data-zh="你的標誌印在機器人上，跟著我們出征每一場區域賽。">Your logo on the robot at every regional we compete in.</span></figcaption>
+            </figure>
+            <figure class="benefit" data-reveal>
+              <img src="assets/img/sp-shirts.webp" alt="Sponsor logos on the back of team shirts" data-zh-alt="印在隊服背面的贊助夥伴標誌" width="480" height="360" loading="lazy">
+              <figcaption><b data-zh="隊服曝光">On team uniforms</b><span data-zh="你的標誌印在隊服上，伴隨隊員出席每一場活動。">Your logo on the uniforms our members wear at every event.</span></figcaption>
+            </figure>
+            <figure class="benefit" data-reveal>
+              <img src="assets/img/sp-recap.webp" alt="Special thanks card in the team's competition recap video" data-zh-alt="賽事紀錄影片中的特別感謝畫面" width="480" height="389" loading="lazy">
+              <figcaption><b data-zh="賽事紀錄影片">Competition recap videos</b><span data-zh="在賽事紀錄影片中特別感謝。">A thank-you in our season recap videos.</span></figcaption>
+            </figure>
+            <figure class="benefit" data-reveal>
+              <img src="assets/img/sp-post.webp" alt="Instagram thank-you post for AMD" data-zh-alt="感謝 AMD 的 Instagram 貼文" width="429" height="560" loading="lazy">
+              <figcaption><b data-zh="社群感謝文">Social media thank-yous</b><span data-zh="在 Instagram 與 Facebook 發表感謝文。">Thank-you posts on Instagram and Facebook.</span></figcaption>
+            </figure>
+            <figure class="benefit" data-reveal>
+              <img src="assets/img/sp-report.webp" alt="Students giving a progress report to sponsors" data-zh-alt="學生向贊助夥伴進行進度回報" width="522" height="398" loading="lazy">
+              <figcaption><b data-zh="進度回報">Progress reports</b><span data-zh="定期回報進度，並在感謝會上向贊助夥伴<span class='nowrap'>報告整季成果</span>。">Regular updates, and a thank-you ceremony where we report the season to sponsors.</span></figcaption>
+            </figure>
+            <figure class="benefit" data-reveal>
+              <img src="assets/img/outreach-1.webp" alt="Children showing robots built at a team workshop" data-zh-alt="孩子們展示在工作坊中完成的機器人" width="450" height="800" loading="lazy">
+              <figcaption><b data-zh="共同舉辦教育推廣">Co-branded STEAM outreach</b><span data-zh="與我們共同舉辦 STEAM 教育推廣活動。">Partner with us on STEAM education events in the community.</span></figcaption>
+            </figure>
+          </div>
         </div>
 
-        <div class="callout" data-reveal>
-          <img src="assets/img/g-inspection.webp" alt="Team members with the robot during inspection" width="560" height="420" loading="lazy">
+        <div class="callout callout--partner" data-reveal>
+          <img src="assets/img/media-offseason-2024.webp" alt="Team 8806 at the 2024 national FRC off-season event they hosted" data-zh-alt="第 8806 隊於自己主辦的 2024 全國 FRC 季後賽" width="640" height="480" loading="lazy">
           <div class="callout__body">
-            <p class="eyebrow eyebrow--ink" data-zh="我們的願景">Our vision</p>
-            <h3 data-zh="培育更多<br>女性工程師。">More women<br>in engineering.</h3>
-            <p data-zh="在 OLPDL，女生就是工程師 — 一起設計、一起動手、一起上場。培育更多女性工程師，是我們最重要的願景之一。">At OLPDL, girls are the engineers — designing, building and competing side by side. Growing more women engineers is one of the core goals of our team.</p>
+            <p class="eyebrow eyebrow--ink" data-zh="合作實例">Partnership in action</p>
+            <p class="callout__text" data-zh="2024 年 8 月，我們與 AMD 合作，舉辦全國高級中等學校 FRC 季後賽。">In August 2024 we hosted the national FRC off-season event, with AMD as a partner.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ============================== CREST ============================== -->
-    <section class="section section--dark crest" aria-labelledby="crest-title">
-      <div class="wrap crest__grid">
-        <div class="crest__copy">
-          <p class="eyebrow" data-reveal data-zh="隊徽">Our crest</p>
-          <h2 class="section__title" id="crest-title" data-reveal data-zh="蠍子，<br>隨時準備出擊。">The scorpion.<br>Always ready to strike.</h2>
-          <p class="section__lead" data-reveal data-zh="蠍子象徵強大的攻擊力，以及我們對未來的企圖心。每個細節都有意義 — 點選看看。">A scorpion stands for striking power — and ambition for what's next. Every detail means something. Tap to explore.</p>
-          <ol class="crest__list" id="crest-list">
-            <li data-part="gear"><b data-zh="齒輪">Gear</b><span data-zh="機器的零件">the parts every machine is made of</span></li>
-            <li data-part="tail"><b data-zh="8806">8806</b><span data-zh="尾節就是我們的隊號">our team number, built into the tail</span></li>
-            <li data-part="body"><b data-zh="蠍子">Scorpion</b><span data-zh="強大的攻擊力與企圖心">striking power and ambition</span></li>
-            <li data-part="wrench"><b data-zh="六角扳手">Hex wrench</b><span data-zh="工程師手上的工具">the tool in every engineer's hand</span></li>
-            <li data-part="name"><b data-zh="OLPDL">OLPDL</b><span data-zh="Our Lady of Providence Dream League">Our Lady of Providence Dream League</span></li>
-          </ol>
-        </div>
-        <div class="crest__art" data-reveal>
-          <img src="assets/img/logo-640.webp" alt="The OLPDL scorpion crest" width="640" height="640" loading="lazy">
-          <span class="crest__ring" data-part="gear" style="--x:36%;--y:21%;--s:22%"></span>
-          <span class="crest__ring" data-part="tail" style="--x:63%;--y:36%;--s:30%"></span>
-          <span class="crest__ring" data-part="body" style="--x:45%;--y:56%;--s:38%"></span>
-          <span class="crest__ring" data-part="wrench" style="--x:76%;--y:78%;--s:18%"></span>
-          <span class="crest__ring" data-part="name" style="--x:38%;--y:76%;--s:30%"></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================== IMPACT ============================== -->
+    <!-- ============================== 5. IMPACT + REACH ============================== -->
     <section class="section section--light impact" id="impact" aria-labelledby="impact-title">
       <div class="wrap">
-        <p class="eyebrow eyebrow--ink" data-reveal data-zh="影響力">Impact</p>
-        <h2 class="section__title" id="impact-title" data-reveal data-zh="機器人之外，<br>才是重點。">The robot is<br>just the start.</h2>
-        <p class="section__lead" data-reveal data-zh="我們把 FRC 帶進國小教室、廣播電台與電視，甚至主辦全國季後賽 — 讓更多孩子相信自己也能成為工程師。">We bring FRC into elementary classrooms, onto radio and TV, and even host a national off-season event — so more kids believe they can become engineers.</p>
+        <div class="section__head">
+          <div>
+            <p class="eyebrow eyebrow--ink" data-reveal data-zh="影響力">Impact</p>
+            <h2 class="section__title" id="impact-title" data-reveal data-zh="機器人之外，<br>才是重點。">The robot is<br>just the start.</h2>
+          </div>
+          <p class="section__lead" data-reveal data-zh="我們把 FRC 帶進國小教室、廣播電台與電視，甚至主辦全國季後賽 — 讓更多孩子相信自己也能成為工程師。">We bring FRC into elementary classrooms, onto radio and TV, and even host a national off-season event — so more kids believe they can become engineers.</p>
+        </div>
+
+        <dl class="kpis" data-reveal>
+          <div><dt><span data-count="12" class="js-outreach-count">12</span></dt><dd data-zh="場 STEAM 推廣活動">STEAM outreach events</dd></div>
+          <div><dt><span data-count="16" id="kpi-exchanges">16</span></dt><dd data-zh="次跨隊交流">team exchanges</dd></div>
+          <div><dt><span data-count="12">12</span>+</dt><dd data-zh="支海內外交流隊伍">teams exchanged with</dd></div>
+          <div><dt><span data-count="5">5</span></dt><dd data-zh="個國家與地區">countries &amp; regions</dd></div>
+        </dl>
 
         <div class="impact__grid">
           <article class="tile tile--outreach" data-reveal>
             <div class="tile__media mosaic">
-              <img src="assets/img/outreach-3.webp" alt="Elementary students holding robots they built in a workshop" width="800" height="600" loading="lazy">
-              <img src="assets/img/outreach-2.webp" alt="A team member helping a student assemble a robot" width="560" height="420" loading="lazy">
+              <img src="assets/img/outreach-3.webp" alt="Elementary students holding robots they built in a workshop" data-zh-alt="國小學生拿著在工作坊中完成的機器人" width="800" height="600" loading="lazy">
+              <img src="assets/img/outreach-2.webp" alt="A team member helping a student assemble a robot" data-zh-alt="隊員協助學生組裝機器人" width="560" height="420" loading="lazy">
             </div>
             <div class="tile__body">
-              <h3 data-zh="STEAM 推廣">STEAM outreach</h3>
-              <p class="tile__big"><span>9</span> <small data-zh="場活動 · 2023–2025">events · 2023–2025</small></p>
+              <h3 data-zh="STEAM 推廣 · <i class='js-outreach-range'>2023–2026</i>">STEAM outreach · <i class="js-outreach-range">2023–2026</i></h3>
               <ul class="log" id="outreach-log"></ul>
             </div>
           </article>
 
           <article class="tile tile--media" data-reveal>
             <div class="tile__body">
-              <h3 data-zh="媒體與活動">In the media</h3>
+              <h3 data-zh="媒體報導">In the media</h3>
               <div class="media-list" id="media-list"></div>
             </div>
           </article>
         </div>
-      </div>
-    </section>
 
-    <!-- ============================== WORLD ============================== -->
-    <section class="section section--gray world" aria-labelledby="world-title">
-      <div class="wrap">
-        <p class="eyebrow eyebrow--ink" data-reveal data-zh="國際視野">Global reach</p>
-        <h2 class="section__title" id="world-title" data-reveal data-zh="從新北，<br>連結世界。">From New Taipei<br>to the world.</h2>
-        <p class="section__lead" data-reveal data-zh="四年來，我們與夏威夷、亞利桑那、土耳其、波蘭、上海及台灣各地的隊伍交流 — 學技術，也交朋友。">In four years we've traded ideas with teams from Hawaii, Arizona, Türkiye, Poland, Shanghai and across Taiwan — swapping engineering tricks and making friends.</p>
-      </div>
-      <div class="wrap">
+        <div class="callout" data-reveal>
+          <img src="assets/img/g-inspection.webp" alt="Team members with the robot during inspection" data-zh-alt="隊員與機器人一同接受檢錄" width="560" height="420" loading="lazy">
+          <div class="callout__body">
+            <p class="eyebrow eyebrow--ink" data-zh="我們的願景">Our vision</p>
+            <h3 data-zh="培育更多<br>女性工程師。">More women<br>in engineering.</h3>
+            <p data-zh="這是我們最重要的願景之一，與 STEAM 教育、推廣 FRC 並列。">It's one of the core goals of our team, alongside STEAM education and bringing FRC to more schools.</p>
+          </div>
+        </div>
+
+        <h3 class="h3 reach__title" data-reveal data-zh="從新北，連結世界。">From New Taipei to the world.</h3>
         <div class="map" data-reveal>
           <div class="map__inner">
             <svg class="map__svg" id="world-map" viewBox="0 0 360 140" role="img" aria-labelledby="world-map-title">
@@ -356,11 +295,7 @@
             </svg>
           </div>
         </div>
-        <div class="world__stats">
-          <div><b>16</b><span data-zh="次跨隊交流">team exchanges</span></div>
-          <div><b>5</b><span data-zh="個國家與地區">countries & regions</span></div>
-          <div><b>12+</b><span data-zh="支海內外交流隊伍">teams exchanged with</span></div>
-        </div>
+        <ul class="place-list" id="place-list"></ul>
         <details class="disclosure">
           <summary data-zh="查看完整交流紀錄">See the full exchange log</summary>
           <ul class="log log--cols" id="exchange-log"></ul>
@@ -368,46 +303,160 @@
       </div>
     </section>
 
-    <!-- ============================== SPONSOR ============================== -->
-    <section class="section section--dark sponsor" id="sponsor" aria-labelledby="sponsor-title">
+    <!-- ============================== 6. TEAM ============================== -->
+    <section class="section section--gray team" id="team" aria-labelledby="team-title">
       <div class="wrap">
-        <p class="eyebrow" data-reveal data-zh="支持我們">Support 8806</p>
-        <h2 class="section__title section__title--xl" id="sponsor-title" data-reveal data-zh="把你的名字，<br><span class='grad'>放上我們的機器人。</span>">Put your name<br><span class="grad">on our robot.</span></h2>
-        <p class="section__lead" data-reveal data-zh="FRC 隊伍由學生打造，也由像你一樣的人支持。以下是一季真正的花費，以及你的支持能完成什麼。">FRC teams are built by students and powered by people like you. Here's what a season really costs — and exactly what your support builds.</p>
-
-        <!-- Season clock -->
-        <div class="now" id="season-now" data-reveal>
-          <div class="now__head">
-            <span class="now__pulse" aria-hidden="true"></span>
-            <p class="now__label"><span data-zh="此刻">Right now</span> · <b id="now-month"></b></p>
+        <div class="section__head">
+          <div>
+            <p class="eyebrow eyebrow--ink" data-reveal data-zh="團隊">The team</p>
+            <h2 class="section__title" id="team-title" data-reveal data-zh="一支隊伍，<br>三種超能力。">One team.<br>Three superpowers.</h2>
           </div>
-          <h3 class="now__title" id="now-title"></h3>
-          <p class="now__text" id="now-text"></p>
-          <ol class="months" id="months"></ol>
+          <p class="section__lead" data-reveal data-zh="OLPDL 像一間由學生經營的小型工程公司，也用同樣的標準要求自己：平日放學後練到晚上九點、每週三晚上有 APCS 程式課，假日還有<span class='nowrap'>訓練與階段任務</span>。">OLPDL runs like a small, student-led engineering company — and trains like one: every weekday after school until 9 pm, an APCS programming course every Wednesday night, plus weekend training and milestone tasks.</p>
         </div>
 
-        <!-- Your name on the robot -->
-        <div class="namer" id="your-name" data-reveal>
-          <div class="namer__copy">
-            <h3 data-zh="看看你的名字<br>在機器人上的樣子。">See your name<br>on the robot.</h3>
-            <p data-zh="贊助夥伴的標誌會出現在機器人、隊服與比賽影片中，跟著我們一起出征世界各地。輸入你的公司或個人名稱試試看。">Sponsor logos ride on the robot, the team uniforms and every competition video — to regionals around the world. Type your company or family name to preview it.</p>
+        <div class="team__top">
+          <figure class="team__photo" data-reveal>
+            <img src="assets/img/team-2025.webp" alt="Team 8806 members in blue team jackets with their robot" data-zh-alt="身穿藍色隊服的第 8806 隊隊員與機器人" width="800" height="600" loading="lazy">
+            <figcaption><span data-zh="「敢於夢想，永不放棄。」">“Dream big, and never give up.”</span><small data-zh="我們的隊訓。">Our team motto.</small></figcaption>
+          </figure>
+
+          <div class="crest" data-reveal>
+            <img class="crest__logo" src="assets/img/logo-640.webp" alt="The OLPDL scorpion crest" data-zh-alt="OLPDL 蠍子隊徽" width="640" height="640" loading="lazy">
+            <div>
+              <p class="eyebrow eyebrow--ink" data-zh="隊徽">Our crest</p>
+              <h3 data-zh="蠍子，隨時準備出擊。">The scorpion — always ready to strike.</h3>
+              <dl class="crest__list">
+                <div><dt>8806</dt><dd data-zh="蠍子的身體，就是我們的隊號">our team number forms the scorpion's body</dd></div>
+                <div><dt data-zh="蠍子">Scorpion</dt><dd data-zh="強大的攻擊力，<span class='nowrap'>以及對未來的企圖心</span>">striking power, and ambition for the future</dd></div>
+                <div><dt data-zh="齒輪">Gear</dt><dd data-zh="構成每一台機器的零件">the parts every machine is made of</dd></div>
+                <div><dt data-zh="六角扳手">Hex wrench</dt><dd data-zh="工程師手上的工具">the tool in every engineer's hand</dd></div>
+                <div><dt>OLPDL</dt><dd>Our Lady of Providence Dream League</dd></div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="subteams">
+          <article class="subteam" data-reveal>
+            <img src="assets/img/sub-marketing.webp" alt="Marketing students explaining the robot to a visitor" data-zh-alt="行銷組學生向來賓介紹機器人" width="800" height="533" loading="lazy">
+            <div class="subteam__body">
+              <p class="subteam__tag" data-zh="行銷組">Marketing</p>
+              <h3 data-zh="募集整季經費，<br>說好 8806 的故事。">Raises the funds.<br>Tells our story.</h3>
+              <ul class="subteam__list">
+                <li><b data-zh="募集整季資源">Raises the funding</b><span data-zh="撰寫贊助企劃書與商業計畫書、向企業提案，並向贊助夥伴回報成果。">Writes the sponsorship proposal and business plan, pitches companies, and reports results back to sponsors.</span></li>
+                <li><b data-zh="經營 8806 品牌">Runs the 8806 brand</b><span data-zh="隊服與周邊、Instagram／Facebook 社群，以及賽事紀錄影片。">Uniforms and merchandise, Instagram and Facebook, and our competition recap videos.</span></li>
+                <li><b data-zh="帶領教育推廣">Leads outreach</b><span data-zh="為國小學生開設 STEAM 課程、到各地擺攤推廣，並接受廣播與電視專訪。">STEAM classes for elementary students, outreach booths around Taiwan, and radio and TV interviews.</span></li>
+              </ul>
+              <p class="subteam__note" data-zh="贊助窗口：洽詢贊助請找行銷組。">Your point of contact for sponsorship.</p>
+            </div>
+          </article>
+          <article class="subteam" data-reveal>
+            <img src="assets/img/sub-engineering.webp" alt="Engineering students working on the robot's bumpers" data-zh-alt="工程組學生製作機器人防撞桿" width="800" height="533" loading="lazy">
+            <div class="subteam__body">
+              <p class="subteam__tag" data-zh="工程組">Engineering</p>
+              <h3 data-zh="從設計圖到賽場，<br>親手打造機器人。">Designs and builds<br>the robot.</h3>
+              <ul class="subteam__list">
+                <li><b data-zh="設計每一個機構">Designs every mechanism</b><span data-zh="負責機器人與各機構的設計，從 Swerve 底盤到 Intake 機構，並在 Onshape 完成工程圖。">Designs the robot and its mechanisms, from the swerve drivetrain to the intake, with engineering drawings in Onshape.</span></li>
+                <li><b data-zh="自己加工零件">Makes the parts in-house</b><span data-zh="操作雷射切割機、CNC 與大型機具，並有自己的安全守則與教學。">Laser cutter, CNC and large machine tools, with our own safety rules and training.</span></li>
+                <li><b data-zh="組裝、測試、反覆優化">Builds, tests, iterates</b><span data-zh="一月 Kickoff 後開始組裝，持續測試與調整，直到三月正式比賽。">Assembly starts at January's Kickoff; testing and tuning run right up to the March regionals.</span></li>
+              </ul>
+            </div>
+          </article>
+          <article class="subteam" data-reveal>
+            <img src="assets/img/sub-programming.webp" alt="A programming student coding at the pit station" data-zh-alt="電控組學生在維修區撰寫程式" width="800" height="533" loading="lazy">
+            <div class="subteam__body">
+              <p class="subteam__tag" data-zh="電控組">Programming &amp; electrical</p>
+              <h3 data-zh="讓機器人<br>會看、會思考。">Makes the robot<br>see and think.</h3>
+              <ul class="subteam__list">
+                <li><b data-zh="撰寫機器人程式">Writes the robot's code</b><span data-zh="以 Java command-based 架構撰寫，包含自動階段的路徑規劃。">Command-based Java, including path planning for the autonomous period.</span></li>
+                <li><b data-zh="賦予機器人視覺">Gives it vision</b><span data-zh="用鏡頭進行視覺辨識，讓機器人看懂場地。">Camera-based vision recognition so the robot can read the field.</span></li>
+                <li><b data-zh="設計整套電控系統">Designs the electrical system</b><span data-zh="電路設計與佈線，以及電控元件的連結。">Circuit design and wiring, and connecting the control electronics.</span></li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== 7. ROBOT SHOWCASE (the only WebGL) ============================== -->
+    <section class="section section--dark showcase" id="robot" aria-labelledby="robot-title">
+      <div class="wrap showcase__grid">
+        <div class="showcase__head">
+          <p class="eyebrow" data-reveal data-zh="我們的機器人">Our robot</p>
+          <h2 class="section__title" id="robot-title" data-reveal data-zh="學生親手打造，<br>贊助夥伴一起成就。">Built by students.<br>Carried by sponsors.</h2>
+        </div>
+
+        <div class="seg seg--tabs" role="tablist" aria-label="Robot views" data-zh-aria="機器人視角" id="robot-tabs">
+          <button role="tab" type="button" id="tab-build" aria-selected="true" aria-controls="panel-build" data-view="build" data-zh="學生親手打造">Built by students</button>
+          <button role="tab" type="button" id="tab-price" aria-selected="false" aria-controls="panel-price" data-view="price" tabindex="-1" data-zh="每個零件都有價格">Every part has a price</button>
+          <button role="tab" type="button" id="tab-logo" aria-selected="false" aria-controls="panel-logo" data-view="logo" tabindex="-1" data-zh="你的品牌在這裡">Your logo here</button>
+        </div>
+
+        <div class="showcase__panels">
+          <div class="tabpanel is-active" role="tabpanel" id="panel-build" aria-labelledby="tab-build" data-view="build">
+            <h3 data-zh="每一顆螺絲，都由學生完成。">Every bolt, by students.</h3>
+            <p data-zh="從九月的第一張草圖到三月的最後一場比賽，45 位學生親手設計、加工、配線、寫程式。">From the first sketch in September to the last match in March, 45 students design, machine, wire and code the robot themselves.</p>
+            <ul class="chips">
+              <li data-zh="Swerve 模組 ×4">Swerve modules ×4</li>
+              <li data-zh="Kraken 無刷馬達">Kraken brushless motors</li>
+              <li data-zh="多節升降機構">Multi-stage elevator</li>
+              <li data-zh="Onshape + 雷切 &amp; CNC">Onshape + laser &amp; CNC</li>
+              <li data-zh="Java、視覺辨識與路徑規劃">Java, vision &amp; path planning</li>
+            </ul>
+          </div>
+          <div class="tabpanel" role="tabpanel" id="panel-price" aria-labelledby="tab-price" data-view="price">
+            <h3 data-zh="每個零件都有價格，<br>也都有使命。">Every part has a price. And a purpose.</h3>
+            <p data-zh="點擊價格標籤，把零件加入你的認養清單 — 每個選項都對應真實的預算項目。">Tap a price tag to add that part to your pledge — every option maps to a real line in our budget.</p>
+          </div>
+          <div class="tabpanel" role="tabpanel" id="panel-logo" aria-labelledby="tab-logo" data-view="logo">
+            <h3 data-zh="你的名字，<br>放上我們的機器人。">Your name, on our robot.</h3>
+            <p data-zh="贊助夥伴的標誌會出現在機器人、隊服與比賽影片中。輸入公司名稱，預覽它在贊助面板上的樣子。">Sponsor logos ride on the robot, the team uniforms and our competition videos. Type your company name to preview it on the sponsor panel.</p>
             <label class="field">
-              <span class="sr-only" data-zh="你的名稱">Your name</span>
+              <span class="sr-only" data-zh="你的公司名稱">Your company</span>
               <input id="namer-input" type="text" maxlength="28" autocomplete="organization" placeholder="Your company" data-zh-placeholder="你的公司名稱">
             </label>
-            <p class="fineprint" data-zh="拖曳即可旋轉機器人。">Drag to rotate the robot.</p>
+            <a class="btn btn--ghost" href="#pledge" data-zh="開始認養 ↓">Build your pledge ↓</a>
           </div>
-          <div class="namer__view">
-            <canvas id="namer-canvas" aria-label="3D preview of the robot with your name on the sponsor panel" role="img"></canvas>
-            <img class="namer__fallback" src="assets/img/sp-robot-logos.webp" alt="Sponsor logos on the robot" width="480" height="320" loading="lazy">
-          </div>
+        </div>
+
+        <div class="showcase__view" id="robot-view">
+          <canvas id="robot-canvas" aria-label="Interactive 3D model of the team's robot. Drag to rotate." data-zh-aria="隊伍機器人的互動 3D 模型，可拖曳旋轉。" role="img"></canvas>
+          <img class="showcase__fallback" src="assets/img/g-match-reef.webp" alt="Team 8806's robot on the REEFSCAPE field" data-zh-alt="第 8806 隊的機器人在 REEFSCAPE 場地上" width="720" height="480" loading="lazy">
+          <div class="hotspots" id="hotspots"></div>
+          <p class="showcase__hint" aria-hidden="true" data-zh="拖曳旋轉">Drag to rotate</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== 8. THE ASK ============================== -->
+    <section class="section section--dark sponsor" id="sponsor" aria-labelledby="sponsor-title">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal data-zh="支持 8806">Support 8806</p>
+        <h2 class="section__title section__title--xl" id="sponsor-title" data-reveal data-zh="讓你的品牌，<br><span class='grad'>站上國際舞台。</span>">Your brand,<br><span class="grad">on the international stage.</span></h2>
+        <p class="section__lead" data-reveal data-zh="以下每個選項都對應真實的預算項目。選擇你想支持的項目，其餘交給我們。">Every option below maps to a real line in our budget. Pick what you'd like to fund — we'll take it from there.</p>
+
+        <!-- Season pill -->
+        <div class="now" id="season-now" data-reveal>
+          <p class="now__line">
+            <span class="now__pulse" aria-hidden="true"></span>
+            <span class="now__label" data-zh="此刻">Right now</span>
+            <span class="now__sep" aria-hidden="true">·</span>
+            <b id="now-month"></b>
+            <span class="now__sep" aria-hidden="true">—</span>
+            <span class="now__title" id="now-title"></span>
+          </p>
+          <p class="now__text" id="now-text"></p>
+          <details class="disclosure disclosure--dark now__cal">
+            <summary data-zh="查看完整賽季行事曆">See the season calendar</summary>
+            <ol class="months" id="months"></ol>
+          </details>
         </div>
 
         <!-- Sponsor a part -->
         <div class="pledge" id="pledge">
           <div class="pledge__head" data-reveal>
             <h3 class="h3" data-zh="認養一個零件。">Sponsor a part.</h3>
-            <p data-zh="每一筆支持都對應到真實的預算項目。挑選你想認養的零件，我們會把清單帶給你。">Every option maps to a real line in our budget. Build a pledge, and we'll take it from there.</p>
+            <p data-zh="加入項目後，透過 Instagram 把清單傳給我們。">Add items, then send us your list on Instagram.</p>
           </div>
           <div class="pledge__grid">
             <ul class="parts" id="parts"></ul>
@@ -415,7 +464,7 @@
               <p class="cart__label" data-zh="你的認養清單">Your pledge</p>
               <p class="cart__total" id="cart-total">NT$0</p>
               <ul class="cart__lines" id="cart-lines"></ul>
-              <p class="cart__empty" id="cart-empty" data-zh="從左側加入零件，開始打造你的認養清單。">Add parts to start building your pledge.</p>
+              <p class="cart__empty" id="cart-empty" data-zh="加入零件，開始打造你的認養清單。">Add parts to start building your pledge.</p>
               <div class="cart__actions">
                 <button class="btn btn--primary btn--block" id="cart-send" type="button" disabled data-zh="透過 Instagram 傳送">Send via Instagram</button>
                 <a class="btn btn--ghost btn--block" id="cart-mail" href="#" hidden data-zh="以 E-mail 傳送">Send by e-mail</a>
@@ -427,68 +476,46 @@
         </div>
 
         <!-- Budget -->
-        <div class="budget" id="budget" data-reveal>
+        <div class="budget" id="budget">
+          <h3 class="h3" data-zh="每一塊錢的去向。">Where every NT$ goes.</h3>
+          <div class="stack" id="budget-stack"></div>
           <div class="budget__head">
-            <div>
-              <h3 class="h3" data-zh="一個賽季的真實成本。">What a season really costs.</h3>
-              <p class="budget__total"><span id="budget-total">NT$0</span> <small id="budget-total-label"></small></p>
-            </div>
-            <div class="seg" role="tablist" aria-label="Budget scope">
-              <button role="tab" type="button" aria-selected="true" data-scope="build" data-zh="打造與參賽">Build & compete</button>
+            <p class="budget__total"><span class="budget__scope" id="budget-scope"></span> <span id="budget-total">NT$0</span> <small id="budget-total-label"></small></p>
+            <div class="seg" role="tablist" aria-label="Budget scope" data-zh-aria="預算範圍">
+              <button role="tab" type="button" aria-selected="true" data-scope="build" data-zh="打造與參賽">Build &amp; compete</button>
               <button role="tab" type="button" aria-selected="false" data-scope="all" data-zh="含團隊差旅">Incl. team travel</button>
             </div>
           </div>
           <div class="bars" id="bars"></div>
           <div class="bars__tip" id="bars-tip" role="tooltip" hidden></div>
+          <p class="budget__note" data-zh="總額為 2025 年贊助企劃書各項目之加總。">Totals are the sum of the line items in the team's 2025 sponsorship proposal.</p>
           <details class="disclosure disclosure--dark">
             <summary data-zh="以表格檢視">View as table</summary>
             <table class="table" id="budget-table"></table>
           </details>
         </div>
 
-        <!-- Benefits -->
-        <div class="benefits">
-          <h3 class="h3" data-reveal data-zh="贊助夥伴可以得到什麼。">What sponsors get back.</h3>
-          <div class="benefits__grid">
-            <figure class="benefit" data-reveal>
-              <img src="assets/img/sp-robot-logos.webp" alt="Sponsor logos printed on the robot" width="480" height="320" loading="lazy">
-              <figcaption><b data-zh="機器人與隊服曝光">On the robot & uniforms</b><span data-zh="你的標誌跟著機器人與隊服登上國內外賽場。">Your logo travels on the robot and team uniforms to every event.</span></figcaption>
-            </figure>
-            <figure class="benefit" data-reveal>
-              <img src="assets/img/sp-recap.webp" alt="Special thanks card in the team's competition recap video" width="480" height="389" loading="lazy">
-              <figcaption><b data-zh="比賽紀錄影片">Competition recap videos</b><span data-zh="在每季比賽紀錄影片中特別感謝。">A dedicated thank-you in every season recap video.</span></figcaption>
-            </figure>
-            <figure class="benefit" data-reveal>
-              <img src="assets/img/sp-post.webp" alt="Instagram thank-you post for AMD" width="429" height="560" loading="lazy">
-              <figcaption><b data-zh="社群感謝文">Social media thank-yous</b><span data-zh="在 Instagram 與 Facebook 發表感謝文。">Thank-you posts on Instagram and Facebook.</span></figcaption>
-            </figure>
-            <figure class="benefit" data-reveal>
-              <img src="assets/img/sp-report.webp" alt="Students giving a progress report to sponsors" width="522" height="398" loading="lazy">
-              <figcaption><b data-zh="進度回報">Progress reports</b><span data-zh="定期回報進度，讓你看見支持的成果。">Regular updates so you can see your support at work.</span></figcaption>
-            </figure>
-            <figure class="benefit" data-reveal>
-              <img src="assets/img/outreach-1.webp" alt="Children showing robots built at a team workshop" width="450" height="800" loading="lazy">
-              <figcaption><b data-zh="教育推廣活動">Co-branded outreach</b><span data-zh="一起舉辦 STEAM 教育推廣活動，建立品牌形象。">Partner with us on STEAM events and build your brand in the community.</span></figcaption>
-            </figure>
-          </div>
-        </div>
-
-        <!-- Thanks -->
-        <div class="thanks" data-reveal>
-          <p class="thanks__label" data-zh="感謝一路支持我們的夥伴">With thanks to the partners who got us here</p>
-          <ul class="thanks__list" id="sponsor-list"></ul>
-        </div>
-
-        <!-- CTA -->
-        <div class="cta" data-reveal>
+        <!-- Contact -->
+        <div class="cta" id="contact">
           <img class="cta__mark" src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy">
-          <h2 class="cta__title" data-zh="一起，<br>敢於夢想。">Dream big.<br>Together.</h2>
-          <p data-zh="不論是企業贊助、器材捐贈或技術指導，我們都很樂意聊聊。">Corporate sponsorship, equipment, or mentoring — we'd love to talk.</p>
+          <p class="eyebrow" data-zh="敢於夢想，永不放棄。">Dream big, and never give up.</p>
+          <h2 class="cta__title" data-zh="成為我們<br>下一季的贊助夥伴。">Join our partners<br>for next season.</h2>
+          <p class="cta__text" data-zh="不論是企業贊助、器材捐贈或技術指導，我們都很樂意聊聊。">Corporate sponsorship, equipment, or mentoring — we'd love to talk.</p>
           <div class="cta__buttons" id="contact-buttons"></div>
+          <p class="cta__sponsors" id="contact-sponsors"></p>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- ============================== MOBILE DOCK ============================== -->
+  <aside class="dock is-hidden" id="dock">
+    <a class="dock__cta" id="dock-cta" href="#pledge" data-zh="贊助 8806 →">Sponsor 8806 →</a>
+    <div class="dock__cart" id="dock-cart" hidden>
+      <p class="dock__sum"><span data-zh="你的認養清單">Your pledge</span> · <b id="dock-total">NT$0</b></p>
+      <button class="btn btn--primary btn--sm dock__send" id="dock-send" type="button" data-zh="傳送">Send</button>
+    </div>
+  </aside>
 
   <!-- ============================== FOOTER ============================== -->
   <footer class="footer">

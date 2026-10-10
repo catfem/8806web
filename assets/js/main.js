@@ -1,4 +1,7 @@
-import { SITE, BUDGET, PARTS, SEASONS, GOALS, CALENDAR, PLACES, EXCHANGES, OUTREACH, MEDIA, SPONSORS } from './data.js';
+import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, EXCHANGES, OUTREACH, MEDIA, SPONSORS } from './data.js';
+
+// Seasons marked `draft` (results not yet confirmed) stay off the page and out of every count.
+const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -27,15 +30,71 @@ const monthName = (m, long) => (zh() ? `${m} 月` : new Date(2000, m - 1, 1).toL
 const listeners = [];
 const onLang = (fn) => { listeners.push(fn); fn(); };
 
+// ============================================================ counts from data.js
+
+// Season results: entries flagged `result` (e.g. "Top 8 alliance") are not awards.
+const awardsOf = (season) => season.awards.filter((a) => !a.result);
+const N = {
+  awards: SEASONS.reduce((n, s) => n + awardsOf(s).length, 0),
+  seasons: SEASONS.length,
+  regionals: ALL_SEASONS.reduce((n, s) => n + (s.regionals || 1), 0),
+  outreach: OUTREACH.length,
+  exchanges: EXCHANGES.length,
+};
+
+// Where we've competed, in season order: "New Taipei City, Hawaii, Istanbul, Arizona and Shanghai".
+// Attendance is a confirmed fact even for a draft season, so places and the regional count read every
+// season; awards and the season cards only read confirmed ones.
+const PLACES_PLAYED = ALL_SEASONS.flatMap((s) => s.places || [])
+  .filter((p, i, all) => all.findIndex((q) => q.en === p.en) === i);
+const ABROAD = PLACES_PLAYED.filter((p) => p.en !== 'New Taipei City');
+const joinList = (list, l) => {
+  const names = list.map((p) => (l === 'zh' ? p.zh : p.en));
+  if (names.length < 2) return names.join('');
+  const last = names[names.length - 1];
+  return l === 'zh' ? `${names.slice(0, -1).join('、')}與${last}` : `${names.slice(0, -1).join(', ')} and ${last}`;
+};
+const outreachYears = OUTREACH.map((o) => +o.date.slice(0, 4));
+const OUTREACH_RANGE = `${Math.min(...outreachYears)}–\u2060${Math.max(...outreachYears)}`;
+const zhNum = (n) => {
+  const d = '零一二三四五六七八九';
+  if (n < 10) return d[n];
+  if (n < 20) return '十' + (n % 10 ? d[n % 10] : '');
+  return d[Math.floor(n / 10)] + '十' + (n % 10 ? d[n % 10] : '');
+};
+// Text that quotes a count (headline, reasons) carries .js-n-<key> / .js-n-<key>-zh placeholders.
+function fillCounts() {
+  Object.entries(N).forEach(([k, n]) => {
+    $$(`.js-n-${k}`).forEach((el) => { el.textContent = n; });
+    $$(`.js-n-${k}-zh`).forEach((el) => { el.textContent = zhNum(n); });
+  });
+  // Place lists and the outreach year range follow the same pattern.
+  // English names are kept whole ("New Taipei City" never splits); Chinese uses word-break: keep-all.
+  const keepNames = (list) => esc(joinList(list, 'en'))
+    .replace(new RegExp(list.map((p) => p.en).sort((x, y) => y.length - x.length).join('|'), 'g'), (n) => `<span class="nowrap">${n}</span>`);
+  $$('.js-places').forEach((el) => { el.innerHTML = keepNames(PLACES_PLAYED); });
+  $$('.js-places-zh').forEach((el) => { el.textContent = joinList(PLACES_PLAYED, 'zh'); });
+  $$('.js-abroad').forEach((el) => { el.innerHTML = keepNames(ABROAD); });
+  $$('.js-abroad-zh').forEach((el) => { el.textContent = joinList(ABROAD, 'zh'); });
+  $$('.js-outreach-range').forEach((el) => { el.textContent = OUTREACH_RANGE; });
+}
+
 // ============================================================ i18n
 
 const META = {
-  en: { title: 'FRC Team 8806 · Our Lady of Providence Dream League', desc: $('meta[name="description"]').content },
-  'zh-Hant': { title: 'FRC 8806 · 崇光高中機器人隊 OLPDL', desc: 'FRC 第 8806 隊（OLPDL）— 新北市崇光高中 45 位學生，打造比賽機器人，也打造未來的工程師。認養一個零件，支持我們的下一台機器人。' },
+  en: {
+    title: `FRC Team 8806 · ${N.awards} awards in ${N.seasons} seasons · Partner with us`,
+    desc: `45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, ${N.awards} FRC awards, ${N.regionals} regionals in ${joinList(PLACES_PLAYED, 'en')}. See what sponsors get and where every NT$ goes.`,
+  },
+  'zh-Hant': {
+    title: `FRC 8806 崇光高中機器人隊 · ${zhNum(N.seasons)}個賽季、${zhNum(N.awards)}座獎項 · 成為贊助夥伴`,
+    desc: `FRC 第 8806 隊（OLPDL）— 新北市崇光高中 45 位學生。2022 年新秀賽季奪下聯盟冠軍，${zhNum(N.seasons)}個賽季 ${N.awards} 座 FRC 獎項，${N.regionals} 場區域賽，足跡遍及${joinList(PLACES_PLAYED, 'zh')}。看看贊助效益與每一塊錢的去向。`,
+  },
 };
 
 function applyLang() {
   root.setAttribute('data-lang', lang);
+  if (zh()) window.loadCJKFont?.();
   root.lang = zh() ? 'zh-Hant' : 'en';
   $$('[data-zh]').forEach((el) => {
     if (el._en == null) el._en = el.innerHTML;
@@ -44,6 +103,15 @@ function applyLang() {
   $$('[data-zh-placeholder]').forEach((el) => {
     if (el._enPh == null) el._enPh = el.placeholder;
     el.placeholder = zh() ? el.getAttribute('data-zh-placeholder') : el._enPh;
+  });
+  // The English originals are kept as attributes, so copies made with innerHTML (the marquee) still swap.
+  $$('[data-zh-aria]').forEach((el) => {
+    if (el.dataset.enAria == null) el.dataset.enAria = el.getAttribute('aria-label') || '';
+    el.setAttribute('aria-label', zh() ? el.dataset.zhAria : el.dataset.enAria);
+  });
+  $$('[data-zh-alt]').forEach((el) => {
+    if (el.dataset.enAlt == null) el.dataset.enAlt = el.alt;
+    el.alt = zh() ? el.dataset.zhAlt : el.dataset.enAlt;
   });
   const toggle = $('#lang-toggle');
   toggle.textContent = zh() ? 'EN' : '中文';
@@ -103,51 +171,39 @@ function initCounters() {
   $$('[data-count]').forEach((el) => io.observe(el));
 }
 
-// ============================================================ record rail
+// ============================================================ results
+
+// "Regional Finalist · Istanbul": the venue is shown when a season had more than one regional.
+const withVenue = (a) => esc(t(a)) + (a.at ? `<small>${esc(t(a.at))}</small>` : '');
 
 function renderSeasons() {
-  const track = $('#season-cards');
-  const cards = SEASONS.map((s) => `
+  $('#season-cards').innerHTML = SEASONS.map((s) => {
+    const result = s.awards.find((a) => a.result);
+    const alt = s.img === 'g-arizona-team.webp'
+      ? UI('Team 8806 at the 2025 Arizona East Regional', '第 8806 隊於 2025 亞利桑那東區域賽')
+      : `${t(s.event)} ${s.year}`;
+    return `
     <article class="season">
-      <img class="season__img" src="assets/img/${s.img}" alt="${esc(t(s.event))} ${s.year}" loading="lazy" width="640" height="480">
+      ${s.img
+        ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(alt)}" loading="lazy" width="640" height="480">`
+        : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>'}
       <div class="season__body">
         <p class="season__year">${s.year}</p>
         <p class="season__event">${esc(t(s.event))}</p>
-        <p class="season__note">${esc(t(s.note))}</p>
-        <ul class="season__awards">${s.awards.map((a) => `<li class="${a.star ? 'star' : ''}">${esc(t(a))}</li>`).join('')}</ul>
-      </div>
-    </article>`).join('');
-  const goal = `
-    <article class="season season--goal">
-      <div class="season__body">
-        <div>
-          <p class="eyebrow">${UI('Next season', '下一季')}</p>
-          <p class="season__year">${UI('The goal', '我們的目標')}</p>
-          <ul class="goal-list">${GOALS.map((g) => `<li>${esc(t(g))}</li>`).join('')}</ul>
-        </div>
-        <div>
-          <p class="season__note" style="margin-bottom:16px">${UI('This is where you come in.', '這一步，需要你的支持。')}</p>
-          <a class="btn btn--primary" href="#sponsor">${UI('Help us get there', '幫助我們達成')}</a>
-        </div>
+        ${result ? `<p class="season__result">${esc(t(result))}${result.at ? ` · ${esc(t(result.at))}` : ''}</p>` : ''}
+        <ul class="season__awards">${awardsOf(s).map((a) => `<li class="${a.star ? 'star' : ''}">${withVenue(a)}</li>`).join('')}</ul>
+        ${s.note ? `<p class="season__note">${esc(t(s.note))}</p>` : ''}
       </div>
     </article>`;
-  track.innerHTML = cards + goal;
-}
-
-function initRail() {
-  const track = $('#season-cards');
-  const [prev, next] = $$('[data-rail]');
-  const update = () => {
-    prev.disabled = track.scrollLeft < 8;
-    next.disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
-  };
-  $$('[data-rail]').forEach((b) => b.addEventListener('click', () => {
-    const card = track.querySelector('.season');
-    track.scrollBy({ left: (+b.dataset.rail) * (card.offsetWidth + 20), behavior: reducedMotion ? 'auto' : 'smooth' });
-  }));
-  track.addEventListener('scroll', update, { passive: true });
-  addEventListener('resize', update);
-  update();
+  }).join('');
+  $('#goals').innerHTML = `
+    <p class="goals__label">${UI('Next, we\'re going for', '接下來，我們的目標')}</p>
+    <ul class="goals__list">${GOALS.map((g) => `<li>${esc(t(g))}</li>`).join('')}</ul>
+    <a class="btn btn--ghost" href="#sponsor">${UI('Help us get there', '幫助我們達成')}</a>`;
+  $('#verify-links').innerHTML = [
+    [SITE.tba, UI('Verify on The Blue Alliance ↗', '在 The Blue Alliance 查證 ↗')],
+    [SITE.frcEvents, UI('FRC Events ↗', 'FRC Events 官方紀錄 ↗')],
+  ].map(([h, l]) => `<a href="${h}" target="_blank" rel="noopener">${esc(l)}</a>`).join('');
 }
 
 // ============================================================ gallery
@@ -158,42 +214,19 @@ function initMarquee() {
   track.innerHTML += track.innerHTML.replace(/<img /g, '<img aria-hidden="true" ');
 }
 
-// ============================================================ crest
-
-function initCrest() {
-  const items = $$('#crest-list li');
-  const rings = $$('.crest__ring');
-  let idx = -1, auto = true, timer = 0;
-  const set = (part) => {
-    items.forEach((li) => li.classList.toggle('is-on', li.dataset.part === part));
-    rings.forEach((r) => r.classList.toggle('is-on', r.dataset.part === part));
-  };
-  items.forEach((li) => {
-    li.tabIndex = 0;
-    li.setAttribute('role', 'button');
-    const pick = () => { auto = false; clearInterval(timer); set(li.dataset.part); };
-    li.addEventListener('click', pick);
-    li.addEventListener('mouseenter', pick);
-    li.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
-  });
-  new IntersectionObserver(([e]) => {
-    clearInterval(timer);
-    if (e.isIntersecting && auto && !reducedMotion) {
-      timer = setInterval(() => { idx = (idx + 1) % items.length; set(items[idx].dataset.part); }, 2200);
-      if (idx < 0) { idx = 0; set(items[0].dataset.part); }
-    }
-  }, { threshold: 0.4 }).observe($('.crest'));
-}
-
 // ============================================================ impact
 
+// Keep the place after " — " (a school name) on one line.
+// Keep a short tail ("— Zhitan Elementary") on one line; long tails must be free to wrap.
+const keepTail = (s) => { const [a, b] = s.split(' — '); return b && b.length <= 28 ? `${esc(a)} — <span class="nowrap">${esc(b)}</span>` : esc(s); };
+
 function renderImpact() {
-  $('#outreach-log').innerHTML = OUTREACH.map((o) => `<li><time datetime="${o.date}">${fmtDate(o.date)}</time><span>${esc(t(o.t))}</span></li>`).join('');
-  $('.tile__big > span').textContent = OUTREACH.length;
-  $('#media-list').innerHTML = MEDIA.map((m) => `
+  $('#outreach-log').innerHTML = OUTREACH.map((o) => `<li><time datetime="${o.date}">${fmtDate(o.date)}</time><span>${keepTail(t(o.t))}${o.note ? `<small>${esc(t(o.note))}</small>` : ''}</span></li>`).join('');
+  // Events the team hosted are told in the #partner callout; this list is press coverage only.
+  $('#media-list').innerHTML = MEDIA.filter((m) => !m.hosted).map((m) => `
     <div class="media-item">
       <img src="assets/img/${m.img}" alt="" loading="lazy" width="112" height="84">
-      <div><time datetime="${m.date}">${fmtDate(m.date)}</time><p>${esc(t(m.t))}</p></div>
+      <div><time datetime="${m.date}">${fmtDate(m.date)}</time><p>${esc(t(m.t))}</p>${m.note ? `<small>${esc(t(m.note))}</small>` : ''}</div>
     </div>`).join('');
   $('#exchange-log').innerHTML = EXCHANGES.map((x) => `<li><time datetime="${x.date}">${fmtDate(x.date)}</time><span><b>${esc(t(x.teams))}</b> · ${esc(t(x.where))}</span></li>`).join('');
 }
@@ -232,14 +265,15 @@ function renderMap() {
   const wrap = inner.parentElement;
   const labels = document.createElement('div');
   inner.appendChild(labels);
-  // On narrow screens the map scrolls sideways; start with home in view.
-  requestAnimationFrame(() => { wrap.scrollLeft = Math.max(0, inner.offsetWidth * (hx / 360) - wrap.clientWidth * 0.45); });
-  const pos = { home: 'below', istanbul: 'below', hawaii: 'below', shanghai: 'left', poland: '' , arizona: '' };
+  const pos = { home: 'below', istanbul: 'below', hawaii: 'below', shanghai: 'left', poland: '', arizona: '' };
   onLang(() => {
     labels.innerHTML = PLACES.map((p) => {
       const [x, y] = proj(p);
-      return `<div class="map__label${pos[p.id] ? ' map__label--' + pos[p.id] : ''}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%"><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></div>`;
+      const cls = (pos[p.id] ? ' map__label--' + pos[p.id] : '') + (p.home ? ' map__label--home' : '');
+      return `<div class="map__label${cls}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%"><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></div>`;
     }).join('');
+    // Narrow screens hide the map labels (except home) and list the places instead.
+    $('#place-list').innerHTML = PLACES.map((p) => `<li><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></li>`).join('');
   });
   new IntersectionObserver(([e], io) => { if (e.isIntersecting) { wrap.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.3 }).observe(wrap);
 }
@@ -254,7 +288,7 @@ function renderSeasonNow() {
   $('#now-month').textContent = monthName(m, true);
   if (cur) {
     $('#now-title').innerHTML = UI(`We're in <span class="grad">${esc(t(cur.t))}</span>.`, `我們正在進行<span class="grad">${esc(t(cur.t))}</span>。`);
-    $('#now-text').textContent = t(cur.d) + ' ' + (pos <= order.indexOf(1)
+    $('#now-text').textContent = t(cur.d) + (zh() ? '' : ' ') + (pos <= order.indexOf(1)
       ? UI('What gets funded this month is what competes in March.', '這個月到位的資源，就是三月登上賽場的機器人。')
       : UI('The season is live — every contribution goes straight to the field.', '賽季進行中 — 每一份支持都直接送上賽場。'));
   } else {
@@ -286,8 +320,11 @@ const MATERIALS = {
 const ALL_PARTS = [...PARTS, MATERIALS];
 const cart = new Map(); // id -> qty (or NT$ for the custom fund)
 
+// Most valuable first; the open materials fund always closes the list.
+const PARTS_BY_PRICE = [...PARTS].sort((a, b) => b.price - a.price).concat(MATERIALS);
+
 function renderParts() {
-  $('#parts').innerHTML = ALL_PARTS.map((p) => `
+  $('#parts').innerHTML = PARTS_BY_PRICE.map((p) => `
     <li class="part" data-id="${p.id}">
       <div class="part__icon" aria-hidden="true">${ICONS[p.icon]}</div>
       <div>
@@ -344,6 +381,7 @@ function renderCart() {
   const mail = $('#cart-mail');
   mail.hidden = !SITE.email || !lines.length;
   if (SITE.email) mail.href = `mailto:${SITE.email}?subject=${encodeURIComponent(UI('Sponsorship pledge for FRC 8806', 'FRC 8806 贊助認養'))}&body=${encodeURIComponent(pledgeMessage())}`;
+  renderDock(total);
 }
 
 function pledgeMessage() {
@@ -392,16 +430,20 @@ function initPledge() {
     syncParts();
   });
   $('#cart-clear').addEventListener('click', () => { cart.clear(); renderParts(); });
-  $('#cart-send').addEventListener('click', async () => {
-    const ok = await copyText(pledgeMessage());
-    const note = $('#cart-note');
-    note.textContent = ok
-      ? UI('Copied! Paste it into the Instagram chat that just opened.', '已複製！請貼到剛開啟的 Instagram 對話中。')
-      : UI('Open the chat and tell us what you\'d like to sponsor.', '請在對話中告訴我們你想認養的項目。');
-    note.classList.add('is-done');
-    window.open(`https://ig.me/m/${SITE.instagram}`, '_blank', 'noopener');
-  });
+  $('#cart-send').addEventListener('click', sendPledge);
+  $('#dock-send').addEventListener('click', sendPledge);
   onLang(renderParts);
+}
+
+// Copy the pledge, then open an Instagram DM to the team (used by the cart and the dock).
+async function sendPledge() {
+  const ok = await copyText(pledgeMessage());
+  const note = $('#cart-note');
+  note.textContent = ok
+    ? UI('Copied! Paste it into the Instagram chat that just opened.', '已複製！請貼到剛開啟的 Instagram 對話中。')
+    : UI('Open the chat and tell us what you\'d like to sponsor.', '請在對話中告訴我們你想認養的項目。');
+  note.classList.add('is-done');
+  window.open(`https://ig.me/m/${SITE.instagram}`, '_blank', 'noopener');
 }
 
 function flashPart(id) {
@@ -413,13 +455,72 @@ function flashPart(id) {
   li.classList.add('is-flash');
 }
 
+// ============================================================ mobile dock
+
+function renderDock(total) {
+  $('#dock-cta').hidden = total > 0;
+  $('#dock-cart').hidden = !(total > 0);
+  $('#dock-total').textContent = money(total);
+}
+
+// The dock is a phone shortcut to the pledge. It stays out of the way on the hero, near the
+// inline cart and contact block, and whenever the parts list sits under it.
+function initDock() {
+  const dock = $('#dock');
+  const blockers = new Set();
+  const update = () => dock.classList.toggle('is-hidden', blockers.size > 0);
+  // A fast jump can queue enter + leave in one batch, so apply the entries in order.
+  const track = (entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) blockers.add(e.target); else blockers.delete(e.target); });
+    update();
+  };
+  const io = new IntersectionObserver(track);
+  ['#top', '#cart', '#contact'].forEach((sel) => io.observe($(sel)));
+  // Only the bottom 88px of the viewport, where the dock sits.
+  let partsIO;
+  const watchParts = () => {
+    partsIO?.disconnect();
+    blockers.delete($('#parts'));
+    partsIO = new IntersectionObserver(track, { rootMargin: `-${Math.max(0, innerHeight - 88)}px 0px 0px 0px` });
+    partsIO.observe($('#parts'));
+  };
+  watchParts();
+  let rt = 0;
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(watchParts, 200); });
+}
+
 // ============================================================ budget chart
+
+const sum = (rows) => rows.reduce((s, r) => s + r.amount, 0);
+const pct = (part, whole) => {
+  const p = Math.round(part / whole * 100);
+  return p < 1 ? '<1%' : p + '%';
+};
+
+// Full-season split: build & compete vs team travel, computed from BUDGET.
+function renderStack() {
+  const total = sum(BUDGET);
+  const groups = [
+    { id: 'build', amount: sum(BUDGET.filter((b) => b.group === 'build')), label: UI('Build & compete', '打造與參賽') },
+    { id: 'travel', amount: sum(BUDGET.filter((b) => b.group === 'travel')), label: UI('Team travel', '團隊差旅') },
+  ];
+  $('#budget-stack').innerHTML = `
+    <p class="stack__title">${UI('Full season:', '完整賽季：')} <b>${moneyShort(total)}</b></p>
+    <div class="stack__bar" role="img" aria-label="${esc(groups.map((g) => `${g.label} ${moneyShort(g.amount)} ${pct(g.amount, total)}`).join(', '))}">
+      ${groups.map((g) => `<div class="stack__seg${g.id === 'travel' ? ' stack__seg--travel' : ''}" style="flex-basis:${(g.amount / total * 100).toFixed(2)}%">${pct(g.amount, total)}</div>`).join('')}
+    </div>
+    <ul class="stack__legend">
+      ${groups.map((g) => `<li class="${g.id === 'travel' ? 'is-travel' : ''}">${esc(g.label)} <b>${moneyShort(g.amount)} · ${pct(g.amount, total)}</b></li>`).join('')}
+    </ul>`;
+}
 
 let scope = 'build';
 function renderBudget() {
+  renderStack();
   const rows = BUDGET.filter((b) => scope === 'all' || b.group === 'build').sort((a, b) => b.amount - a.amount);
-  const total = rows.reduce((s, r) => s + r.amount, 0);
+  const total = sum(rows);
   const max = rows[0].amount;
+  $('#budget-scope').textContent = scope === 'all' ? UI('Full season:', '完整賽季：') : UI('Build & compete:', '打造與參賽：');
   $('#budget-total').textContent = moneyShort(total);
   $('#budget-total-label').textContent = scope === 'all'
     ? UI('Full season, including international team travel', '完整賽季，含國際賽事團費')
@@ -427,7 +528,8 @@ function renderBudget() {
   $('#bars').innerHTML = rows.map((r) => `
     <div class="bar${r.group === 'travel' ? ' bar--travel' : ''}" tabindex="0" data-id="${r.id}">
       <div class="bar__label">${esc(t(r.label))}</div>
-      <div class="bar__track"><div class="bar__fill" style="width:${(r.amount / max * 82).toFixed(2)}%"></div><span class="bar__value">${moneyShort(r.amount)}</span></div>
+      <div class="bar__track"><div class="bar__fill" style="width:${(r.amount / max * 100).toFixed(2)}%"></div></div>
+      <div class="bar__value">${moneyShort(r.amount)}<small>${pct(r.amount, total)}</small></div>
     </div>`).join('');
   $('#budget-table').innerHTML = `
     <thead><tr><th>${UI('Item', '項目')}</th><th>${UI('Amount', '金額')}</th></tr></thead>
@@ -436,7 +538,7 @@ function renderBudget() {
 }
 
 function initBudget() {
-  const tabs = $$('.seg [data-scope]');
+  const tabs = $$('[data-scope]');
   tabs.forEach((b) => b.addEventListener('click', () => {
     scope = b.dataset.scope;
     tabs.forEach((x) => x.setAttribute('aria-selected', String(x === b)));
@@ -474,87 +576,168 @@ function renderContact() {
   const ig = `https://www.instagram.com/${SITE.instagram}/`;
   const btns = [
     `<a class="btn btn--primary" href="https://ig.me/m/${SITE.instagram}" target="_blank" rel="noopener">${UI('Message us on Instagram', '在 Instagram 私訊我們')}</a>`,
-    SITE.email ? `<a class="btn btn--ghost" href="mailto:${SITE.email}">${UI('E-mail the team', '寄信給我們')}</a>` : '',
     `<a class="btn btn--ghost" href="${SITE.facebook}" target="_blank" rel="noopener">Facebook</a>`,
+    SITE.email ? `<a class="btn btn--ghost" href="mailto:${SITE.email}">${UI('E-mail the team', '寄信給我們')}</a>` : '',
+    SITE.proposalUrl ? `<a class="btn btn--ghost" href="${esc(SITE.proposalUrl)}" target="_blank" rel="noopener" download>${UI('Download our sponsorship proposal (PDF)', '下載贊助企劃書（PDF）')}</a>` : '',
   ];
   $('#contact-buttons').innerHTML = btns.join('');
+  const names = SPONSORS.map((s) => t(s));
+  $('#hero-sponsors').textContent = names.join(' · ');
+  $('#contact-sponsors').textContent = zh()
+    ? `與 ${names.slice(0, -1).join('、')}及${names.at(-1)}一起支持我們。`
+    : `Join ${names.slice(0, -1).join(', ')} and ${names.at(-1)}.`;
   $('#footer-links').innerHTML = [
     [ig, `Instagram @${SITE.instagram}`],
     [SITE.facebook, 'Facebook'],
     [SITE.tba, 'The Blue Alliance'],
     [SITE.frcEvents, 'FRC Events'],
   ].map(([h, l]) => `<li><a href="${h}" target="_blank" rel="noopener">${esc(l)}</a></li>`).join('');
-  $('#sponsor-list').innerHTML = SPONSORS.map((s) => `<li>${esc(t(s))}</li>`).join('');
   $('#concept-notice').hidden = !SITE.conceptNotice;
 }
 
-// ============================================================ 3D
+// ============================================================ robot showcase
 
 const HOTSPOTS = [
   { id: 'x60', anchor: 'x60', part: 'x60', label: { en: 'Kraken X60', zh: '海妖 X60 馬達' }, tag: { en: 'NT$9,500 · Sponsor one', zh: 'NT$9,500 · 認養一顆' } },
-  { id: 'x44', anchor: 'x44', part: 'x44', label: { en: 'Kraken X44', zh: '海妖 X44 馬達' }, tag: { en: 'NT$5,500 · Sponsor one', zh: 'NT$5,500 · 認養一顆' } },
+  { id: 'x44', anchor: 'x44', part: 'x44', label: { en: 'Kraken X44', zh: '海妖 X44 馬達' }, tag: { en: 'NT$5,500 · Sponsor one', zh: 'NT$5,500 · 認養一顆' }, left: true },
   { id: 'camera', anchor: 'camera', budget: true, label: { en: 'Vision camera', zh: '視覺辨識鏡頭' }, tag: { en: 'Electronics · see the budget', zh: '電控 · 查看預算' } },
   { id: 'rio', anchor: 'rio', budget: true, desktopOnly: true, label: { en: 'roboRIO controller', zh: 'roboRIO 主控' }, tag: { en: 'Electronics · see the budget', zh: '電控 · 查看預算' }, left: true },
   { id: 'elevator', anchor: 'elevator', part: 'materials', desktopOnly: true, label: { en: 'Aluminium & carbon fibre', zh: '鋁材與碳纖維' }, tag: { en: 'Materials fund · any amount', zh: '材料基金 · 任意金額' }, left: true },
 ];
 
+// Probe once, and give the context back straight away (the real renderer makes its own).
 function hasWebGL() {
   try {
     const c = document.createElement('canvas');
-    return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
+    const gl = window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'));
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return !!gl;
   } catch (e) { return false; }
 }
 
-async function init3D() {
-  if (!hasWebGL()) { root.classList.add('no-webgl'); return; }
-  const sponsorNames = SPONSORS.slice(0, 5).map((s) => s.en.replace(' Technologies', ''));
-  try {
-    const { initStory, initNamer } = await import('./scene.js');
-    const story = await initStory({
-      canvas: $('#robot-canvas'),
-      stage: $('.story__stage'),
-      section: $('.story'),
-      chapters: $$('.chapter'),
-      dots: $$('.story__dots li'),
-      hotspotLayer: $('#hotspots'),
-      hotspots: HOTSPOTS,
-      sponsors: sponsorNames,
-      modelUrl: SITE.robotModelUrl,
-      reducedMotion,
-      lang,
-      onHotspot: (h) => {
-        if (h.part) { if (h.part !== 'materials') addPart(h.part, 1); flashPart(h.part); }
-        else { $('#budget').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' }); }
-      },
+const idle = (fn, timeout) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout }) : setTimeout(fn, 1));
+const onHotspot = (h) => {
+  if (h.part) { if (h.part !== 'materials') addPart(h.part, 1); flashPart(h.part); }
+  else $('#budget').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+};
+
+// Without the procedural 3D model (no WebGL, or a custom GLB) the price tags become a plain list of
+// buttons and the sponsor panel is drawn on a 2D card, so both tabs still do what their text says.
+async function initFlatShowcase(view3d, input) {
+  const tags = document.createElement('div');
+  tags.className = 'flat-tags';
+  tags.innerHTML = HOTSPOTS.map((h) => `<button class="hotspot__tag" type="button" data-id="${h.id}"${h.desktopOnly ? ' data-desktop-only' : ''}><b></b><span></span></button>`).join('');
+  tags.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b) onHotspot(HOTSPOTS.find((h) => h.id === b.dataset.id));
+  });
+  const card = document.createElement('div');
+  card.className = 'flat-card';
+  const c = document.createElement('canvas');
+  c.width = 768; c.height = 1024;
+  c.setAttribute('role', 'img');
+  card.appendChild(c);
+  view3d.append(tags, card);
+  const { drawSponsorPanel } = await import('./sponsor-panel.js');
+  const sponsors = SPONSORS.map((x) => x.en.replace(' Technologies', ''));
+  const draw = () => {
+    drawSponsorPanel(c.getContext('2d'), c.width, c.height, input.value.trim(), sponsors);
+    c.setAttribute('aria-label', UI('Sponsor panel preview: ', '贊助面板預覽：') + [input.value.trim(), ...sponsors].filter(Boolean).join(', '));
+  };
+  input.addEventListener('input', draw);
+  document.fonts?.ready.then(draw);
+  onLang(() => {
+    $$('button', tags).forEach((b) => {
+      const h = HOTSPOTS.find((x) => x.id === b.dataset.id);
+      b.querySelector('b').textContent = t(h.label);
+      b.querySelector('span').textContent = t(h.tag);
     });
-    listeners.push(() => story.setLang(lang));
-    let namer = null;
-    const startNamer = () => {
-      if (namer) return;
-      namer = initNamer({ canvas: $('#namer-canvas'), wrap: $('.namer__view'), input: $('#namer-input'), sponsors: sponsorNames, reducedMotion });
-      document.fonts?.ready.then(() => namer.redrawText());
-    };
-    new IntersectionObserver(([e], io) => { if (e.isIntersecting) { startNamer(); io.disconnect(); } }, { rootMargin: '600px' }).observe($('#your-name'));
-    document.fonts?.ready.then(() => story.redrawText());
-  } catch (e) {
-    console.error(e);
-    root.classList.add('no-webgl');
-  }
+    draw();
+  });
+  view3d.classList.add('is-flat');
 }
 
-// "#robot" points into the sticky 3D stage, so jump to that chapter's scroll position instead.
-function initStoryLinks() {
-  $$('a[href="#robot"]').forEach((a) => a.addEventListener('click', (e) => {
-    const story = $('.story');
-    if (!story) return;
-    e.preventDefault();
-    const top = story.offsetTop + (1 / 6 + 0.04) * (story.offsetHeight - innerHeight);
-    window.scrollTo({ top, behavior: reducedMotion ? 'auto' : 'smooth' });
-  }));
+// Tabs work on their own (text only); the 3D engine is loaded when #robot comes near the viewport.
+function initShowcase() {
+  const section = $('#robot');
+  const tabs = $$('#robot-tabs [role="tab"]');
+  const panels = $$('#robot .tabpanel');
+  const view3d = $('#robot-view');
+  let view = 'build';
+  let engine = null;
+
+  const select = (btn, focus) => {
+    view = btn.dataset.view;
+    tabs.forEach((b) => {
+      const on = b === btn;
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    panels.forEach((p) => p.classList.toggle('is-active', p.dataset.view === view));
+    view3d.dataset.view = view;
+    if (focus) btn.focus();
+    engine?.setView(view);
+  };
+  tabs.forEach((b, i) => {
+    b.addEventListener('click', () => select(b));
+    b.addEventListener('keydown', (e) => {
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (step) { e.preventDefault(); select(tabs[(i + step + tabs.length) % tabs.length], true); }
+      else if (e.key === 'Home') { e.preventDefault(); select(tabs[0], true); }
+      else if (e.key === 'End') { e.preventDefault(); select(tabs[tabs.length - 1], true); }
+    });
+  });
+  view3d.dataset.view = view;
+
+  const input = $('#namer-input');
+  view3d.addEventListener('pointerdown', () => view3d.classList.add('is-dragged'), { once: true });
+
+  const flat = () => { root.classList.add('no-webgl'); initFlatShowcase(view3d, input); };
+  const start = async () => {
+    if (!hasWebGL()) { flat(); return; }
+    try {
+      const { initShowcase: boot } = await import('./scene.js');
+      engine = await boot({
+        canvas: $('#robot-canvas'),
+        wrap: view3d,
+        section,
+        hotspotLayer: $('#hotspots'),
+        hotspots: HOTSPOTS,
+        sponsors: SPONSORS.map((s) => s.en.replace(' Technologies', '')),
+        modelUrl: SITE.robotModelUrl,
+        reducedMotion,
+        lang,
+        view,
+        onHotspot,
+      });
+      engine.setView(view); // in case a tab was picked while the engine was loading
+      if (engine.custom) initFlatShowcase(view3d, input);
+      engine.setName(input.value.trim());
+      input.addEventListener('input', () => engine.setName(input.value.trim()));
+      listeners.push(() => { engine.setLang(lang); engine.redrawText(); });
+      document.fonts?.ready.then(() => engine.redrawText());
+    } catch (e) {
+      console.error(e);
+      flat();
+    }
+  };
+  // About one viewport ahead, and only once the main thread has a quiet moment.
+  new IntersectionObserver(([e], io) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    idle(start, 1500);
+  }, { rootMargin: '100% 0px' }).observe(section);
 }
 
 // ============================================================ boot
 
+// Counts that come straight from data.js.
+$$('.js-outreach-count').forEach((el) => { el.dataset.count = el.textContent = N.outreach; });
+$('#kpi-exchanges').dataset.count = $('#kpi-exchanges').textContent = N.exchanges;
+$('#score-awards').dataset.count = $('#score-awards').textContent = N.awards;
+$('#score-regionals').dataset.count = $('#score-regionals').textContent = N.regionals;
+
+onLang(fillCounts);
 onLang(renderSeasons);
 onLang(renderImpact);
 renderMap();
@@ -566,8 +749,6 @@ applyLang();
 initNav();
 initReveal();
 initCounters();
-initRail();
 initMarquee();
-initCrest();
-initStoryLinks();
-init3D();
+initDock();
+initShowcase();
