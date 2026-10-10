@@ -384,8 +384,8 @@ function renderSeasonNow() {
   const cur = CALENDAR[pos];
   $('#now-month').textContent = monthName(m, true);
   if (cur) {
-    // The amber month cell below marks "now", so the title stays white (one accent per screen).
-    $('#now-title').innerHTML = UI(`We're in <em>${esc(t(cur.t))}</em>.`, `我們正在進行<em>${esc(t(cur.t))}</em>。`);
+    // The blue month cell below marks "now", so the title stays white (one accent per screen).
+    $('#now-title').innerHTML = UI(`We're in <em>${esc(t(cur.t))}</em>.`, `我們正在進行<wbr><em>${esc(t(cur.t))}</em>。`);
     $('#now-text').textContent = t(cur.d) + (zh() ? '' : ' ') + (pos <= order.indexOf(1)
       ? UI('What gets funded this month is what competes in March.', '這個月到位的資源，就是三月登上賽場的機器人。')
       : UI('The season is live — every contribution goes straight to the field.', '賽季進行中 — 每一份支持都直接送上賽場。'));

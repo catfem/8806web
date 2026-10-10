@@ -3,7 +3,7 @@
    Sponsor-first page: proof → value → cause → team → robot → the ask.
    Look: a dark technical product page. One content column framed by 1px
    rules, mono labels, bordered cells, square buttons, heavy expanded
-   headlines and a single amber accent.
+   headlines and a single blue accent.
    ========================================================================= */
 
 :root {
@@ -18,10 +18,13 @@
   --text: #f2f2f3;
   --muted: #a8aab1;
   --dim: #868991;         /* >= 4.5:1 on every surface; the non-text "+" ticks keep --tick */
-  --accent: #f5b32a;      /* amber: one accent word, badge, active states, bars, award markers, focus */
-  --accent-text: #ffc04d; /* the accent as text on the dark page */
-  --accent-soft: rgba(245, 179, 42, 0.5);  /* team-travel bars: distinct from solid amber, still >= 3:1 on the track */
-  --on-accent: #121316;
+  --accent: #2a6df4;      /* cobalt blue: one accent word, badge, active states, bars, award markers, focus (>= 3.5:1 on every surface) */
+  --accent-text: #6aa5ff; /* the accent as text on the dark page (>= 6.5:1) */
+  --accent-glow: rgba(42, 109, 244, 0.45);
+  /* team-travel bars: hatched, so they differ from the solid build bars by pattern, not only by lightness */
+  --hatch: repeating-linear-gradient(135deg, var(--accent) 0 2px, transparent 2px 6px);
+  --on-accent: #ffffff;   /* text on a blue fill: 4.57:1 */
+  --ink: #121316;         /* text on the white buttons */
   --navy: #1f2c5c;        /* team navy: only the crest tile (and the 3D scene) */
 
   /* type */
@@ -93,7 +96,7 @@ i[class*="js-"] { font-style: normal; } /* counts, places and ranges filled in f
 .skip {
   position: fixed; top: 0; left: 0; z-index: 100; padding: 0 18px; height: var(--nav-h);
   display: flex; align-items: center;
-  background: #fff; color: var(--on-accent);
+  background: #fff; color: var(--ink);
   font: 700 12px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase;
   transform: translateY(-100%);
 }
@@ -132,7 +135,7 @@ html[data-lang="zh-Hant"] .h4 { letter-spacing: 0.02em; }
 .label { font-size: 11.5px; font-weight: 500; line-height: 1.45; color: var(--dim); }
 .caption { font-size: 11.5px; font-weight: 500; line-height: 1.6; color: var(--dim); }
 
-/* small amber square: award markers, captions */
+/* small blue square: award markers, captions */
 .sq { display: inline-block; flex: none; width: 7px; height: 7px; background: var(--accent); margin-right: 10px; vertical-align: 1px; }
 
 /* number badge + wordmark ("8806 OLPDL") */
@@ -158,8 +161,8 @@ html[data-lang="zh-Hant"] .h4 { letter-spacing: 0.02em; }
   transition: background-color .2s, color .2s, border-color .2s;
 }
 .btn svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
-.btn--primary { background: #fff; color: var(--on-accent); }
-.btn--primary:hover { background: var(--accent); }
+.btn--primary { background: #fff; color: var(--ink); }
+.btn--primary:hover { background: var(--accent); color: var(--on-accent); }
 .btn--primary:disabled { background: var(--bg-3); color: var(--dim); border-color: var(--rule-2); cursor: not-allowed; }
 .btn--ghost { border-color: var(--rule-3); }
 .btn--ghost:hover { border-color: #fff; }
@@ -224,11 +227,11 @@ button[aria-selected="true"] .cells__n { color: var(--accent-text); }
 .nav__tagcell { display: flex; align-items: center; padding: 0 18px; border-left: 1px solid var(--rule); }
 .nav__tag {
   display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
-  background: #fff; color: var(--on-accent);
+  background: #fff; color: var(--ink);
   font-size: 12px; font-weight: 500;
   transition: background-color .2s;
 }
-.nav__tagcell:hover .nav__tag { background: var(--accent); }
+.nav__tagcell:hover .nav__tag { background: var(--accent); color: var(--on-accent); }
 .nav__end { margin-left: auto; display: flex; align-items: stretch; }
 .nav__text { padding: 0 20px; }
 .nav__cell {
@@ -245,11 +248,11 @@ button[aria-selected="true"] .cells__n { color: var(--accent-text); }
 .nav__menu[aria-expanded="true"] { color: var(--text); background: var(--bg-2); }
 .nav__cta {
   display: flex; align-items: center; padding: 0 26px;
-  background: #fff; color: var(--on-accent);
+  background: #fff; color: var(--ink);
   font-size: 12px; font-weight: 700; white-space: nowrap;
   transition: background-color .2s;
 }
-.nav__cta:hover { background: var(--accent); }
+.nav__cta:hover { background: var(--accent); color: var(--on-accent); }
 
 @media (max-width: 1180px) {
   .nav__links, .nav__text { display: none; }
@@ -489,6 +492,7 @@ html[data-lang="zh-Hant"] :is(.season__result, .season__note, .season__awards sm
 .season--latest .season__body { padding: clamp(26px, 3vw, 40px) var(--pad); }
 .season--latest .season__year { font-size: 56px; }
 .season--latest .season__event { font-size: 17px; }
+html[data-lang="zh-Hant"] .season__event { word-break: keep-all; overflow-wrap: anywhere; } /* never split 區域賽 */
 .season--latest .season__awards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; margin-top: 26px; }
 .season--latest .season__awards li { font-size: 22px; }
 .season__stat {
@@ -502,7 +506,7 @@ html[data-lang="zh-Hant"] :is(.season__result, .season__note, .season__awards sm
 .season__stat-year { color: var(--dim); }
 .season__stat-num {
   display: block; font: 800 clamp(120px, 13vw, 184px)/0.86 var(--f-display); font-stretch: 112%; letter-spacing: -0.05em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .season__stat-label { display: block; margin-top: 14px; color: var(--text); font-weight: 700; }
 .season__stat-sub { display: block; margin-top: 6px; color: var(--muted); }
@@ -808,7 +812,7 @@ html[data-lang="zh-Hant"] .showcase__head .h2 { font-size: clamp(28px, 3.3cqi, 4
   overflow: hidden;
   background-color: #141518;
   background-image:
-    radial-gradient(56% 52% at 50% 64%, rgba(245, 179, 42, 0.08), rgba(245, 179, 42, 0) 72%),
+    radial-gradient(56% 52% at 50% 64%, rgba(42, 109, 244, 0.12), rgba(42, 109, 244, 0) 72%),
     linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
   background-size: auto, 40px 40px, 40px 40px;
@@ -897,7 +901,7 @@ html[data-lang="zh-Hant"] .showcase__head .h2 { font-size: clamp(28px, 3.3cqi, 4
 .hotspot.is-on { pointer-events: auto; }
 .hotspot__dot {
   flex: none; width: 10px; height: 10px; margin: -5px;
-  background: #fff; box-shadow: 0 0 0 4px rgba(245, 179, 42, .35);
+  background: #fff; box-shadow: 0 0 0 4px var(--accent-glow);
 }
 .hotspot__tag {
   margin-left: 18px;  /* keep in sync with GAP in scene.js */
@@ -929,7 +933,7 @@ html[data-lang="zh-Hant"] .showcase__head .h2 { font-size: clamp(28px, 3.3cqi, 4
 @keyframes blink { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .now__pulse { animation: none; } }
 .now__title { margin-top: 14px; font: 800 clamp(24px, 2.4vw, 34px)/1.1 var(--f-display); font-stretch: 108%; letter-spacing: -0.022em; color: var(--text); text-wrap: balance; }
-html[data-lang="zh-Hant"] .now__title { font-weight: 900; letter-spacing: 0.02em; line-height: 1.3; }
+html[data-lang="zh-Hant"] .now__title { font-weight: 900; letter-spacing: 0.02em; line-height: 1.3; word-break: keep-all; overflow-wrap: anywhere; } /* breaks only at the <wbr> before the phrase */
 html[data-lang="zh-Hant"] .now__title em { white-space: nowrap; } /* never split the month's phrase */
 .now__text { margin-top: 10px; max-width: 760px; font-size: 16.5px; }
 .months { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
@@ -954,7 +958,7 @@ html[data-lang="zh-Hant"] .now__title em { white-space: nowrap; } /* never split
 .part:last-child { border-bottom: 0; }
 .part.is-picked { background: var(--bg-2); box-shadow: inset 3px 0 0 var(--accent); }
 .part.is-flash { animation: flash 1.2s var(--ease); }
-@keyframes flash { 0%, 40% { background-color: rgba(245, 179, 42, .16); } 100% { background-color: var(--bg-2); } }
+@keyframes flash { 0%, 40% { background-color: rgba(42, 109, 244, .2); } 100% { background-color: var(--bg-2); } }
 .part__icon { width: 56px; height: 56px; display: grid; place-items: center; border: 1px solid var(--rule-2); color: var(--muted); transition: color .25s, border-color .25s; }
 .part__icon svg { width: 26px; height: 26px; }
 .part.is-picked .part__icon { color: var(--accent-text); border-color: var(--accent); }
@@ -973,7 +977,7 @@ html[data-lang="zh-Hant"] .part__name { letter-spacing: 0.02em; }
 }
 .stepper output { width: 46px; font-size: 14px; font-weight: 700; }
 .stepper button { cursor: pointer; transition: background-color .2s, color .2s; }
-.stepper button:hover:not(:disabled) { background: #fff; color: var(--on-accent); }
+.stepper button:hover:not(:disabled) { background: #fff; color: var(--ink); }
 .stepper button:disabled { color: var(--rule-3); cursor: default; }
 .part__custom input {
   width: 150px; height: 40px; padding: 0 12px;
@@ -1017,11 +1021,11 @@ html[data-lang="zh-Hant"] .part__name { letter-spacing: 0.02em; }
   font: 700 12px/1 var(--f-mono); color: var(--on-accent); font-variant-numeric: tabular-nums;
   background: var(--accent);
 }
-.stack__seg--travel { background: var(--accent-soft); color: var(--text); }
+.stack__seg--travel { background: var(--bg) var(--hatch); box-shadow: inset 0 0 0 1px var(--accent); color: var(--text); text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg); }
 .stack__legend { display: flex; flex-wrap: wrap; gap: 6px 28px; margin-top: 14px; font: 500 11px/1.5 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .stack__legend li { display: flex; align-items: center; gap: 8px; }
 .stack__legend li::before { content: ""; width: 10px; height: 10px; background: var(--accent); }
-.stack__legend li.is-travel::before { background: var(--accent-soft); }
+.stack__legend li.is-travel::before { background: var(--hatch); box-shadow: inset 0 0 0 1px var(--accent); }
 .stack__legend b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .budget__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 26px; padding-top: 28px; border-top: 1px solid var(--rule); }
@@ -1038,10 +1042,10 @@ html[data-lang="zh-Hant"] .budget__total { font-weight: 900; letter-spacing: 0.0
 .bar__label { font-size: 14.5px; line-height: 1.3; transition: color .2s; }
 .bar__track { position: relative; height: 18px; background: var(--bg-2); }
 .bar__fill { height: 100%; min-width: 3px; background: var(--accent); transition: width .9s var(--ease), background-color .2s; }
-.bar--travel .bar__fill { background: var(--accent-soft); }
+.bar--travel .bar__fill { background: transparent var(--hatch); box-shadow: inset 0 0 0 1px var(--accent); }
 .bar__value { font: 700 12.5px/1 var(--f-mono); color: var(--text); white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .bar__value small { display: inline-block; min-width: 3.8em; margin-left: 8px; font-size: 11px; font-weight: 500; color: var(--dim); }
-.bar:hover .bar__fill, .bar:focus-visible .bar__fill { background: #ffd27a; }
+.bar:hover .bar__fill, .bar:focus-visible .bar__fill { background-color: var(--accent-text); }
 .bar:hover .bar__label, .bar:focus-visible .bar__label { color: var(--text); }
 .bars__tip {
   position: absolute; z-index: 4; max-width: 320px; pointer-events: none;
@@ -1175,7 +1179,7 @@ html[data-lang="zh-Hant"] .cta__title { font-size: clamp(32px, 5.8cqi, 76px); }
   .js .dock.is-hidden { transform: translateY(100%); visibility: hidden; transition: transform .35s var(--ease), visibility 0s .35s; }
   .dock__cta { flex: 1; display: flex; align-items: center; gap: 12px; padding-left: var(--pad); min-width: 0; }
   .dock__text { font: 700 12.5px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; }
-  .dock__go { margin-left: auto; align-self: stretch; width: 64px; display: grid; place-items: center; background: #fff; color: var(--on-accent); }
+  .dock__go { margin-left: auto; align-self: stretch; width: 64px; display: grid; place-items: center; background: #fff; color: var(--ink); }
   .dock__go svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; }
   .dock__cart { flex: 1; display: flex; align-items: stretch; min-width: 0; }
   .dock__sum {
@@ -1185,8 +1189,8 @@ html[data-lang="zh-Hant"] .cta__title { font-size: clamp(32px, 5.8cqi, 76px); }
   }
   .dock__sum b { font: 800 19px/1 var(--f-display); font-stretch: 112%; letter-spacing: -0.02em; text-transform: none; color: var(--text); font-variant-numeric: tabular-nums; }
   .dock__send {
-    flex: none; padding: 0 26px; border: 0; background: #fff; color: var(--on-accent); cursor: pointer;
+    flex: none; padding: 0 26px; border: 0; background: #fff; color: var(--ink); cursor: pointer;
     font: 700 12.5px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase;
   }
-  .dock__send:hover { background: var(--accent); }
+  .dock__send:hover { background: var(--accent); color: var(--on-accent); }
 }
