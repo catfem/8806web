@@ -745,6 +745,8 @@ function buildDragChain(mats, x, zFix, zMove, yFix, yMove0) {
 
 // The build is a generator that pauses between sub-assemblies, so a caller can spread the work
 // over several frames (buildRobotAsync) instead of blocking the main thread in one long task.
+// Each pause names the sub-assembly just finished ('frame', 'drive', 'electronics', 'elevator',
+// 'effector'); `wait` receives it, which is how the page shows the build's progress.
 export function buildRobot(opts = {}) {
   const steps = buildSteps(opts);
   let r = steps.next();
@@ -754,7 +756,7 @@ export function buildRobot(opts = {}) {
 export async function buildRobotAsync(opts = {}, wait = () => new Promise((res) => setTimeout(res, 0))) {
   const steps = buildSteps(opts);
   let r = steps.next();
-  while (!r.done) { await wait(); r = steps.next(); }
+  while (!r.done) { await wait(r.value); r = steps.next(); }
   return r.value;
 }
 
@@ -833,7 +835,7 @@ function* buildSteps({ sponsors = [], detail = 'high', maxAnisotropy = 0 } = {})
   bake(frame);
   body.add(frame);
   parts.frame = frame;
-  yield;
+  yield 'frame';
 
   // ---------------- swerve modules
   parts.modules = [];
@@ -865,7 +867,7 @@ function* buildSteps({ sponsors = [], detail = 'high', maxAnisotropy = 0 } = {})
   parts.bumpers = bumpers;
   parts.redrawNumbers = num.redraw;
   anchor('bumpers', bumpers, 0.3, 0.08, 0.45);
-  yield;
+  yield 'drive';
 
   // ---------------- electronics
   const elec = new THREE.Group();
@@ -949,7 +951,7 @@ function* buildSteps({ sponsors = [], detail = 'high', maxAnisotropy = 0 } = {})
   parts.electronics = elec;
   anchor('rio', rio, 0, 0.03, 0);
   anchor('pdh', pdh, 0, 0.04, 0);
-  yield;
+  yield 'electronics';
 
   // ---------------- elevator
   const elevator = new THREE.Group();
@@ -1060,7 +1062,7 @@ function* buildSteps({ sponsors = [], detail = 'high', maxAnisotropy = 0 } = {})
   elevator.add(stage0);
   anchor('camera', cam, 0, 0.03, 0.02);
   anchor('elevator', stage0, -EX, 0.75, EZ);
-  yield;
+  yield 'elevator';
 
   // stage 1 (black punched tube)
   const stage1 = dynamic(new THREE.Group());
@@ -1121,7 +1123,7 @@ function* buildSteps({ sponsors = [], detail = 'high', maxAnisotropy = 0 } = {})
     parts.elevator.drag = drag;
     drag.update(0.24);
   }
-  yield;
+  yield 'effector';
 
   // ---------------- ground intake (over the bumper)
   const intake = new THREE.Group();

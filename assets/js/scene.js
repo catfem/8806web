@@ -50,18 +50,33 @@ function contactShadow(size = 1.9) {
   return m;
 }
 
-// Floor ring that glows under the robot, a nod to the hero lighting of product pages (blue, like the page accent).
-function floorGlow() {
+// Turntable datum ring under the robot, drawn like the page's drafting geometry (blue, like the page
+// accent): an outer ring with a tick every 5° (longer every 30°), a dashed inner ring and two dash-dot
+// centre lines. No text. Its opacity follows the view's `glow`.
+function datumRing(maxAnisotropy = 1) {
   const c = document.createElement('canvas');
-  c.width = c.height = 256;
+  c.width = c.height = 512;
   const g = c.getContext('2d');
-  const grd = g.createRadialGradient(128, 128, 60, 128, 128, 128);
-  grd.addColorStop(0, 'rgba(42,109,244,0)');
-  grd.addColorStop(0.82, 'rgba(42,109,244,0.16)');
-  grd.addColorStop(0.9, 'rgba(106,165,255,0.42)');
-  grd.addColorStop(1, 'rgba(42,109,244,0)');
-  g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
+  const C = 256, R = 236;
+  g.strokeStyle = 'rgba(106,165,255,0.55)';
+  g.lineWidth = 2;
+  g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = 1.5;
+  for (let i = 0; i < 72; i++) {
+    const a = i / 72 * Math.PI * 2, len = i % 6 ? 10 : 22;
+    g.beginPath();
+    g.moveTo(C + Math.cos(a) * R, C + Math.sin(a) * R);
+    g.lineTo(C + Math.cos(a) * (R - len), C + Math.sin(a) * (R - len));
+    g.stroke();
+  }
+  g.setLineDash([6, 6]);
+  g.beginPath(); g.arc(C, C, 200, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(106,165,255,0.35)';
+  g.lineWidth = 1.5;
+  g.setLineDash([32, 8, 6, 8]);
+  g.beginPath(); g.moveTo(C - R, C); g.lineTo(C + R, C); g.moveTo(C, C - R); g.lineTo(C, C + R); g.stroke();
   const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = Math.min(8, maxAnisotropy); // seen at a low angle: keep the thin lines from smearing
   const m = new THREE.Mesh(new THREE.PlaneGeometry(1.75, 1.75), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   m.rotation.x = -Math.PI / 2;
   m.position.y = 0.001;
@@ -136,7 +151,7 @@ async function warmUp(renderer, scene, camera, idle) {
 // One entry per tab. Every field is numeric so views can be blended.
 //   az/el/dist: camera orbit (dist on desktop, md on phones); tx/ty/tz: look-at target
 //   elevator/cycle/intake/explode/xray/lift: mechanism pose; hot: price-tag opacity
-//   glow: floor ring; sway: idle camera sway (rad); spin: roller speed
+//   glow: datum ring opacity; sway: idle camera sway (rad); spin: roller speed
 //   cycle: amplitude of the slow elevator cycle (elevator travel = elevator .. elevator + 2 * cycle)
 const VIEWS = {
   build: { az: 0.85, el: 0.2, dist: 4.1, md: 4.6, tx: 0, ty: 0.68, tz: 0, elevator: 0.15, cycle: 0.16, intake: 1, explode: 0, xray: 0, lift: 0, hot: 0, glow: 0.45, sway: 0.25, spin: 1 },
@@ -149,6 +164,11 @@ const REF_ASPECT = { desktop: 1.05, mobile: 0.76 };
 const FOV = 30;
 const TWEEN_MS = 900;
 const GAP = 18, PAD = 8; // GAP = .hotspot__tag margin in main.css
+// Top and bottom insets for the price tags, so they clear the view's corner labels (cad.css). On phones the
+// bottom-left note can take two lines beside the "drag to rotate" hint, so the bottom inset is larger there.
+const PAD_T = { desktop: 44, mobile: 40 }, PAD_B = { desktop: 44, mobile: 48 };
+// The one-shot assembly intro: how far apart the parts start (in `explode` units) and how long they take.
+const INTRO_EXPLODE = 0.35, INTRO_MS = 1100;
 
 // Where the sponsor panel is and how big it is, if the model exposes it.
 function panelInfo(robot) {
@@ -171,6 +191,9 @@ export async function initShowcase(opts) {
   const mobile = () => isMobileLayout();
   // Spread the set-up over idle slices of the main thread, so scrolling nearby stays smooth.
   const idle = () => new Promise((res) => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 300 }) : setTimeout(res, 16)));
+  // Each finished build stage is reported (opts.onStage: the page's "regenerating" status line).
+  const stage = (id) => opts.onStage?.(id);
+  const step = (id) => { if (id) stage(id); return idle(); };
   const { renderer, scene } = makeRenderer(canvas, mobile() ? 1.5 : 2);
   const camera = new THREE.PerspectiveCamera(FOV, 1, 0.05, 50);
   await idle();
@@ -180,18 +203,20 @@ export async function initShowcase(opts) {
     try {
       robot = await loadCustomRobot(modelUrl);
       pose = (st) => robot.pose(st);
+      stage('model');
     } catch (e) {
       console.warn('Custom robot model failed to load, using the built-in one.', e);
     }
   }
   if (!robot) {
-    robot = await buildRobotAsync({ sponsors, detail: mobile() ? 'low' : 'high', maxAnisotropy: renderer.capabilities.getMaxAnisotropy() }, idle);
+    robot = await buildRobotAsync({ sponsors, detail: mobile() ? 'low' : 'high', maxAnisotropy: renderer.capabilities.getMaxAnisotropy() }, step);
     pose = (st, dt) => poseRobot(robot, st, dt);
+    stage('intake'); // the last sub-assembly, built after the final pause
   }
   scene.add(robot.root);
   const shadow = contactShadow();
-  const glow = floorGlow();
-  scene.add(shadow, glow);
+  const ring = datumRing(renderer.capabilities.getMaxAnisotropy());
+  scene.add(shadow, ring);
 
   // Frame the sponsor panel from the model itself when it says where the panel is:
   // about half the view height on desktop; on phones as large as fits, so the names stay legible.
@@ -212,6 +237,8 @@ export async function initShowcase(opts) {
   }
 
   // Price-tag DOM. A tag click scrolls the page away, so rendering pauses briefly to keep that scroll smooth.
+  // Each tag carries its bill-of-materials balloon (`ref`: an item number, or a sheet like "07.2") and a
+  // leader from the part's dot to the tag's near edge.
   let holdUntil = 0;
   // Labels are { en, zh }; the page language is 'en' or 'zh-Hant'.
   const langKey = (l) => (/^zh/i.test(l || '') ? 'zh' : 'en');
@@ -219,14 +246,17 @@ export async function initShowcase(opts) {
   const spots = (robot.custom ? [] : hotspots).map((h) => {
     const el = document.createElement('div');
     el.className = 'hotspot';
-    el.innerHTML = '<i class="hotspot__dot"></i><button class="hotspot__tag" type="button" tabindex="-1"><b></b><span></span></button>';
-    el.querySelector('button').addEventListener('click', () => { holdUntil = performance.now() + 1200; onHotspot(h); });
+    el.innerHTML = '<i class="hotspot__lead" aria-hidden="true"></i><i class="hotspot__dot"></i><button class="hotspot__tag" type="button" tabindex="-1"><span class="balloon" aria-hidden="true"></span><span class="hotspot__text"><b></b><span></span></span></button>';
+    // detail 0: activated from the keyboard, so the page may move focus along with the scroll
+    el.querySelector('button').addEventListener('click', (e) => { holdUntil = performance.now() + 1200; onHotspot(h, { keyboard: e.detail === 0 }); });
     hotspotLayer.appendChild(el);
-    return { h, el, anchor: robot.anchors[h.anchor], b: el.querySelector('b'), s: el.querySelector('span'), btn: el.querySelector('button') };
+    return { h, el, anchor: robot.anchors[h.anchor], b: el.querySelector('b'), s: el.querySelector('.hotspot__text > span'), ref: el.querySelector('.balloon'), ln: el.querySelector('.hotspot__lead'), btn: el.querySelector('button') };
   });
   const renderLabels = () => spots.forEach((sp) => {
     sp.b.textContent = sp.h.label[lang] ?? sp.h.label.en;
     sp.s.textContent = sp.h.tag[lang] ?? sp.h.tag.en;
+    sp.ref.textContent = sp.h.ref ?? '';
+    sp.ref.classList.toggle('balloon--sheet', typeof sp.h.ref !== 'number');
     sp.w = 0;
   });
   renderLabels();
@@ -270,6 +300,9 @@ export async function initShowcase(opts) {
   const v = new THREE.Vector3();
   const look = new THREE.Vector3();
   let name = '';
+  // Assembly intro: 0 = not started, -1 = played or skipped, otherwise its start time.
+  let intro = reducedMotion ? -1 : 0;
+  let camAz = null, camEl = null; // the last angles reported to opts.onCamera
 
   function frame(now) {
     raf = requestAnimationFrame(frame);
@@ -294,6 +327,16 @@ export async function initShowcase(opts) {
       }
     }
 
+    // The one-shot assembly intro (the "regenerated" payoff): on the first rendered frame of the build
+    // view the parts start a little apart and converge (quart-out). Skipped in any other first view.
+    if (intro === 0) intro = to === views.build ? now : -1;
+    let explode = cur.explode;
+    if (intro > 0) {
+      const a = Math.min(1, (now - intro) / INTRO_MS);
+      explode += (1 - a) ** 4 * INTRO_EXPLODE;
+      if (a >= 1) intro = -1;
+    }
+
     // Pose first: the camera target follows the robot's lift in the exploded view.
     const drive = clamp(cur.xray / 0.6); // the drivetrain animates while the bumpers are see-through
     const still = reducedMotion;
@@ -301,7 +344,7 @@ export async function initShowcase(opts) {
       yaw: 0,
       xray: cur.xray,
       lift: cur.lift,
-      explode: cur.explode,
+      explode,
       elevator: cur.elevator + (still ? 0 : cur.cycle * (1 - Math.cos(time * 1.05))),
       intake: cur.intake,
       steer: still ? 0 : drive * Math.sin(time * 0.9) * 0.9,
@@ -310,8 +353,8 @@ export async function initShowcase(opts) {
       eeSpeed: still ? 0 : cur.spin * 2,
       ball: 0,
     }, dt);
-    shadow.material.opacity = 1 - cur.explode * 0.6;
-    glow.material.opacity = cur.glow;
+    shadow.material.opacity = 1 - explode * 0.6;
+    ring.material.opacity = cur.glow;
 
     const m = mobile();
     const aspect = W / H;
@@ -329,10 +372,14 @@ export async function initShowcase(opts) {
     );
     camera.lookAt(look);
     camera.updateMatrixWorld(); // tags below project with this frame's camera, not last frame's
+    // The view's AZ / EL readout, in whole degrees; reported only when one of them changes.
+    const azDeg = Math.round(((az * 180 / Math.PI) % 360 + 360) % 360) % 360, elDeg = Math.round(el * 180 / Math.PI);
+    if (azDeg !== camAz || elDeg !== camEl) { camAz = azDeg; camEl = elDeg; opts.onCamera?.(azDeg, elDeg); }
 
     // price tags: place each next to its anchor, then push apart any that overlap
     if (spots.length) robot.root.updateMatrixWorld();
     const shown = [];
+    const padT = m ? PAD_T.mobile : PAD_T.desktop, padB = m ? PAD_B.mobile : PAD_B.desktop;
     spots.forEach((sp, j) => {
       const vis = m && sp.h.desktopOnly ? 0 : cur.hot;
       if (vis < 0.02 || !sp.anchor) {
@@ -350,8 +397,8 @@ export async function initShowcase(opts) {
       if (!fitsLeft && !fitsRight) left = x > W / 2;
       const shift = left ? Math.max(0, PAD - (x - GAP - sp.w)) : Math.min(0, (W - PAD) - (x + GAP + sp.w));
       const x0 = (left ? x - GAP - sp.w : x + GAP) + shift;
-      // keep the tag inside the view vertically too
-      const cy = clamp(y, PAD + sp.th / 2, H - PAD - sp.th / 2);
+      // keep the tag inside the view vertically too, clear of the corner labels
+      const cy = clamp(y, padT + sp.th / 2, H - padB - sp.th / 2);
       shown.push({ sp, j, vis, x, y, left, shift, x0, x1: x0 + sp.w, cy });
     });
     // Greedy de-overlap: walk the tags top to bottom and push each below any earlier tag (or another
@@ -373,7 +420,7 @@ export async function initShowcase(opts) {
     }
     for (let i = shown.length - 1; i >= 0; i--) {
       const t = shown[i];
-      t.cy = Math.min(t.cy, H - PAD - t.sp.th / 2);
+      t.cy = Math.min(t.cy, H - padB - t.sp.th / 2);
       for (let k = i + 1; k < shown.length; k++) {
         const o = shown[k];
         if (t.x0 < o.x1 + 6 && o.x0 < t.x1 + 6) t.cy = Math.min(t.cy, o.cy - (o.sp.th + t.sp.th) / 2 - 6);
@@ -383,12 +430,18 @@ export async function initShowcase(opts) {
       const dy = cy - y;
       // Touch the DOM only when something changed.
       const tf = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(${left ? '-100%' : '0'}, -50%)`;
-      const nudge = shift || Math.abs(dy) > 0.5 ? `${shift.toFixed(1)}px ${dy.toFixed(1)}px` : '';
+      const nudged = shift || Math.abs(dy) > 0.5;
+      const nudge = nudged ? `${shift.toFixed(1)}px ${dy.toFixed(1)}px` : '';
+      // Leader from the dot to the middle of the tag's near edge, wherever the nudge put the tag. It is a
+      // 1px line scaled to length from the dot end (the right end for a tag on the left, so mirrored).
+      const lx = left ? GAP - +shift.toFixed(1) : GAP + +shift.toFixed(1), ly = nudged ? +dy.toFixed(1) : 0;
+      const lead = `rotate(${Math.atan2(left ? -ly : ly, lx).toFixed(4)}rad) scaleX(${Math.hypot(lx, ly).toFixed(1)})`;
       const op = smooth(0.4 + j * 0.06, 0.8 + j * 0.04, vis).toFixed(2);
       const on = vis > 0.6;
       if (sp.left !== left) { sp.left = left; sp.el.classList.toggle('hotspot--left', left); }
       if (sp.tf !== tf) { sp.tf = tf; sp.el.style.transform = tf; }
       if (sp.nudge !== nudge) { sp.nudge = nudge; sp.btn.style.translate = nudge; }
+      if (sp.lead !== lead) { sp.lead = lead; sp.ln.style.transform = lead; }
       if (sp.op !== op) { sp.op = op; sp.el.style.opacity = op; }
       if (sp.on !== on) { sp.on = on; sp.el.classList.toggle('is-on', on); sp.btn.tabIndex = on ? 0 : -1; }
     });
@@ -406,9 +459,10 @@ export async function initShowcase(opts) {
   // Compile the shaders before the first visible frame: in parallel where the GPU driver supports it,
   // otherwise a few materials per idle slice (each render links only the programs it has not seen yet).
   await warmUp(renderer, scene, camera, idle);
+  if (!robot.custom) stage('shading');
   new IntersectionObserver((entries) => { inView = entries.at(-1).isIntersecting; sync(); }).observe(section);
   document.addEventListener('visibilitychange', sync);
-  requestAnimationFrame(() => canvas.classList.add('is-ready'));
+  requestAnimationFrame(() => { canvas.classList.add('is-ready'); stage('done'); });
 
   return {
     custom: !!robot.custom,

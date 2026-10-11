@@ -1,0 +1,300 @@
+/* =========================================================================
+   FRC 8806 — CAD layer ("Drawing Set 8806")
+   The page reads as the team's own engineering drawing set: drafting
+   tokens and linetypes, the hero crest as Detail A, the rail's drawing
+   list and title block (the footer's below 1440px), zone letters in the
+   drawing border, selection grips on actions, the budget bar's dimensions,
+   the bill of materials with its item balloons, and the robot viewport's
+   corners and leaders. Grey linework frames the page; blue and white stay
+   for facts and actions. Final states only: nothing here animates, and
+   whatever sits on static content is drawn without JavaScript. Decorative
+   geometry is aria-hidden and never takes pointer events.
+   ========================================================================= */
+
+:root {
+  --cad: var(--tick);          /* #6e7179, 3.80:1: dimension, extension and leader lines, arrowheads */
+  --cad-faint: var(--rule-3);  /* #5c5f67, decorative only: centre and construction lines, zone ticks, hidden lines (the goals, main.css) */
+  /* long-dash-dot centre line (16 · 4 · 3 · 4), horizontal; set `color` on the element */
+  --ln-center: repeating-linear-gradient(90deg, currentColor 0 16px, transparent 16px 20px, currentColor 20px 23px, transparent 23px 27px);
+  /* section hatch on "cut" surfaces (the 2026 stat panel, main.css): 1px lines at an 8px pitch, 135°, over --bg-2 */
+  --hatch-section: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 8px);
+  --zone: 320px;               /* zone height in the drawing border (Z in cad.js) */
+  --balloon: 22px;             /* item balloon diameter (the small variant is 18px) */
+}
+
+/* ------------------------------------------------------------------ hero: Detail A */
+
+/* The ring, its centre-line stubs and the leader to the callout, drawn over the crest disc
+   (the box and the disc are in main.css). The sketch circle is the plotter's construction
+   line: invisible at rest. */
+.hero__geo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.hero__geo * { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.geo-ring, .geo-cl { stroke: var(--cad-faint); }
+.geo-ring { stroke-dasharray: 16 4 3 4; } /* r = 60: about 14 whole periods, no visible seam */
+.geo-sketch { stroke: var(--accent-text); opacity: 0; }
+.geo-leader { stroke: var(--cad); }
+/* the column-wide horizontal centre line; .frame is the inline-size container, so 100cqi is the
+   column and the line can't overflow. The disc covers its middle; the crest row holds no text. */
+.hero__mark::before {
+  content: ""; position: absolute; z-index: 0; top: 50%; left: 50%;
+  width: calc(100cqi - 2 * var(--pad)); height: 1px;
+  translate: -50% 0; color: var(--rule-2); background: var(--ln-center); pointer-events: none;
+}
+/* starts where the leader's shoulder ends (x 150, y 128 in the 148 box) */
+.hero__callout {
+  position: absolute; left: calc(100% + 6px); top: calc(50% + 54px); translate: 0 -50%;
+  white-space: nowrap; pointer-events: none;
+  font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
+}
+@media (max-width: 760px) {
+  .hero__mark::before { display: none; }
+  .hero__callout { left: calc(100% + 4px); top: calc(50% + 42px); }
+}
+@media (max-width: 560px) { .hero__callout, .geo-leader { display: none; } }
+
+/* ------------------------------------------------------------------ zone letters */
+
+/* One letter per 320px band down each sheet, in the gutter beside the column rule (cad.js writes
+   the bands). Left gutter only while the rail holds the right one. */
+.sec > .zones { border-top: 0; } /* .sec > * + * would otherwise add a rule */
+.zones { position: absolute; inset: 0; pointer-events: none; display: none; }
+@media (min-width: 1100px) { .zones { display: block; } }
+.zones i { position: absolute; left: 0; right: 0; top: calc(var(--i) * var(--zone)); height: var(--zone); }
+.zones i::before, .zones i::after {
+  content: attr(data-l); position: absolute; top: 0; bottom: 0; width: min(var(--L), 44px);
+  display: grid; place-items: center;
+  font: 500 11px/1 var(--f-mono); color: var(--dim);
+}
+/* a 6px boundary tick off the column rule at the top of each band */
+.zones i::before { right: 100%; background: linear-gradient(var(--cad-faint), var(--cad-faint)) right top / 6px 1px no-repeat; }
+.zones i::after { left: 100%; background: linear-gradient(var(--cad-faint), var(--cad-faint)) left top / 6px 1px no-repeat; display: none; }
+.zones i:first-child::before, .zones i:first-child::after { background: none; } /* the "+" tick owns the section top */
+@media (min-width: 1100px) and (max-width: 1439px) { .zones i::after { display: grid; } }
+
+/* ------------------------------------------------------------------ title block */
+
+/* Drawing title block: the rail's (≥1440px, decorative cells) and the footer's (below 1440px, real
+   content; its placement is in main.css). Inner lines are 1px gaps over the rule colour, like .grid. */
+.tblock__cells {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule-2);
+}
+.tblock__cell { background: var(--bg); padding: 6px 10px; min-width: 0; }
+.tblock__cell--wide { grid-column: 1 / -1; }
+.tblock dt, .tblock__k { font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim); }
+.tblock dd {
+  margin-top: 2px; font: 700 12px/1.35 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+/* "Approved by: your brand?": the block's one live cell, a standing call to action. One row where it
+   fits; in a narrow rail the value drops under the label as a whole, like the cells above. */
+.tblock__approve {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 2px 8px;
+  min-height: 40px; padding: 6px 10px;
+  border: 1px solid var(--rule-2); border-top: 0; background: var(--bg);
+}
+.tblock__k { white-space: nowrap; }
+.tblock__v {
+  flex: 1 0 auto; display: inline-flex; justify-content: space-between; align-items: center; gap: 8px;
+  font: 700 12px/1.35 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent-text); white-space: nowrap;
+}
+.tblock__v svg { flex: none; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.tblock__approve:hover { background: var(--bg-2); }
+.tblock__approve:hover .tblock__v { color: var(--text); }
+.tblock__approve:focus-visible { outline-offset: -2px; }
+
+/* ------------------------------------------------------------------ right rail: drawing list + title block */
+
+@media (min-width: 1440px) {
+  /* right: 56px clears the 50px ruler and its tick labels */
+  .dlist, .tblock--rail { position: absolute; left: 16px; right: 56px; pointer-events: auto; }
+  .dlist { top: 20px; border: 1px solid var(--rule-2); background: var(--bg); }
+  .dlist__head {
+    display: flex; align-items: center; height: 30px; padding: 0 10px;
+    border-bottom: 1px solid var(--rule);
+    font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
+  }
+  .dlist a {
+    display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center;
+    min-height: 28px; padding: 5px 10px; /* rows may wrap to two lines */
+    font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
+  }
+  .dlist__n { font-variant-numeric: tabular-nums; }
+  /* sub-sheets 07.1–07.3 hang off 07 on a tree line (a background image, so the current row's fill keeps it) */
+  .dlist__sub a {
+    padding-left: 22px;
+    background-image: linear-gradient(var(--rule-2), var(--rule-2)); background-size: 1px 100%;
+    background-position: 14px 0; background-repeat: no-repeat;
+  }
+  /* sheets already read, hover, the current sheet's parent, the current sheet */
+  .dlist a.is-before { color: var(--muted); }
+  .dlist a:hover { color: #c4c6cc; }
+  .dlist a.is-parent { color: var(--text); }
+  .dlist a[aria-current="true"] { color: var(--text); background-color: var(--bg-2); }
+  .dlist a:focus-visible { outline-offset: -2px; }
+  /* the current-row bar: moved by transform only (initRail caches the row geometry) */
+  .dlist__bar {
+    position: absolute; left: -1px; top: 0; width: 2px; height: 28px;
+    background: var(--accent); transform-origin: top; pointer-events: none;
+  }
+  .no-js .dlist__bar { display: none; }
+  .tblock--rail { bottom: 20px; }
+}
+/* short screens: only the approve row stays */
+@media (min-width: 1440px) and (max-height: 760px) {
+  .tblock--rail .tblock__cells { display: none; }
+  .tblock--rail .tblock__approve { border-top: 1px solid var(--rule-2); }
+}
+
+/* ------------------------------------------------------------------ selection grips */
+
+/* A selected CAD entity: four 5px grips on the corners of a box 4px outside the control, flush with
+   the outer corners of the 2px focus ring. On hover where there is hover, and on keyboard focus. */
+:is(.btn, .hotspot__tag) { position: relative; }
+:is(.btn, .hotspot__tag)::before {
+  content: ""; position: absolute; inset: -5px; /* both controls have a 1px border: -4px from their edge */
+  pointer-events: none; opacity: 0;
+  --g: linear-gradient(var(--accent-text), var(--accent-text));
+  background: var(--g) 0 0 / 5px 5px no-repeat, var(--g) 100% 0 / 5px 5px no-repeat,
+              var(--g) 0 100% / 5px 5px no-repeat, var(--g) 100% 100% / 5px 5px no-repeat;
+}
+@media (hover: hover) { :is(.btn, .hotspot__tag):hover::before { opacity: 1; } }
+:is(.btn, .hotspot__tag):focus-visible::before { opacity: 1; }
+.btn:disabled::before { display: none; }
+
+/* ------------------------------------------------------------------ budget dimensions */
+
+/* The full-season bar is a dimensioned part (renderStack in main.js; every value comes from BUDGET):
+   the season total is its overall dimension and a chain dimension measures each group under it. One
+   dimension style for the whole site: 1px --cad lines, closed 8×6px arrowheads whose tips touch the
+   extension lines, extension lines 3px off the object and running 6px past the dimension line. Labels
+   are mono --dim, values --text; the lines and arrowheads are aria-hidden. */
+.dim { color: var(--cad); }
+.dim__ln { display: block; height: 1px; background: currentColor; }
+.dim__ln--l::before, .dim__ln--r::after, .dim--chain .dim__ln::before, .dim--chain .dim__ln::after {
+  content: ""; position: absolute; top: -2.5px; width: 0; height: 0; border-style: solid; /* centred on the 1px line */
+}
+.dim__ln--l::before, .dim--chain .dim__ln::before { left: 0; border-width: 3px 8px 3px 0; border-color: transparent currentColor transparent transparent; }
+.dim__ln--r::after, .dim--chain .dim__ln::after { right: 0; border-width: 3px 0 3px 8px; border-color: transparent transparent transparent currentColor; }
+.dim__lbl { font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim); }
+.dim__val { font: 700 12px/1.3 var(--f-mono); color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* Overall: the total sits in a break of the dimension line (14px clear each side), its label above.
+   The extension lines rise from 3px above the bar to 6px past the line. */
+.dim--total { position: relative; display: flex; align-items: center; margin: 40px 0 14px; }
+.dim--total::before, .dim--total::after { content: ""; position: absolute; top: calc(50% - 6px); bottom: -11px; width: 1px; background: currentColor; }
+.dim--total::before { left: 0; }
+.dim--total::after { right: 0; }
+.dim--total .dim__ln { position: relative; flex: 1 1 24px; }
+.dim__txt { position: relative; display: flex; padding: 0 14px; white-space: nowrap; } /* flex: no stray space before the value */
+.dim--total .dim__lbl { position: absolute; left: 50%; bottom: 100%; translate: -50% -6px; font-size: 11.5px; }
+/* phones scale it down (10vw), so each half-line keeps at least 24px down to a 320px screen */
+.dim--total .dim__val { font: 800 clamp(min(40px, 10vw), 4.4vw, 60px)/1 var(--f-display); font-stretch: 112%; letter-spacing: -0.035em; }
+html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
+
+/* Chain: one span per group, flex-based like the bar's segments (same 2px gap), so each boundary
+   lands on the bar's. Adjacent spans share one extension line: the first span draws both of its
+   own, each later one only its right one, with its dimension line reaching back across the gap. */
+.dim-chain { display: flex; gap: 2px; margin-top: 3px; }
+.dim--chain { position: relative; min-width: 0; padding-top: 24px; text-align: center; }
+.dim--chain:first-child::before, .dim--chain::after { content: ""; position: absolute; top: 0; height: 18px; width: 1px; background: currentColor; }
+.dim--chain:first-child::before { left: 0; }
+.dim--chain::after { right: 0; }
+.dim--chain .dim__ln { position: absolute; top: 12px; left: 0; right: 0; }
+.dim--chain + .dim--chain .dim__ln { left: -2px; }
+.dim--chain .dim__lbl, .dim--chain .dim__val { display: block; }
+.dim--chain .dim__val { margin-top: 2px; }
+
+/* the chain on tablets and up, the legend (main.css) on phones: one of them is ever rendered */
+@media (min-width: 641px) { .stack__legend { display: none; } }
+@media (max-width: 640px) { .dim-chain { display: none; } }
+
+/* ------------------------------------------------------------------ BOM: item balloons + bill of materials */
+
+/* Item balloon: the pledge item number in a circle (balloon() in cad.js; ITEM in main.js). The same
+   number marks the part in the list, in the cart and on its 3D price tag. A picked part's balloon
+   turns blue. The sheet-reference box points at a budget sheet ("07.2") instead of an item. */
+.balloon {
+  flex: none; display: inline-grid; place-items: center;
+  width: var(--balloon); height: var(--balloon);
+  border: 1px solid var(--muted); border-radius: 50%; background: var(--bg); color: var(--text);
+  font: 700 11px/1 var(--f-mono); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums;
+}
+.balloon--sm { width: 18px; height: 18px; margin-right: 6px; }
+.balloon--sheet { width: auto; height: 18px; padding: 0 5px; border-radius: 0; }
+.part.is-picked .balloon { border-color: var(--accent); color: var(--accent-text); }
+
+/* In the list the balloon hangs off the icon box's top-left corner on a 6px 45° leader whose end
+   touches the corner (centre 17px out along the diagonal: 11px radius + 6px). Phones have an 18px
+   gutter, too narrow for balloon + leader, so there the balloon sits on the corner instead. */
+.part__icon .balloon { position: absolute; z-index: 1; top: -24px; left: -24px; }
+.part__icon .balloon::after {
+  content: ""; position: absolute; left: 50%; top: calc(50% - 0.5px); width: 6px; height: 1px;
+  background: var(--cad); transform-origin: 0 50%; transform: rotate(45deg) translateX(11px);
+}
+@media (max-width: 760px) {
+  .part__icon .balloon { top: -15px; left: -15px; }
+  .part__icon .balloon::after { display: none; }
+}
+@media (max-width: 560px) { .part__icon .balloon { width: 18px; height: 18px; top: -12px; left: -12px; } }
+
+/* Column header and column rules: the rows share the header's columns (56px item · part · price),
+   and the rules run down the middle of the two gaps, through the header and every row. Rows touch,
+   so the rules read as continuous lines. The list is rendered by JavaScript, so no-JS drops the head. */
+.bom { min-width: 0; }
+.bom__head { display: none; }
+@media (min-width: 561px) {
+  .bom__head {
+    position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) var(--buy-w); gap: 20px;
+    padding: 10px var(--pad); border-bottom: 1px solid var(--rule); /* the grid's own top rule is the head's */
+    font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
+  }
+  .bom__head > :last-child { text-align: right; }
+  .bom__head::before, .bom__head::after, .part::before, .part::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--rule); pointer-events: none;
+  }
+  .bom__head::before, .part::before { left: calc(var(--pad) + 66px); }
+  .bom__head::after, .part::after { right: calc(var(--pad) + var(--buy-w) + 10px); }
+}
+.no-js .bom__head { display: none; }
+
+/* the cart's total rule: a drawing-style double line under the lines, above the actions */
+.cart__lines:not(:empty) { border-bottom: 3px double var(--rule-2); padding-bottom: 4px; }
+
+/* ------------------------------------------------------------------ robot viewport */
+
+/* The 3D view as a CAD viewport. Corners (main.css places the top-left one): top right, the drawing
+   view of the current tab over the "illustrative model · not to scale" note; bottom left, the status
+   line (initShowcase in main.js): the regenerate progress while the model builds, then the camera's
+   azimuth / elevation (phones: the note). All aria-hidden; no-WebGL and no-JS hide every corner. */
+.showcase__corner--tr {
+  right: 16px; top: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; text-align: right;
+}
+.showcase__corner--tr b, .vs-readout b { color: var(--muted); font-weight: 700; }
+/* clear of the "drag to rotate" hint in the other bottom corner */
+.showcase__corner--bl { left: 16px; bottom: 16px; max-width: calc(100% - 180px); }
+.showcase__corner--bl > * { display: none; }
+#view-status:is([data-state="working"], [data-state="done"]) .vs-regen { display: grid; }
+.vs-regen { grid-template-columns: 7px auto; align-items: center; gap: 6px 8px; }
+.vs-sq { width: 7px; height: 7px; border: 1px solid var(--accent); }
+#view-status[data-state="done"] .vs-sq { background: var(--accent); }
+/* progress: a 2px × 120px track; the fill is scaled to the share of stages done (--p, one write each) */
+.vs-bar { grid-column: 2; position: relative; width: 120px; height: 2px; background: var(--rule-2); }
+.vs-bar::after { content: ""; position: absolute; inset: 0; background: var(--accent); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.vs-readout b { display: inline-block; min-width: 3ch; font-variant-numeric: tabular-nums; }
+@media (min-width: 761px) { #view-status[data-state="rest"] .vs-readout { display: inline; } }
+@media (max-width: 760px) {
+  .showcase__corner--tr { display: none; }
+  #view-status[data-state="rest"] .vs-note { display: inline; }
+}
+/* a custom model in the price tab lists its tags in this corner (main.css) */
+.is-flat[data-view="price"] .showcase__corner--bl { display: none; }
+
+/* Price-tag leader: from the part's dot to the middle of the tag's near edge. A 1px line that scene.js
+   rotates and scales from the dot end (rotate(θ) scaleX(length)), so it follows a nudged tag. */
+.hotspot__lead {
+  position: absolute; top: calc(50% - 0.5px); left: 0; width: 1px; height: 1px;
+  background: var(--cad); transform-origin: 0 50%; pointer-events: none;
+}
+.hotspot--left .hotspot__lead { left: auto; right: 0; transform-origin: 100% 50%; }
+@media (max-width: 760px) { .hotspot__tag .balloon:not(.balloon--sheet) { width: 18px; height: 18px; } }
