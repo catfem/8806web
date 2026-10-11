@@ -1,0 +1,257 @@
+/* =========================================================================
+   FRC 8806 — motion ("the plotter") and smooth scrolling
+   Construction lines draw first, content places, annotations land last,
+   and then everything rests. One-shot: nothing re-hides on scroll-up.
+   Every hidden starting state hangs off html.mo (set by the head script
+   unless reduced motion is asked for) inside @media screen, so reduced
+   motion, print, no JavaScript and the 3 s backstop all paint the final
+   state. motion.js adds .is-in once per element. Never animated: the hero
+   headline, sub-copy and buttons, and money in any form. Only transform,
+   opacity and stroke-dashoffset move (plus short hover colour changes).
+   ========================================================================= */
+
+:root {
+  /* --ease (main.css) is every arrival, draw, pop and sweep; --ease-io only travels between two rests */
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-micro: 160ms;   /* hover and focus grips, press */
+  --t-state: 320ms;   /* pops, tick snaps, indicator slide, label swaps */
+  --t-reveal: 640ms;  /* content fade-up */
+  --t-draw: 800ms;    /* line, dimension and stroke draws, bar plots */
+  --t-long: 1200ms;   /* map arcs only */
+  --stagger: 60ms;    /* between the members of a batch or group, at most --stagger-n steps */
+  --stagger-n: 6;
+  --rise: 12px;       /* reveal translate */
+}
+@media (max-width: 760px) { :root { --stagger: 40ms; --stagger-n: 4; --rise: 8px; } }
+
+/* ------------------------------------------------------------------ smooth scrolling (Lenis) */
+
+/* The rules of the vendored lenis.css (which is not linked). CSS smooth scrolling would fight Lenis's
+   per-frame scrollTo, so html.lenis sets it back to auto. */
+html.lenis, html.lenis body { height: auto; }
+html.lenis { scroll-behavior: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent], .lenis [data-lenis-prevent-horizontal] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* a section that took focus at the end of a jump (goTo in motion.js): not a control, so no ring */
+[data-jump-focus]:focus { outline: none; }
+
+/* ------------------------------------------------------------------ reveal engine */
+
+/* Blocks fade and rise into place; a staggered group (data-stagger) stays put and its children place
+   one after another (--i). --d is the batch delay from the observer. */
+.mo [data-reveal], .mo [data-stagger] > * {
+  transition: opacity var(--t-reveal) var(--ease) var(--d, 0ms), transform var(--t-reveal) var(--ease) var(--d, 0ms);
+}
+.mo [data-stagger] > * { transition-delay: calc(var(--d, 0ms) + min(var(--i, 0), var(--stagger-n)) * var(--stagger)); }
+@media screen {
+  .mo [data-reveal=""]:not([data-stagger]):not(.is-in),
+  .mo [data-stagger]:not(.is-in) > * { opacity: 0; transform: translateY(var(--rise)); }
+  /* A bordered grid draws its inner lines with its own background (.grid, main.css). While its cells
+     are still hidden that background would show as a grey block, so the lines come in after them. */
+  .mo .grid:is([data-stagger]:not(.is-in), :has(> [data-reveal]:not(.is-in))) { background-color: transparent; }
+}
+.mo .grid:is([data-stagger], :not([data-reveal])) {
+  transition: background-color var(--t-reveal) var(--ease) calc(var(--d, 0ms) + 4 * var(--stagger));
+}
+
+/* Jump mode (html.is-jumping, for the length of an in-page jump): content is simply there on arrival.
+   Geometry still draws; it never hides a fact. */
+.is-jumping :is([data-reveal], [data-stagger] > *, .ln__i, .grid) { transition-duration: 0s !important; transition-delay: 0s !important; }
+
+/* Counters: the box is sized for the final value (motion.js sets --digits), tabular figures, so nothing
+   beside a number moves while it counts. */
+[data-count] { display: inline-block; min-width: calc(var(--digits, 1) * 1ch); font-variant-numeric: tabular-nums; text-align: left; }
+
+/* ------------------------------------------------------------------ headline line masks (the seven h2s) */
+
+/* Each authored line rises out of its own mask. The padding / negative margin pairs widen the mask
+   without moving anything, so descenders, the hook of a "j" and the Chinese 900 weight are never clipped
+   at rest. The headline is a flex column so those margins never collapse into each other: every line
+   sits exactly where the <br> put it. Lines wrap as they did before (the <br> headline was never
+   balanced). Never the hero h1. */
+[data-reveal="lines"] { display: flex; flex-direction: column; }
+.ln { display: block; overflow: hidden; padding: 0.08em 0.1em 0.18em; margin: -0.08em -0.1em -0.18em; text-wrap: wrap; }
+.ln__i { display: block; }
+.mo .ln__i { transition: transform var(--t-reveal) var(--ease) calc(var(--d, 0ms) + var(--l, 0) * 80ms); }
+/* 120%, not 110%: the mask reaches .18em below the line for descenders, and at line-height 1 a 110% drop
+   leaves the tips of tall letters showing there */
+@media screen { .mo [data-reveal="lines"]:not(.is-in) .ln__i { transform: translateY(120%); } }
+
+/* ------------------------------------------------------------------ boot: the frame draws itself */
+
+/* ≥761px, no hash, motion on: the head script sets html.is-boot for 1.6 s. Overlay lines sit exactly on
+   the nav rule and the two column rules (which are transparent meanwhile), so when it goes the real
+   rules are already there in the same pixels. The hero text never takes part. */
+.boot { display: none; }
+@media screen {
+  .is-boot .boot { display: block; position: fixed; inset: 0; z-index: 51; pointer-events: none; }
+  .boot i { position: absolute; background: var(--rule); }
+  .boot__n { left: 0; right: 0; top: calc(var(--nav-h) - 1px); height: 1px; animation: boot-x 450ms var(--ease) both; }
+  .boot__l, .boot__r { top: var(--nav-h); bottom: 0; width: 1px; transform-origin: top; animation: boot-y 600ms var(--ease) 60ms both; }
+  .boot__l { left: var(--L); }
+  .boot__r { right: var(--R); }
+  .is-boot .nav { border-bottom-color: transparent; }
+  .is-boot .frame { border-left-color: transparent; border-right-color: transparent; }
+  .is-boot .nav::before, .is-boot .nav::after { animation: tick-in 200ms var(--ease) 450ms both; }
+}
+@keyframes boot-x { from { transform: scaleX(0); } }
+@keyframes boot-y { from { transform: scaleY(0); } }
+@keyframes tick-in { from { opacity: 0; transform: scale(0.3) rotate(45deg); } }
+
+/* ------------------------------------------------------------------ hero: Detail A plots in */
+
+/* The blue sketch circle plots, then fades as the grey ring, stubs, leader and callout land; the
+   column-wide centre line grows from the middle. It runs from the first paint on every load, in step with
+   the boot (the draw observer's .is-in would only arrive once main.js has run), and the fill-mode keeps
+   each piece in its starting state until its turn. */
+@media screen {
+  .mo .hero__mark::before { animation: grow var(--t-draw) var(--ease) both; }
+  .mo .hero__mark .geo-sketch { stroke-dasharray: 1; animation: sketch 1100ms var(--ease) both; }
+  .mo .hero__mark .geo-ring { animation: fade-in var(--t-state) var(--ease) 600ms both; }
+  .mo .hero__mark .geo-cl { transform-box: fill-box; transform-origin: center; animation: stub-in var(--t-state) var(--ease) 600ms both; }
+  .mo .hero__mark .geo-leader { stroke-dasharray: 1; animation: draw-in 300ms var(--ease) 800ms both; }
+  .mo .hero__mark .hero__callout { animation: fade-in 240ms var(--ease) 900ms both; }
+}
+@keyframes sketch {
+  0% { stroke-dashoffset: 1; opacity: 1; }
+  70% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes grow { from { transform: scaleX(0); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes stub-in { from { opacity: 0; transform: scale(0.2); } }
+@keyframes draw-in { from { stroke-dashoffset: 1; } }
+
+/* ------------------------------------------------------------------ sheets: strip sweep, "+" ticks, zones */
+
+/* A blue line runs along each strip's bottom rule once and fades: the sheet header regenerating. */
+.strip { position: relative; }
+.strip::after { content: ""; display: none; }
+@media screen {
+  .mo .strip::after {
+    display: block; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+    background: var(--accent); transform: scaleX(0); transform-origin: left; pointer-events: none;
+  }
+  .mo .strip.is-in::after { animation: sweep 900ms var(--ease) both; }
+}
+@keyframes sweep {
+  0% { transform: scaleX(0); opacity: 1; }
+  65% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+/* "+" ticks snap onto the frame where a sheet starts */
+.mo :is(.sec, .gallery)::before, .mo :is(.sec, .gallery)::after {
+  transition: opacity var(--t-state) var(--ease), transform var(--t-state) var(--ease);
+}
+@media screen {
+  .mo :is(.sec, .gallery):not(.is-in)::before, .mo :is(.sec, .gallery):not(.is-in)::after { opacity: 0; transform: scale(0.3) rotate(45deg); }
+}
+
+/* zone letters (and their boundary ticks) come in down the border */
+.mo .zones i::before, .mo .zones i::after { transition: opacity var(--t-state) var(--ease) calc(min(var(--i, 0), 10) * 30ms); }
+@media screen { .mo .sec:not(.is-in) .zones i::before, .mo .sec:not(.is-in) .zones i::after { opacity: 0; } }
+
+/* ------------------------------------------------------------------ budget: dimensions + plot */
+
+/* Overall dimension: the extension lines rise from the bar, the half-lines grow outward from the
+   figure, the arrowheads land last. Chain: extension lines drop, each line grows from its centre, one
+   span after the other. No text is ever hidden. */
+.mo #budget-stack :is(.dim--total, .dim--chain)::before, .mo #budget-stack :is(.dim--total, .dim--chain)::after {
+  transition: transform 200ms var(--ease) calc(var(--k, 0) * 120ms);
+}
+.mo #budget-stack .dim--total::before, .mo #budget-stack .dim--total::after { transform-origin: bottom; }
+.mo #budget-stack .dim--chain::before, .mo #budget-stack .dim--chain::after { transform-origin: top; }
+.mo #budget-stack .dim__ln { transition: transform 600ms var(--ease) calc(150ms + var(--k, 0) * 120ms); }
+.mo #budget-stack .dim__ln--l { transform-origin: right; }
+.mo #budget-stack .dim__ln--r { transform-origin: left; }
+.mo #budget-stack .dim__ln::before, .mo #budget-stack .dim__ln::after { transition: opacity 240ms var(--ease) calc(600ms + var(--k, 0) * 120ms); }
+
+/* The bars plot under a cover that slides off them (a cover, not a scale, so the travel hatch is never
+   distorted). The scope toggle replots the line items quickly (.is-replot); a language switch doesn't. */
+.mo :is(.stack__seg, .bar__fill) { position: relative; overflow: hidden; }
+.mo :is(.stack__seg, .bar__fill)::after {
+  content: ""; position: absolute; inset: 0; background: var(--bg); pointer-events: none;
+  transform: translateX(101%);
+}
+.mo .bar__fill::after { background: var(--bg-2); transition: transform 700ms var(--ease) calc(120ms + min(var(--k, 0), 8) * 45ms); }
+.mo .stack__seg::after { transition: transform 700ms var(--ease) calc(var(--k, 0) * 120ms); }
+.mo #bars.is-replot .bar__fill::after { transition-duration: 360ms; transition-delay: calc(min(var(--k, 0), 8) * 30ms); }
+@media screen {
+  .mo #budget-stack:not(.is-in) :is(.dim--total, .dim--chain)::before,
+  .mo #budget-stack:not(.is-in) :is(.dim--total, .dim--chain)::after { transform: scaleY(0); }
+  .mo #budget-stack:not(.is-in) .dim__ln { transform: scaleX(0); }
+  .mo #budget-stack:not(.is-in) .dim__ln::before, .mo #budget-stack:not(.is-in) .dim__ln::after { opacity: 0; }
+  .mo #budget-stack:not(.is-in) .stack__seg::after, .mo #bars:not(.is-in) .bar__fill::after { transform: none; }
+}
+
+/* ------------------------------------------------------------------ bill of materials */
+
+/* the item balloons pop onto their leaders down the list; a flashed part's balloon pings */
+.mo .part__icon .balloon { transition: opacity var(--t-state) var(--ease), transform var(--t-state) var(--ease); transition-delay: calc(min(var(--k, 0), 6) * 50ms); }
+@media screen { .mo #parts:not(.is-in) .part__icon .balloon { opacity: 0; transform: scale(0.6); } }
+.mo .part.is-flash .balloon { animation: ping 600ms var(--ease); }
+@keyframes ping { 40% { transform: scale(1.25); border-color: var(--accent); } }
+
+/* stepper press, and the totals tick (renderCart in main.js) */
+.mo .stepper button { transition: background-color .2s, color .2s, transform 80ms var(--ease); }
+.mo .stepper button:active:not(:disabled) { transform: scale(0.94); }
+
+/* ------------------------------------------------------------------ rail, nav, grips */
+
+/* The current-row bar slides between rows (after its first placement, so it never slides in on load);
+   reduced motion jumps. Row colours fade like any hover. */
+.mo .dlist__bar.is-placed { transition: transform var(--t-state) var(--ease-io); }
+.dlist a { transition: color var(--t-micro), background-color var(--t-micro); }
+
+/* nav: the current section's link is underlined from the left */
+.nav__links a { position: relative; }
+.nav__links a::after {
+  content: ""; position: absolute; left: 15px; right: 15px; bottom: -1px; height: 2px;
+  background: var(--accent); transform: scaleX(0); transform-origin: left; pointer-events: none;
+}
+.nav__links a[aria-current="true"]::after { transform: none; }
+.mo .nav__links a::after { transition: transform var(--t-state) var(--ease); }
+
+/* selection grips (cad.css) snap in from slightly outside; with reduced motion they only fade */
+:is(.btn, .hotspot__tag)::before { transition: opacity var(--t-micro) var(--ease); }
+.mo :is(.btn, .hotspot__tag)::before { transform: scale(1.06); transition: opacity var(--t-micro) var(--ease), transform var(--t-micro) var(--ease); }
+@media (hover: hover) { .mo :is(.btn, .hotspot__tag):hover::before { transform: none; } }
+.mo :is(.btn, .hotspot__tag):focus-visible::before { transform: none; }
+
+/* ------------------------------------------------------------------ ambient: map, season clock, photo strip */
+
+/* Map flight plan: the arcs fly out nearest-first (--k, renderMap), the pins land, then the labels;
+   each halo pulses three times and rests as a static disc. */
+.map__arc { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.mo .map__arc { transition: stroke-dashoffset var(--t-long) var(--ease) calc(var(--k, 0) * 140ms); }
+.mo .map__pin:not(.map__pin--home) { transform-box: fill-box; transform-origin: center; transition: transform 240ms var(--ease) calc(var(--k, 0) * 140ms + 1000ms); }
+.mo .map__label:not(.map__label--home) { transition: opacity var(--t-state) var(--ease) calc(var(--k, 0) * 140ms + 1100ms); }
+.mo .map.is-flown .map__halo { animation: halo 2.4s var(--ease) calc(var(--k, 0) * 140ms + 1100ms) 3 backwards; }
+@keyframes halo { from { transform: scale(0.6); opacity: 0.45; } to { transform: scale(2.6); opacity: 0; } }
+@media screen {
+  .mo .map:not(.is-flown) .map__arc { stroke-dashoffset: 1; }
+  .mo .map:not(.is-flown) .map__pin:not(.map__pin--home) { transform: scale(0); }
+  .mo .map:not(.is-flown) .map__label:not(.map__label--home) { opacity: 0; }
+}
+
+/* season clock: the "right now" square blinks three times, then stays on */
+.mo .now__pulse { animation: blink 1.6s steps(2, jump-none) 3; }
+@keyframes blink { 50% { opacity: 0.25; } }
+
+/* Photo strip: the only endless motion, so it has a Pause / Play button (initMarquee in main.js; it is
+   hidden until wired up, and with reduced motion the strip is a manual scroller instead). It also rests
+   while hovered and while off screen. */
+.gallery__toggle {
+  position: absolute; right: var(--pad); bottom: 22px; z-index: 2;
+  min-width: 32px; height: 32px; padding: 0 10px;
+  border: 1px solid var(--rule-3); border-radius: 0; background: var(--bg); color: var(--text); cursor: pointer;
+  font: 700 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase;
+  transition: border-color var(--t-micro);
+}
+.gallery__toggle:hover { border-color: #fff; }
+@media (max-width: 760px) { .gallery__toggle { bottom: 18px; } }
+@media (prefers-reduced-motion: reduce) { .gallery__toggle { display: none; } }
+.marquee.is-paused .marquee__track, .gallery.is-off .marquee__track { animation-play-state: paused; }

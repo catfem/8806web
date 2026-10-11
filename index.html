@@ -24,12 +24,23 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,700..900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&amp;display=swap"></noscript>
   <link rel="stylesheet" href="assets/css/main.css">
   <link rel="stylesheet" href="assets/css/cad.css">
+  <link rel="stylesheet" href="assets/css/motion.css">
 
   <script>
     // Pick the language before first paint to avoid a flash of the wrong one.
     (function () {
       var d = document.documentElement, l;
-      d.className = d.className.replace('no-js', 'js');
+      // Motion on (.mo) unless reduced motion is asked for: every hidden starting state in motion.css
+      // hangs off it. Backstop: if motion.js hasn't started its observers within 3 s (a failed or slow
+      // main.js), .mo goes and everything shows. The frame draws itself on a fresh desktop load (is-boot).
+      var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      d.className = d.className.replace('no-js', 'js') + (rm ? '' : ' mo');
+      if (!rm) {
+        setTimeout(function () { if (!window.__motionReady) d.classList.remove('mo'); }, 3000);
+        if (!location.hash && matchMedia('(min-width: 761px)').matches) {
+          d.classList.add('is-boot'); setTimeout(function () { d.classList.remove('is-boot'); }, 1600);
+        }
+      }
       var q = /[?&]lang=(zh|en)/i.exec(location.search);
       if (q) l = q[1].toLowerCase() === 'zh' ? 'zh-Hant' : 'en';
       if (!l) try { l = localStorage.getItem('lang'); } catch (e) {}
@@ -48,7 +59,7 @@
     })();
   </script>
   <script type="importmap">
-    { "imports": { "three": "./assets/vendor/three/three.module.min.js", "three/addons/": "./assets/vendor/three/addons/" } }
+    { "imports": { "three": "./assets/vendor/three/three.module.min.js", "three/addons/": "./assets/vendor/three/addons/", "lenis": "./assets/vendor/lenis/lenis.mjs" } }
   </script>
   <script type="module" src="assets/js/main.js"></script>
 
@@ -66,6 +77,8 @@
   </script>
 </head>
 <body>
+  <!-- Boot: the nav rule and the column rules draw themselves on a fresh desktop load (motion.css) -->
+  <div class="boot" aria-hidden="true"><i class="boot__n"></i><i class="boot__l"></i><i class="boot__r"></i></div>
   <a class="skip" href="#main" data-zh="跳至主要內容">Skip to content</a>
 
   <!-- ============================== NAV ============================== -->
@@ -96,7 +109,7 @@
   </header>
 
   <!-- Phone / tablet menu (the right rail does this job on wide screens) -->
-  <nav class="menu" id="menu" aria-label="Sections" data-zh-aria="頁面區塊" hidden>
+  <nav class="menu" id="menu" aria-label="Sections" data-zh-aria="頁面區塊" data-lenis-prevent hidden>
     <ol>
       <li><a href="#top"><span class="menu__n">01</span><span data-zh="總覽">Overview</span></a></li>
       <li><a href="#results"><span class="menu__n">02</span><span data-zh="戰績">Results</span></a></li>
@@ -196,7 +209,7 @@
       </div>
       <div class="sec__head sec__head--media">
         <div>
-          <h2 class="h2" id="results-title" data-reveal data-zh="從新秀，<br>到國際舞台。">From rookies<br>to the international stage.</h2>
+          <h2 class="h2" id="results-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="從新秀，">From rookies</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="到國際舞台。">to the international stage.</span></span></h2>
           <p class="lead" data-reveal data-zh="2021 年成軍，2022 年首次參賽便奪下<strong>聯盟冠軍</strong>；此後每一季，我們把 8806 帶到更遠的地方 — <i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i>。">Founded in 2021, we won the <strong>Regional</strong> in our very first season in 2022 — and every season since, we've taken 8806 further afield: <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i>.</p>
         </div>
         <figure class="photo results__photo" data-reveal>
@@ -204,7 +217,7 @@
           <figcaption class="caption"><span class="sq" aria-hidden="true"></span><span data-zh="2025 新北市區域賽 · 榮譽意象獎">2025 New Taipei City Regional · Imagery Award</span></figcaption>
         </figure>
       </div>
-      <div class="seasons" id="season-cards" data-reveal></div>
+      <div class="seasons" id="season-cards" data-reveal data-stagger data-lenis-prevent-horizontal></div>
       <div class="pad results__end">
         <div class="goals" id="goals" data-reveal></div>
         <div class="results__foot" data-reveal>
@@ -229,6 +242,8 @@
           <img src="assets/img/g-team-pit.webp" alt="Team 8806 with their robot" data-zh-alt="第 8806 隊與機器人合照" width="800" height="533" loading="lazy">
         </div>
       </div>
+      <!-- the strip is the page's one endless motion: Pause / Play (initMarquee shows it when it can work) -->
+      <button class="gallery__toggle" id="marquee-toggle" type="button" aria-label="Pause the photo strip" data-zh-aria="暫停照片輪播" hidden><span data-zh="暫停">Pause</span></button>
     </section>
 
     <!-- ============================== 03. WHY PARTNER ============================== -->
@@ -238,10 +253,10 @@
         <p class="strip__meta" data-zh="為什麼選擇 8806 · 4 個理由 · 6 項回饋">Why partner with 8806 · 4 reasons · 6 benefits</p>
       </div>
       <div class="sec__head">
-        <h2 class="h2" id="partner-title" data-reveal data-zh="成就學生，<br>也成就<em class='accent'>你的品牌</em>。">Good for students.<br>Good for <em class="accent">your brand</em>.</h2>
+        <h2 class="h2" id="partner-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="成就學生，">Good for students.</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="也成就<em class='accent'>你的品牌</em>。">Good for <em class="accent">your brand</em>.</span></span></h2>
       </div>
 
-      <ol class="grid grid--4 reasons" data-reveal>
+      <ol class="grid grid--4 reasons" data-reveal data-stagger>
         <li class="cell reason">
           <span class="cell__n">01</span>
           <b class="h4" data-zh="實績證明">Proven</b>
@@ -315,11 +330,11 @@
         <p class="strip__meta" data-zh="<i class='js-n-outreach'>12</i> 場推廣活動 · <i class='js-n-exchanges'>16</i> 次跨隊交流"><i class="js-n-outreach">12</i> outreach events · <i class="js-n-exchanges">16</i> team exchanges</p>
       </div>
       <div class="sec__head">
-        <h2 class="h2" id="impact-title" data-reveal data-zh="機器人之外，<br>才是重點。">The robot is<br>just the start.</h2>
+        <h2 class="h2" id="impact-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="機器人之外，">The robot is</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="才是重點。">just the start.</span></span></h2>
         <p class="lead" data-reveal data-zh="我們把 FRC 帶進國小教室、廣播電台與電視，甚至主辦全國季後賽 — 讓更多孩子相信自己也能成為工程師。">We bring FRC into elementary classrooms, onto radio and TV, and even host a national off-season event — so more kids believe they can become engineers.</p>
       </div>
 
-      <dl class="grid grid--4 kpis" data-reveal>
+      <dl class="grid grid--4 kpis" data-reveal data-stagger>
         <div class="cell"><dt><span data-count="12" class="js-outreach-count">12</span></dt><dd data-zh="場 STEAM 推廣活動">STEAM outreach events</dd></div>
         <div class="cell"><dt><span data-count="16" id="kpi-exchanges">16</span></dt><dd data-zh="次跨隊交流">team exchanges</dd></div>
         <div class="cell"><dt><span data-count="12">12</span><em>+</em></dt><dd data-zh="支海內外交流隊伍">teams exchanged with</dd></div>
@@ -378,7 +393,7 @@
         <p class="strip__meta" data-zh="45 位學生 · 3 個組別">45 students · 3 subteams</p>
       </div>
       <div class="sec__head">
-        <h2 class="h2" id="team-title" data-reveal data-zh="一支隊伍，<br>三種超能力。">One team.<br>Three superpowers.</h2>
+        <h2 class="h2" id="team-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="一支隊伍，">One team.</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="三種超能力。">Three superpowers.</span></span></h2>
         <p class="lead" data-reveal data-zh="OLPDL 像一間由學生經營的小型工程公司，也用同樣的標準要求自己：平日放學後練到晚上九點、每週三晚上有 APCS 程式課，假日還有<span class='nowrap'>訓練與階段任務</span>。">OLPDL runs like a small, student-led engineering company — and trains like one: every weekday after school until 9 pm, an APCS programming course every Wednesday night, plus weekend training and milestone tasks.</p>
       </div>
 
@@ -455,7 +470,7 @@
         <div class="showcase__side">
           <div class="showcase__head">
             <p class="label" data-reveal data-zh="我們的機器人">Our robot</p>
-            <h2 class="h2" id="robot-title" data-reveal data-zh="學生親手打造，<br>贊助夥伴<em class='accent'>一起成就</em>。">Built by students.<br>Carried by <em class="accent">sponsors</em>.</h2>
+            <h2 class="h2" id="robot-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="學生親手打造，">Built by students.</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="贊助夥伴<em class='accent'>一起成就</em>。">Carried by <em class="accent">sponsors</em>.</span></span></h2>
           </div>
 
           <div class="cells cells--tabs" role="tablist" aria-label="Robot views" data-zh-aria="機器人視角" id="robot-tabs">
@@ -520,7 +535,7 @@
         <p class="strip__meta" data-zh="賽季時程 · 認養零件 · 預算 · 聯絡">Season clock · pledge · budget · contact</p>
       </div>
       <div class="sec__head">
-        <h2 class="h2 h2--xl" id="sponsor-title" data-reveal data-zh="讓你的品牌，<br>站上<em class='accent'>國際舞台</em>。">Your brand,<br>on the international <em class="accent">stage</em>.</h2>
+        <h2 class="h2 h2--xl" id="sponsor-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="讓你的品牌，">Your brand,</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="站上<em class='accent'>國際舞台</em>。">on the international <em class="accent">stage</em>.</span></span></h2>
         <p class="lead" data-reveal data-zh="以下每個選項都對應真實的預算項目。選擇你想支持的項目，其餘交給我們。">Every option below maps to a real line in our budget. Pick what you'd like to fund — we'll take it from there.</p>
       </div>
 
@@ -612,7 +627,7 @@
         <div class="cta__body">
           <img class="cta__mark" src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy">
           <p class="label" data-zh="敢於夢想，永不放棄。">Dream big, and never give up.</p>
-          <h2 class="h1 cta__title" data-zh="成為我們<br>下一季的<em class='accent'>贊助夥伴</em>。">Join our partners<br>for <em class="accent">next season</em>.</h2>
+          <h2 class="h1 cta__title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="成為我們">Join our partners</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="下一季的<em class='accent'>贊助夥伴</em>。">for <em class="accent">next season</em>.</span></span></h2>
           <p class="cta__text" data-zh="不論是企業贊助、器材捐贈或技術指導，我們都很樂意聊聊。">Corporate sponsorship, equipment, or mentoring — we'd love to talk.</p>
           <div class="btns btns--center" id="contact-buttons"></div>
           <p class="cta__sponsors" id="contact-sponsors"></p>

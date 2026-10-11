@@ -4,11 +4,12 @@ import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, E
 const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
 import { initZones, balloon, sheetRef } from './cad.js';
+import { initMotion, initSmoothScroll, goTo, getLenis, REDUCED } from './motion.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const root = document.documentElement;
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reducedMotion = REDUCED.matches;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let lang = root.getAttribute('data-lang') === 'zh-Hant' ? 'zh-Hant' : 'en';
@@ -146,7 +147,7 @@ $('#lang-toggle').addEventListener('click', () => {
   applyLang();
 });
 
-// ============================================================ nav theme + reveal
+// ============================================================ nav + rail
 
 // Phone / tablet menu: a button in the nav opens the list of sections.
 function initMenu() {
@@ -202,7 +203,13 @@ function initRail() {
   addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(move); }, { passive: true });
   addEventListener('resize', layout);
   addEventListener('load', layout);
-  new ResizeObserver(() => layout()).observe($('#main'));
+  // The page grew or shrank (images, a language switch, the zone letters): Lenis re-measures too, unless
+  // it is gliding (its own resize debounce catches up then).
+  new ResizeObserver(() => {
+    layout();
+    const lenis = getLenis();
+    if (lenis && !lenis.isScrolling) lenis.resize();
+  }).observe($('#main'));
   layout();
 
   // The current-row bar only moves by transform, from row geometry cached here (relative to the
@@ -249,39 +256,10 @@ function initRail() {
   ORDER.forEach((id) => io.observe(document.getElementById(id)));
   paint();
   addEventListener('resize', layoutRows);
-  document.fonts?.ready.then(layoutRows);
+  // Once the rows have their final size the bar may slide between them (motion.css); before that it
+  // would slide in from the list head on load.
+  document.fonts?.ready.then(() => { layoutRows(); requestAnimationFrame(() => bar.classList.add('is-placed')); });
   onLang(layoutRows);
-}
-
-function initReveal() {
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      e.target.classList.add('is-in');
-      io.unobserve(e.target);
-    });
-  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
-  $$('[data-reveal]').forEach((el) => io.observe(el));
-}
-
-function initCounters() {
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      io.unobserve(e.target);
-      const el = e.target, end = +el.dataset.count;
-      if (reducedMotion) return;
-      const t0 = performance.now(), dur = 1400;
-      const step = (now) => {
-        const k = Math.min(1, (now - t0) / dur);
-        el.textContent = Math.round(end * (1 - Math.pow(1 - k, 3)));
-        if (k < 1) requestAnimationFrame(step);
-      };
-      el.textContent = '0';
-      requestAnimationFrame(step);
-    });
-  }, { threshold: 0.6 });
-  $$('[data-count]').forEach((el) => io.observe(el));
 }
 
 // ============================================================ results
@@ -339,10 +317,32 @@ function renderGoalsAndLinks() {
 
 // ============================================================ gallery
 
+// The strip is the page's only endless motion, so it has a Pause / Play button (the choice is remembered)
+// and it rests while off screen. With reduced motion it is a manual scroller (CSS) and the button stays
+// hidden. The label changes rather than aria-pressed, so the button always says what it will do.
 function initMarquee() {
-  const track = $('#marquee .marquee__track');
+  const marquee = $('#marquee');
+  const track = $('.marquee__track', marquee);
   if (reducedMotion) return;
   track.innerHTML += track.innerHTML.replace(/<img /g, '<img aria-hidden="true" ');
+  const btn = $('#marquee-toggle');
+  const label = $('span', btn);
+  let paused = false;
+  try { paused = localStorage.getItem('marquee') === 'paused'; } catch (e) { /* storage unavailable */ }
+  const paint = () => {
+    marquee.classList.toggle('is-paused', paused);
+    label.textContent = paused ? UI('Play', '播放') : UI('Pause', '暫停');
+    btn.setAttribute('aria-label', paused ? UI('Play the photo strip', '播放照片輪播') : UI('Pause the photo strip', '暫停照片輪播'));
+  };
+  btn.addEventListener('click', () => {
+    paused = !paused;
+    try { localStorage.setItem('marquee', paused ? 'paused' : 'playing'); } catch (e) { /* storage unavailable */ }
+    paint();
+  });
+  onLang(paint);
+  btn.hidden = false;
+  const gallery = marquee.closest('.gallery');
+  new IntersectionObserver(([e]) => gallery.classList.toggle('is-off', !e.isIntersecting)).observe(gallery);
 }
 
 // ============================================================ impact
@@ -376,15 +376,19 @@ function renderMap() {
   const proj = (p) => [((p.lon - lon0) % 360 + 360) % 360 + 1, lat0 - p.lat + 1];
   const home = PLACES.find((p) => p.home);
   const [hx, hy] = proj(home);
+  const dist = (p) => { const [x, y] = proj(p); return Math.hypot(x - hx, y - hy); };
+  // Flight plan: the arcs fly out nearest-first, each place's arc, pin, halo and label sharing its step
+  // (--k, motion.css). Home has no step.
+  const K = Object.fromEntries(PLACES.filter((p) => !p.home).sort((a, b) => dist(a) - dist(b)).map((p, k) => [p.id, k]));
+  const kAttr = (p) => (p.home ? '' : ` style="--k:${K[p.id]}"`);
   let arcs = '', pins = '';
   PLACES.forEach((p) => {
     const [x, y] = proj(p);
     if (!p.home) {
-      const dist = Math.hypot(x - hx, y - hy);
-      const cx = (x + hx) / 2, cy = (y + hy) / 2 - Math.max(6, dist * 0.32);
-      arcs += `<path class="map__arc" pathLength="1" d="M${hx} ${hy}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}"/>`;
+      const cx = (x + hx) / 2, cy = (y + hy) / 2 - Math.max(6, dist(p) * 0.32);
+      arcs += `<path class="map__arc" pathLength="1"${kAttr(p)} d="M${hx} ${hy}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}"/>`;
     }
-    pins += `<circle class="map__halo" cx="${x}" cy="${y}" r="2.2"/><circle class="map__pin${p.home ? ' map__pin--home' : ''}" cx="${x}" cy="${y}" r="${p.home ? 1.6 : 1.2}"/>`;
+    pins += `<circle class="map__halo"${kAttr(p)} cx="${x}" cy="${y}" r="2.2"/><circle class="map__pin${p.home ? ' map__pin--home' : ''}"${kAttr(p)} cx="${x}" cy="${y}" r="${p.home ? 1.6 : 1.2}"/>`;
   });
   svg.insertAdjacentHTML('beforeend', `
     <path class="map__dots" d="${d}"/>
@@ -399,12 +403,14 @@ function renderMap() {
     labels.innerHTML = PLACES.map((p) => {
       const [x, y] = proj(p);
       const cls = (pos[p.id] ? ' map__label--' + pos[p.id] : '') + (p.home ? ' map__label--home' : '');
-      return `<div class="map__label${cls}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%"><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></div>`;
+      return `<div class="map__label${cls}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%${p.home ? '' : `;--k:${K[p.id]}`}"><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></div>`;
     }).join('');
     // Narrow screens hide the map labels (except home) and list the places instead.
     $('#place-list').innerHTML = PLACES.map((p) => `<li><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></li>`).join('');
   });
-  new IntersectionObserver(([e], io) => { if (e.isIntersecting) { wrap.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.3 }).observe(wrap);
+  // The map also fades in (data-reveal, .is-in), which is too early for the flight: it waits for a third
+  // of the map to be on screen.
+  new IntersectionObserver(([e], io) => { if (e.isIntersecting) { wrap.classList.add('is-flown'); io.disconnect(); } }, { threshold: 0.3 }).observe(wrap);
 }
 
 // ============================================================ season clock
@@ -509,6 +515,7 @@ function pledgeLines() {
   });
 }
 
+let shownTotal = null;
 function renderCart() {
   const lines = pledgeLines();
   const total = lines.reduce((s, l) => s + l.amount, 0);
@@ -521,6 +528,13 @@ function renderCart() {
   mail.hidden = !SITE.email || !lines.length;
   if (SITE.email) mail.href = `mailto:${SITE.email}?subject=${encodeURIComponent(UI('Sponsorship pledge for FRC 8806', 'FRC 8806 贊助認養'))}&body=${encodeURIComponent(pledgeMessage())}`;
   renderDock(total);
+  // The totals tick when they change: the new value is written first, so it is never shown wrong.
+  if (shownTotal !== null && total !== shownTotal && root.classList.contains('mo')) {
+    ['#cart-total', '#dock-total'].forEach((sel) => $(sel).animate?.(
+      [{ transform: 'translateY(-6px)', opacity: 0.4 }, { transform: 'none', opacity: 1 }],
+      { duration: 240, easing: 'cubic-bezier(.22,1,.36,1)' }));
+  }
+  shownTotal = total;
 }
 
 function pledgeMessage() {
@@ -585,13 +599,12 @@ async function sendPledge() {
   window.open(`https://ig.me/m/${SITE.instagram}`, '_blank', 'noopener');
 }
 
-// A price tag activated from the keyboard also takes focus to the row's own control; a tap never does,
-// so a phone never opens its keyboard on the amount field.
+// The row is centred under the nav. A price tag activated from the keyboard also takes focus to the row's
+// own control; a tap never does, so a phone never opens its keyboard on the amount field.
 function flashPart(id, { keyboard } = {}) {
   const li = $(`#parts .part[data-id="${id}"]`);
   if (!li) return;
-  li.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
-  if (keyboard) li.querySelector('[data-step="1"]:not(:disabled), .part__custom input')?.focus({ preventScroll: true });
+  goTo(li, { block: 'center', focus: keyboard ? li.querySelector('[data-step="1"]:not(:disabled), .part__custom input') : null });
   li.classList.remove('is-flash');
   void li.offsetWidth;
   li.classList.add('is-flash');
@@ -677,8 +690,8 @@ function renderBudget() {
   $('#budget-total-label').textContent = scope === 'all'
     ? UI('Full season, including international team travel', '完整賽季，含國際賽事團費')
     : UI('To build, register and ship one season\'s robots', '一季打造、報名與運送機器人的費用');
-  $('#bars').innerHTML = rows.map((r) => `
-    <div class="bar${r.group === 'travel' ? ' bar--travel' : ''}" tabindex="0" data-id="${r.id}">
+  $('#bars').innerHTML = rows.map((r, i) => `
+    <div class="bar${r.group === 'travel' ? ' bar--travel' : ''}" tabindex="0" data-id="${r.id}" style="--k:${i}">
       <div class="bar__label">${esc(t(r.label))}</div>
       <div class="bar__track"><div class="bar__fill" style="width:${(r.amount / max * 100).toFixed(2)}%"></div></div>
       <div class="bar__value">${moneyShort(r.amount)}<small>${pct(r.amount, total)}</small></div>
@@ -691,14 +704,22 @@ function renderBudget() {
 
 function initBudget() {
   const toggles = $$('[data-scope]');
+  const bars = $('#bars');
   toggles.forEach((b) => b.addEventListener('click', () => {
     scope = b.dataset.scope;
     toggles.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    // A new scope replots the line items (quickly, motion.css .is-replot): the new bars are born under
+    // their covers, then uncovered. A language switch re-renders in place and replots nothing.
+    const replot = root.classList.contains('mo') && bars.classList.contains('is-in');
+    if (replot) bars.classList.remove('is-in', 'is-replot');
     renderBudget();
+    if (replot) requestAnimationFrame(() => requestAnimationFrame(() => bars.classList.add('is-in', 'is-replot')));
   }));
   const tip = $('#bars-tip');
   const box = $('#budget');
-  const show = (bar, x, y) => {
+  let tipBy = ''; // 'pointer' or 'focus'
+  const show = (bar, x, y, by) => {
+    tipBy = by;
     const r = BUDGET.find((b) => b.id === bar.dataset.id);
     tip.innerHTML = `<b>${esc(t(r.label))} · ${money(r.amount)}</b>${esc(t(r.detail))}`;
     tip.hidden = false;
@@ -707,18 +728,20 @@ function initBudget() {
     tip.style.left = Math.min(bb.width - tw - 12, Math.max(12, x - bb.left + 16)) + 'px';
     tip.style.top = (y - bb.top + 18) + 'px';
   };
-  const bars = $('#bars');
   bars.addEventListener('pointermove', (e) => {
     const bar = e.target.closest('.bar');
-    if (bar) show(bar, e.clientX, e.clientY); else tip.hidden = true;
+    if (bar) show(bar, e.clientX, e.clientY, 'pointer'); else tip.hidden = true;
   });
   bars.addEventListener('pointerleave', () => { tip.hidden = true; });
   bars.addEventListener('focusin', (e) => {
     const bar = e.target.closest('.bar');
     const r = bar.getBoundingClientRect();
-    show(bar, r.left + 200, r.bottom - 8);
+    show(bar, r.left + 200, r.bottom - 8, 'focus');
   });
   bars.addEventListener('focusout', () => { tip.hidden = true; });
+  // A smooth wheel glide moves the page under a still pointer (no pointermove): a tip the pointer opened
+  // goes with the first scroll. One opened by keyboard focus stays with its bar.
+  addEventListener('scroll', () => { if (!tip.hidden && tipBy === 'pointer') tip.hidden = true; }, { passive: true });
   onLang(renderBudget);
 }
 
@@ -773,7 +796,7 @@ const idle = (fn, timeout) => (window.requestIdleCallback ? requestIdleCallback(
 // info.keyboard: the tag was activated from the keyboard (see flashPart).
 const onHotspot = (h, info = {}) => {
   if (h.part) { if (h.part !== 'materials') addPart(h.part, 1); flashPart(h.part, info); }
-  else $('#budget').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+  else goTo($('#budget'));
 };
 
 // Without the procedural 3D model (no WebGL, or a custom GLB) the price tags become a plain list of
@@ -964,8 +987,8 @@ applyLang();
 initZones();
 initMenu();
 initRail();
-initReveal();
-initCounters();
+initMotion();
 initMarquee();
 initDock();
 initShowcase();
+initSmoothScroll();

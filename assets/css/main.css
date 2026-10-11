@@ -366,12 +366,7 @@ html[data-lang="zh-Hant"] .menu a { font-weight: 900; letter-spacing: 0.08em; }
 .photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--rule-2); }
 .photo figcaption { margin-top: 12px; display: flex; align-items: baseline; }
 
-[data-reveal] { transition: opacity .9s var(--ease), transform .9s var(--ease); }
-.js [data-reveal]:not(.is-in) { opacity: 0; transform: translateY(16px); }
-@media (prefers-reduced-motion: reduce) {
-  [data-reveal] { transition: none; }
-  .js [data-reveal]:not(.is-in) { opacity: 1; transform: none; }
-}
+/* Reveals, draw-ins and the other one-shot motion ("the plotter") live in motion.css. */
 
 /* ------------------------------------------------------------------ 01. hero */
 
@@ -688,14 +683,11 @@ html[data-lang="zh-Hant"] .benefit__post-body { font-weight: 900; letter-spacing
 .map__inner { position: relative; }
 .map__svg { width: 100%; height: auto; display: block; overflow: visible; }
 .map__dots { fill: none; stroke: #2e3138; stroke-width: 1.05; stroke-linecap: square; }
+/* the arcs' flight, the pins landing and the halos' three pulses are in motion.css */
 .map__arc { fill: none; stroke: var(--accent); stroke-width: .55; stroke-linecap: round; opacity: .9; }
-.map__arc { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 2.2s var(--ease); }
-.map.is-in .map__arc { stroke-dashoffset: 0; }
 .map__pin { fill: var(--accent); }
 .map__pin--home { fill: #fff; }
-.map__halo { fill: var(--accent); opacity: .25; transform-box: fill-box; transform-origin: center; animation: halo 2.4s var(--ease) infinite; }
-@keyframes halo { from { transform: scale(.6); opacity: .45; } to { transform: scale(2.6); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .map__halo { animation: none; } .map__arc { transition: none; } }
+.map__halo { fill: var(--accent); opacity: .25; transform-box: fill-box; transform-origin: center; }
 .map__label {
   position: absolute; transform: translate(-50%, calc(-100% - 10px));
   padding: 3px 5px; text-align: center; white-space: nowrap; pointer-events: none;
@@ -940,9 +932,7 @@ html[data-lang="zh-Hant"] .showcase__head .h2 { font-size: clamp(28px, 3.3cqi, 4
 .now__top { padding: clamp(28px, 3.4vw, 44px) var(--pad); }
 .now__line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: 500 11.5px/1.4 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim); }
 .now__line b { color: var(--text); font-weight: 700; }
-.now__pulse { flex: none; width: 8px; height: 8px; background: var(--accent); animation: blink 1.6s steps(2, jump-none) infinite; }
-@keyframes blink { 50% { opacity: .25; } }
-@media (prefers-reduced-motion: reduce) { .now__pulse { animation: none; } }
+.now__pulse { flex: none; width: 8px; height: 8px; background: var(--accent); } /* blinks three times (motion.css) */
 .now__title { margin-top: 14px; font: 800 clamp(24px, 2.4vw, 34px)/1.1 var(--f-display); font-stretch: 108%; letter-spacing: -0.022em; color: var(--text); text-wrap: balance; }
 html[data-lang="zh-Hant"] .now__title { font-weight: 900; letter-spacing: 0.02em; line-height: 1.3; word-break: keep-all; overflow-wrap: anywhere; } /* breaks only at the <wbr> before the phrase */
 html[data-lang="zh-Hant"] .now__title em { white-space: nowrap; } /* never split the month's phrase */
@@ -1054,7 +1044,7 @@ html[data-lang="zh-Hant"] .budget__total { font-weight: 900; letter-spacing: 0.0
 }
 .bar__label { font-size: 14.5px; line-height: 1.3; transition: color .2s; }
 .bar__track { position: relative; height: 18px; background: var(--bg-2); }
-.bar__fill { height: 100%; min-width: 3px; background: var(--accent); transition: width .9s var(--ease), background-color .2s; }
+.bar__fill { height: 100%; min-width: 3px; background: var(--accent); transition: background-color .2s; } /* plotted in motion.css */
 .bar--travel .bar__fill { background: transparent var(--hatch); box-shadow: inset 0 0 0 1px var(--accent); }
 .bar__value { font: 700 12.5px/1 var(--f-mono); color: var(--text); white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .bar__value small { display: inline-block; min-width: 3.8em; margin-left: 8px; font-size: 11px; font-weight: 500; color: var(--dim); }
