@@ -3,6 +3,7 @@ import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, E
 // Seasons marked `draft` (results not yet confirmed) stay off the page and out of every count.
 const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
+import { initZones, balloon, sheetRef } from './cad.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -91,6 +92,8 @@ function fillCounts() {
       ? `${where}${where && !where.includes('·') ? '區域賽' : ''}${top.zh}${more > 0 ? `，本季再添 ${more} 座獎項` : ''}`
       : `${top.en}${where ? ` in ${where}` : ''}${more > 0 ? `, plus ${more} more award${more > 1 ? 's' : ''} this season` : ''}`;
   }
+  // Title-block revision: one letter per season (A = the rookie season), so 5 seasons read "E · 2026".
+  $$('.js-rev').forEach((el) => { el.textContent = `${String.fromCharCode(64 + N.seasons)} · ${latest.year}`; });
 }
 
 // ============================================================ i18n
@@ -160,15 +163,21 @@ function initMenu() {
   addEventListener('resize', () => { if (!menu.hidden && innerWidth > 1180) set(false); });
 }
 
-// Which section is being read: it names the right rail, lights its TOC entry and ruler tick, and
-// marks the matching nav / menu link. The rail itself only shows on wide screens (CSS).
+// Which sheet is being read: it lights its row in the rail's drawing list (the sponsor block's
+// sub-sheets 07.1–07.3 under 07), the ruler tick, the title block's sheet number and the matching
+// nav / menu link. The rail itself only shows on wide screens (CSS).
 const RAIL_SECTIONS = ['top', 'results', 'partner', 'impact', 'team', 'robot', 'sponsor'];
 function initRail() {
-  const title = $('#rail-title');
+  const ORDER = [...RAIL_SECTIONS, 'pledge', 'budget', 'contact']; // each sub-sheet after its parent
+  const PARENT = { pledge: 'sponsor', budget: 'sponsor', contact: 'sponsor' };
+  const SHEET = { top: '01', results: '02', partner: '03', impact: '04', team: '05', robot: '06', sponsor: '07', pledge: '07.1', budget: '07.2', contact: '07.3' };
   const ruler = $('#ruler');
   const marker = $('#ruler-marker');
   const sections = RAIL_SECTIONS.map((id) => document.getElementById(id));
-  const tocLinks = $$('.rail__toc a');
+  const rows = $$('.dlist a');
+  const bar = $('.dlist__bar');
+  const sheetNo = $('#tb-sheet');
+  const navLists = [$$('.nav__links a'), $$('.menu a')];
   let current = 'top';
 
   // One labelled tick per section, at the scroll position where that section reaches the top.
@@ -196,29 +205,52 @@ function initRail() {
   new ResizeObserver(() => layout()).observe($('#main'));
   layout();
 
-  const name = () => tocLinks.find((a) => a.dataset.sec === current)?.textContent || '';
+  // The current-row bar only moves by transform, from row geometry cached here (relative to the
+  // list, which is fixed): measured at start, once fonts load, on resize and after a language switch
+  // (Chinese rows are a different height), never on scroll.
+  let geo = {};
+  const placeBar = () => {
+    const g = geo[current];
+    if (g?.h) bar.style.transform = `translateY(${g.top}px) scaleY(${g.h / 28})`;
+  };
+  const layoutRows = () => {
+    geo = Object.fromEntries(rows.map((a) => [a.dataset.sec, { top: a.offsetTop, h: a.offsetHeight }]));
+    placeBar();
+  };
   const paint = () => {
-    tocLinks.forEach((a) => a.setAttribute('aria-current', String(a.dataset.sec === current)));
-    ticks.forEach((t) => t.classList.toggle('is-active', t.dataset.sec === current));
-    $$('.nav__links a, .menu a').forEach((a) => a.setAttribute('aria-current', String(a.getAttribute('href') === `#${current}`)));
+    const i = ORDER.indexOf(current), parent = PARENT[current];
+    rows.forEach((a) => {
+      const id = a.dataset.sec;
+      a.setAttribute('aria-current', String(id === current));
+      a.classList.toggle('is-parent', id === parent);
+      a.classList.toggle('is-before', id !== parent && ORDER.indexOf(id) < i);
+    });
+    ticks.forEach((tk) => tk.classList.toggle('is-active', tk.dataset.sec === (parent || current)));
+    sheetNo.textContent = SHEET[current];
+    // Nav and menu: the exact link if the list has one, otherwise the parent's; never two in a list.
+    navLists.forEach((links) => {
+      const hit = links.find((a) => a.getAttribute('href') === `#${current}`)
+        || (parent && links.find((a) => a.getAttribute('href') === `#${parent}`));
+      links.forEach((a) => a.setAttribute('aria-current', String(a === hit)));
+    });
+    placeBar();
   };
-  const setTitle = (instant) => {
-    if (instant || reducedMotion) { title.textContent = name(); return; }
-    title.classList.add('is-swap');
-    clearTimeout(setTitle.t);
-    setTitle.t = setTimeout(() => { title.textContent = name(); title.classList.remove('is-swap'); }, 180);
-  };
-  // A section is current while it crosses a line 35% down the viewport.
+  // A sheet is current while it crosses a line 35% down the viewport. Sub-sheets sit inside 07 and
+  // come after it in ORDER, so the deepest one on the line wins; off every sheet (the photo strip)
+  // the last one stays. A fast jump can queue enter + leave in one batch, so apply them in order.
+  const live = new Set();
   const io = new IntersectionObserver((entries) => {
-    const hit = entries.filter((e) => e.isIntersecting).at(-1);
-    if (!hit || hit.target.id === current) return;
-    current = hit.target.id;
+    entries.forEach((e) => { if (e.isIntersecting) live.add(e.target.id); else live.delete(e.target.id); });
+    const next = ORDER.filter((id) => live.has(id)).at(-1) ?? current;
+    if (next === current) return;
+    current = next;
     paint();
-    setTitle(false);
   }, { rootMargin: '-35% 0px -64% 0px' });
-  sections.forEach((sec) => io.observe(sec));
+  ORDER.forEach((id) => io.observe(document.getElementById(id)));
   paint();
-  onLang(() => setTitle(true));
+  addEventListener('resize', layoutRows);
+  document.fonts?.ready.then(layoutRows);
+  onLang(layoutRows);
 }
 
 function initReveal() {
@@ -426,11 +458,14 @@ const cart = new Map(); // id -> qty (or NT$ for the custom fund)
 
 // Most valuable first; the open materials fund always closes the list.
 const PARTS_BY_PRICE = [...PARTS].sort((a, b) => b.price - a.price).concat(MATERIALS);
+// Bill-of-materials item numbers, in list order (student 1 … materials 6). The same balloon marks the
+// part in the cart and on its 3D price tag, so they are derived here, never typed in.
+const ITEM = Object.fromEntries(PARTS_BY_PRICE.map((p, i) => [p.id, i + 1]));
 
 function renderParts() {
-  $('#parts').innerHTML = PARTS_BY_PRICE.map((p) => `
-    <li class="part" data-id="${p.id}">
-      <div class="part__icon" aria-hidden="true">${ICONS[p.icon]}</div>
+  $('#parts').innerHTML = PARTS_BY_PRICE.map((p, i) => `
+    <li class="part" data-id="${p.id}" style="--k:${i}">
+      <div class="part__icon" aria-hidden="true">${balloon(ITEM[p.id])}${ICONS[p.icon]}</div>
       <div>
         <p class="part__name">${esc(t(p.name))}</p>
         <p class="part__blurb">${esc(t(p.blurb))}</p>
@@ -478,7 +513,7 @@ function renderCart() {
   const lines = pledgeLines();
   const total = lines.reduce((s, l) => s + l.amount, 0);
   $('#cart-total').textContent = money(total);
-  $('#cart-lines').innerHTML = lines.map((l) => `<li><span>${esc(l.text)}</span><b>${money(l.amount)}</b></li>`).join('');
+  $('#cart-lines').innerHTML = lines.map((l) => `<li><span>${balloon(ITEM[l.p.id], true)} ${esc(l.text)}</span><b>${money(l.amount)}</b></li>`).join('');
   $('#cart-empty').hidden = lines.length > 0;
   $('#cart-send').disabled = !lines.length;
   $('#cart-clear').hidden = !lines.length;
@@ -550,10 +585,13 @@ async function sendPledge() {
   window.open(`https://ig.me/m/${SITE.instagram}`, '_blank', 'noopener');
 }
 
-function flashPart(id) {
+// A price tag activated from the keyboard also takes focus to the row's own control; a tap never does,
+// so a phone never opens its keyboard on the amount field.
+function flashPart(id, { keyboard } = {}) {
   const li = $(`#parts .part[data-id="${id}"]`);
   if (!li) return;
   li.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+  if (keyboard) li.querySelector('[data-step="1"]:not(:disabled), .part__custom input')?.focus({ preventScroll: true });
   li.classList.remove('is-flash');
   void li.offsetWidth;
   li.classList.add('is-flash');
@@ -601,18 +639,28 @@ const pct = (part, whole) => {
   return p < 1 ? '<1%' : p + '%';
 };
 
-// Full-season split: build & compete vs team travel, computed from BUDGET.
+// Full-season split: build & compete vs team travel, computed from BUDGET. The bar is a dimensioned
+// part: the season total is its overall dimension, and a chain dimension under it measures each
+// group (the legend takes over at ≤640px, cad.css). The dimension geometry is aria-hidden.
 function renderStack() {
   const total = sum(BUDGET);
   const groups = [
     { id: 'build', amount: sum(BUDGET.filter((b) => b.group === 'build')), label: UI('Build & compete', '打造與參賽') },
     { id: 'travel', amount: sum(BUDGET.filter((b) => b.group === 'travel')), label: UI('Team travel', '團隊差旅') },
   ];
+  const basis = (g) => (g.amount / total * 100).toFixed(2);
   $('#budget-stack').innerHTML = `
-    <p class="stack__title">${UI('Full season:', '完整賽季：')} <b>${moneyShort(total)}</b></p>
-    <div class="stack__bar" role="img" aria-label="${esc(groups.map((g) => `${g.label} ${moneyShort(g.amount)} ${pct(g.amount, total)}`).join(', '))}">
-      ${groups.map((g) => `<div class="stack__seg${g.id === 'travel' ? ' stack__seg--travel' : ''}" style="flex-basis:${(g.amount / total * 100).toFixed(2)}%">${pct(g.amount, total)}</div>`).join('')}
+    <div class="dim dim--total">
+      <i class="dim__ln dim__ln--l" aria-hidden="true"></i>
+      <p class="dim__txt"><span class="dim__lbl">${UI('Full season', '完整賽季')}</span> <b class="dim__val">${moneyShort(total)}</b></p>
+      <i class="dim__ln dim__ln--r" aria-hidden="true"></i>
     </div>
+    <div class="stack__bar" role="img" aria-label="${esc(groups.map((g) => `${g.label} ${moneyShort(g.amount)} ${pct(g.amount, total)}`).join(', '))}">
+      ${groups.map((g, i) => `<div class="stack__seg${g.id === 'travel' ? ' stack__seg--travel' : ''}" style="flex-basis:${basis(g)}%;--k:${i}">${pct(g.amount, total)}</div>`).join('')}
+    </div>
+    <ol class="dim-chain">
+      ${groups.map((g, i) => `<li class="dim dim--chain" style="flex-basis:${basis(g)}%;--k:${i}"><i class="dim__ln" aria-hidden="true"></i><span class="dim__lbl">${esc(g.label)}</span> <b class="dim__val">${moneyShort(g.amount)} · ${pct(g.amount, total)}</b></li>`).join('')}
+    </ol>
     <ul class="stack__legend">
       ${groups.map((g) => `<li class="${g.id === 'travel' ? 'is-travel' : ''}">${esc(g.label)} <b>${moneyShort(g.amount)} · ${pct(g.amount, total)}</b></li>`).join('')}
     </ul>`;
@@ -702,12 +750,13 @@ function renderContact() {
 
 // ============================================================ robot showcase
 
+// `ref` is the tag's balloon: the part's bill-of-materials item number, or the budget sheet it points to.
 const HOTSPOTS = [
-  { id: 'x60', anchor: 'x60', part: 'x60', label: { en: 'Kraken X60', zh: '海妖 X60 馬達' }, tag: { en: 'NT$9,500 · Sponsor one', zh: 'NT$9,500 · 認養一顆' } },
-  { id: 'x44', anchor: 'x44', part: 'x44', label: { en: 'Kraken X44', zh: '海妖 X44 馬達' }, tag: { en: 'NT$5,500 · Sponsor one', zh: 'NT$5,500 · 認養一顆' }, left: true },
-  { id: 'camera', anchor: 'camera', budget: true, label: { en: 'Vision camera', zh: '視覺辨識鏡頭' }, tag: { en: 'Electronics · see the budget', zh: '電控 · 查看預算' } },
-  { id: 'rio', anchor: 'rio', budget: true, desktopOnly: true, label: { en: 'roboRIO controller', zh: 'roboRIO 主控' }, tag: { en: 'Electronics · see the budget', zh: '電控 · 查看預算' }, left: true },
-  { id: 'elevator', anchor: 'elevator', part: 'materials', desktopOnly: true, label: { en: 'Aluminium & carbon fibre', zh: '鋁材與碳纖維' }, tag: { en: 'Materials fund · any amount', zh: '材料基金 · 任意金額' }, left: true },
+  { id: 'x60', anchor: 'x60', part: 'x60', ref: ITEM.x60, label: { en: 'Kraken X60', zh: '海妖 X60 馬達' }, tag: { en: 'NT$9,500 · Sponsor one', zh: 'NT$9,500 · 認養一顆' } },
+  { id: 'x44', anchor: 'x44', part: 'x44', ref: ITEM.x44, label: { en: 'Kraken X44', zh: '海妖 X44 馬達' }, tag: { en: 'NT$5,500 · Sponsor one', zh: 'NT$5,500 · 認養一顆' }, left: true },
+  { id: 'camera', anchor: 'camera', budget: true, ref: '07.2', label: { en: 'Vision camera', zh: '視覺辨識鏡頭' }, tag: { en: 'Electronics · see the budget', zh: '電控 · 查看預算' } },
+  { id: 'rio', anchor: 'rio', budget: true, ref: '07.2', desktopOnly: true, label: { en: 'roboRIO controller', zh: 'roboRIO 主控' }, tag: { en: 'Electronics · see the budget', zh: '電控 · 查看預算' }, left: true },
+  { id: 'elevator', anchor: 'elevator', part: 'materials', ref: ITEM.materials, desktopOnly: true, label: { en: 'Aluminium & carbon fibre', zh: '鋁材與碳纖維' }, tag: { en: 'Materials fund · any amount', zh: '材料基金 · 任意金額' }, left: true },
 ];
 
 // Probe once, and give the context back straight away (the real renderer makes its own).
@@ -721,8 +770,9 @@ function hasWebGL() {
 }
 
 const idle = (fn, timeout) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout }) : setTimeout(fn, 1));
-const onHotspot = (h) => {
-  if (h.part) { if (h.part !== 'materials') addPart(h.part, 1); flashPart(h.part); }
+// info.keyboard: the tag was activated from the keyboard (see flashPart).
+const onHotspot = (h, info = {}) => {
+  if (h.part) { if (h.part !== 'materials') addPart(h.part, 1); flashPart(h.part, info); }
   else $('#budget').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
 };
 
@@ -731,10 +781,10 @@ const onHotspot = (h) => {
 async function initFlatShowcase(view3d, input) {
   const tags = document.createElement('div');
   tags.className = 'flat-tags';
-  tags.innerHTML = HOTSPOTS.map((h) => `<button class="hotspot__tag" type="button" data-id="${h.id}"${h.desktopOnly ? ' data-desktop-only' : ''}><b></b><span></span></button>`).join('');
+  tags.innerHTML = HOTSPOTS.map((h) => `<button class="hotspot__tag" type="button" data-id="${h.id}"${h.desktopOnly ? ' data-desktop-only' : ''}>${typeof h.ref === 'number' ? balloon(h.ref) : sheetRef(h.ref)}<span class="hotspot__text"><b></b><span></span></span></button>`).join('');
   tags.addEventListener('click', (e) => {
     const b = e.target.closest('button');
-    if (b) onHotspot(HOTSPOTS.find((h) => h.id === b.dataset.id));
+    if (b) onHotspot(HOTSPOTS.find((h) => h.id === b.dataset.id), { keyboard: e.detail === 0 });
   });
   const card = document.createElement('div');
   card.className = 'flat-card';
@@ -755,12 +805,34 @@ async function initFlatShowcase(view3d, input) {
     $$('button', tags).forEach((b) => {
       const h = HOTSPOTS.find((x) => x.id === b.dataset.id);
       b.querySelector('b').textContent = t(h.label);
-      b.querySelector('span').textContent = t(h.tag);
+      b.querySelector('.hotspot__text > span').textContent = t(h.tag);
     });
     draw();
   });
   view3d.classList.add('is-flat');
 }
+
+// The view is a CAD viewport. Its top-right label names the drawing view of each tab (they match the
+// A/B/C tabs). Its bottom-left status line follows the model's real build stages while it regenerates
+// (robot-model.js yields, then scene.js), then reads the live camera angles (phones: the
+// "illustrative model" note). All of it is aria-hidden: the canvas label says the same.
+const VIEW_LABELS = {
+  build: { en: 'View A · Assembly', zh: '視圖 A · 組立圖' },
+  price: { en: 'View B · Exploded', zh: '視圖 B · 爆炸圖' },
+  logo: { en: 'View C · Detail', zh: '視圖 C · 局部詳圖' },
+};
+const STAGES = {
+  frame: { en: 'Frame', zh: '車架' },
+  drive: { en: 'Swerve drive & bumpers', zh: 'Swerve 底盤與防撞框' },
+  electronics: { en: 'Electronics', zh: '電控系統' },
+  elevator: { en: 'Elevator', zh: '升降機構' },
+  effector: { en: 'End effector', zh: '末端執行器' },
+  intake: { en: 'Intake', zh: '夾取機構' },
+  shading: { en: 'Shading', zh: '材質著色' },
+  model: { en: 'Model', zh: '模型' },
+};
+// The built-in robot's stages in build order; a custom model (SITE.robotModelUrl) is a single one.
+const BUILD_STAGES = ['frame', 'drive', 'electronics', 'elevator', 'effector', 'intake', 'shading'];
 
 // Tabs work on their own (text only); the 3D engine is loaded when #robot comes near the viewport.
 function initShowcase() {
@@ -768,8 +840,39 @@ function initShowcase() {
   const tabs = $$('#robot-tabs [role="tab"]');
   const panels = $$('#robot .tabpanel');
   const view3d = $('#robot-view');
+  const viewLabel = $('#view-label b');
+  const status = $('#view-status');
+  const regenText = $('.vs-txt', status);
+  const regenBar = $('.vs-bar', status);
+  const [azOut, elOut] = $$('.vs-readout b', status);
   let view = 'build';
   let engine = null;
+
+  // Status line: idle → working ("Regenerating · 3/7 · Electronics": the stage in progress) → done
+  // ("Regenerated", 1.2s) → rest. Each finished stage writes the text and the bar once.
+  let order = SITE.robotModelUrl ? ['model'] : BUILD_STAGES, built = 0, state = 'idle';
+  const paintStatus = () => {
+    if (status.dataset.state !== state) status.dataset.state = state;
+    if (state === 'working') {
+      const n = Math.min(built, order.length - 1);
+      regenText.textContent = `${UI('Regenerating', '重新生成中')} · ${n + 1}/${order.length} · ${t(STAGES[order[n]])}`;
+    } else if (state === 'done') regenText.textContent = UI('Regenerated', '已重新生成');
+  };
+  const onStage = (id) => {
+    if (id === 'done') {
+      state = 'done';
+      paintStatus();
+      setTimeout(() => { state = 'rest'; paintStatus(); }, 1200);
+      return;
+    }
+    if (!order.includes(id)) order = BUILD_STAGES; // a custom model that failed to load: the built-in robot
+    built = order.indexOf(id) + 1;
+    regenBar.style.setProperty('--p', (built / order.length).toFixed(3));
+    paintStatus();
+  };
+  // Whole degrees from scene.js, only when one changes: text only, no layout read.
+  const deg = (n) => (n < 0 ? '-' : '') + String(Math.abs(n)).padStart(3, '0');
+  const onCamera = (az, el) => { azOut.textContent = deg(az); elOut.textContent = deg(el); };
 
   const select = (btn, focus) => {
     view = btn.dataset.view;
@@ -780,6 +883,7 @@ function initShowcase() {
     });
     panels.forEach((p) => p.classList.toggle('is-active', p.dataset.view === view));
     view3d.dataset.view = view;
+    viewLabel.textContent = t(VIEW_LABELS[view]);
     if (focus) btn.focus();
     engine?.setView(view);
   };
@@ -793,6 +897,7 @@ function initShowcase() {
     });
   });
   view3d.dataset.view = view;
+  onLang(() => { viewLabel.textContent = t(VIEW_LABELS[view]); paintStatus(); });
 
   const input = $('#namer-input');
   view3d.addEventListener('pointerdown', () => view3d.classList.add('is-dragged'), { once: true });
@@ -800,6 +905,8 @@ function initShowcase() {
   const flat = () => { root.classList.add('no-webgl'); initFlatShowcase(view3d, input); };
   const start = async () => {
     if (!hasWebGL()) { flat(); return; }
+    state = 'working';
+    paintStatus(); // "1/7 · Frame" from the moment the engine starts loading
     try {
       const { initShowcase: boot } = await import('./scene.js');
       engine = await boot({
@@ -814,6 +921,8 @@ function initShowcase() {
         lang,
         view,
         onHotspot,
+        onStage,
+        onCamera,
       });
       engine.setView(view); // in case a tab was picked while the engine was loading
       if (engine.custom) initFlatShowcase(view3d, input);
@@ -852,6 +961,7 @@ initPledge();
 initBudget();
 onLang(renderContact);
 applyLang();
+initZones();
 initMenu();
 initRail();
 initReveal();

@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,700..900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,700..900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&amp;display=swap"></noscript>
   <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/cad.css">
 
   <script>
     // Pick the language before first paint to avoid a flash of the wrong one.
@@ -119,7 +120,17 @@
       </div>
 
       <div class="hero__body">
-        <div class="hero__icon"><img src="assets/img/mark-white.webp" width="512" height="512" alt="The OLPDL scorpion crest" data-zh-alt="OLPDL 蠍子隊徽"></div>
+        <!-- The crest as Detail A: the ring, centre-line stubs and leader are drafting geometry (cad.css) -->
+        <div class="hero__mark" data-draw>
+          <svg class="hero__geo" viewBox="0 0 148 148" aria-hidden="true" focusable="false">
+            <circle class="geo-sketch" cx="74" cy="74" r="60" pathLength="1"/>
+            <circle class="geo-ring" cx="74" cy="74" r="60"/>
+            <path class="geo-cl" d="M74 0v8M74 140v8M0 74h8M140 74h8"/>
+            <path class="geo-leader" d="M116.4 116.4 128 128h22" pathLength="1"/>
+          </svg>
+          <div class="hero__icon"><img src="assets/img/mark-white.webp" width="512" height="512" alt="The OLPDL scorpion crest" data-zh-alt="OLPDL 蠍子隊徽"></div>
+          <span class="hero__callout" aria-hidden="true"><span data-zh="詳圖 A · 隊徽">Detail A · Crest</span></span>
+        </div>
         <p class="hero__brand"><span class="badge">8806</span><span class="wordmark">OLP<em>DL</em></span></p>
         <h1 class="h1 hero__title" id="hero-title">
           <span data-zh="<i class='js-n-seasons-zh'>五</i>個賽季，<i class='js-n-awards-zh'>十一</i>座獎項。"><i class="js-n-awards">11</i> awards. <i class="js-n-seasons">5</i> seasons.</span>
@@ -485,10 +496,18 @@
         </div>
 
         <div class="showcase__view" id="robot-view">
-          <canvas id="robot-canvas" aria-label="Interactive 3D model of the team's robot. Drag to rotate." data-zh-aria="隊伍機器人的互動 3D 模型，可拖曳旋轉。" role="img"></canvas>
+          <canvas id="robot-canvas" aria-label="Interactive 3D model of the team's robot (illustrative, not to scale). Drag to rotate." data-zh-aria="隊伍機器人的互動 3D 示意模型（未依比例），可拖曳旋轉。" role="img"></canvas>
           <img class="showcase__fallback" src="assets/img/g-match-reef.webp" alt="Team 8806's robot on the REEFSCAPE field" data-zh-alt="第 8806 隊的機器人在 REEFSCAPE 場地上" width="720" height="480" loading="lazy">
           <div class="hotspots" id="hotspots"></div>
+          <!-- CAD viewport corners (cad.css): the drawing view of the current tab; the regenerate status, then
+               the camera's azimuth / elevation (phones: the note). Filled in by initShowcase() in main.js. -->
           <span class="showcase__corner showcase__corner--tl" aria-hidden="true">FRC 8806 · REEFSCAPE</span>
+          <p class="showcase__corner showcase__corner--tr" id="view-label" aria-hidden="true"><b></b><span data-zh="示意模型 · 未依比例">Illustrative model · not to scale</span></p>
+          <p class="showcase__corner showcase__corner--bl" id="view-status" aria-hidden="true">
+            <span class="vs-regen"><i class="vs-sq"></i><span class="vs-txt"></span><i class="vs-bar"></i></span>
+            <span class="vs-readout"><span data-zh="方位">AZ</span> <b>---</b>° · <span data-zh="仰角">EL</span> <b>---</b>°</span>
+            <span class="vs-note" data-zh="示意模型&nbsp;· 未依比例">Illustrative model&nbsp;· not&nbsp;to&nbsp;scale</span>
+          </p>
           <p class="showcase__hint" aria-hidden="true" data-zh="拖曳旋轉">Drag to rotate</p>
         </div>
       </div>
@@ -525,14 +544,19 @@
       <div class="pledge" id="pledge">
         <div class="strip strip--sub">
           <p class="strip__id"><span class="strip__n">07.1</span> / <b data-zh="認養零件">Sponsor a part</b></p>
-          <p class="strip__meta" data-zh="透過 Instagram 傳送">Send via Instagram</p>
+          <p class="strip__meta" data-zh="物料清單 · 透過 Instagram 傳送">Bill of materials · send via Instagram</p>
         </div>
         <div class="pledge__head" data-reveal>
           <h3 class="h3" data-zh="認養一個零件。">Sponsor a part.</h3>
           <p data-zh="加入項目後，透過 Instagram 把清單傳給我們。">Add items, then send us your list on Instagram.</p>
         </div>
         <div class="pledge__grid">
-          <ul class="parts" id="parts"></ul>
+          <!-- The parts list is the robot's bill of materials: item balloons (cross-referenced in the cart and
+               on the 3D price tags), a column header and column rules (cad.css) -->
+          <div class="bom">
+            <div class="bom__head" aria-hidden="true"><span data-zh="項次">Item</span><span data-zh="品名與說明">Part &amp; description</span><span data-zh="單價 · 數量">Unit cost · qty</span></div>
+            <ol class="parts" id="parts" data-draw></ol>
+          </div>
           <div class="pledge__side">
           <aside class="cart" id="cart" aria-live="polite">
             <p class="cart__label label" data-zh="你的認養清單">Your pledge</p>
@@ -561,7 +585,7 @@
         </div>
         <div class="budget__body">
           <h3 class="h3" data-zh="每一塊錢的去向。">Where every NT$ goes.</h3>
-          <div class="stack" id="budget-stack"></div>
+          <div class="stack" id="budget-stack" data-draw></div>
           <div class="budget__head">
             <p class="budget__total"><span class="budget__scope" id="budget-scope"></span> <span id="budget-total">NT$0</span> <small id="budget-total-label"></small></p>
             <div class="cells cells--seg" role="group" aria-label="Budget scope" data-zh-aria="預算範圍">
@@ -569,7 +593,7 @@
               <button type="button" aria-pressed="false" data-scope="all" data-zh="含團隊差旅">Incl. team travel</button>
             </div>
           </div>
-          <div class="bars" id="bars"></div>
+          <div class="bars" id="bars" data-draw></div>
           <div class="bars__tip" id="bars-tip" role="tooltip" hidden></div>
           <p class="budget__note" data-zh="總額為 2025 年贊助企劃書各項目之加總。">Totals are the sum of the line items in the team's 2025 sponsorship proposal.</p>
           <details class="disclosure">
@@ -607,6 +631,20 @@
           <span data-zh="天主教崇光高級中學 · 新北市">Our Lady of Providence High School · New Taipei City, Taiwan</span>
         </div>
       </div>
+      <!-- Drawing title block below 1440px (the right rail carries it on wide screens) -->
+      <div class="tblock tblock--footer">
+        <dl class="tblock__cells">
+          <div class="tblock__cell tblock__cell--wide"><dt data-zh="專案">Project</dt><dd>FRC 8806 · OLPDL</dd></div>
+          <div class="tblock__cell"><dt data-zh="繪圖">Drawn by</dt><dd data-zh="45 位學生">45 students</dd></div>
+          <div class="tblock__cell"><dt data-zh="單位">Units</dt><dd>NT$</dd></div>
+          <div class="tblock__cell"><dt data-zh="圖紙數">Sheets</dt><dd>07</dd></div>
+          <div class="tblock__cell"><dt data-zh="版次">Rev</dt><dd class="js-rev">E · 2026</dd></div>
+        </dl>
+        <a class="tblock__approve" href="#sponsor" aria-label="Approved by: your brand? Become a sponsor" data-zh-aria="核准：你的品牌？成為贊助夥伴">
+          <span class="tblock__k" data-zh="核准">Approved by</span>
+          <span class="tblock__v"><span data-zh="你的品牌？">Your brand?</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg></span>
+        </a>
+      </div>
       <ul class="cells footer__links" id="footer-links"></ul>
     </div>
     <div class="footer__legal">
@@ -617,19 +655,37 @@
   </div>
 
   <!-- ============================== RIGHT RAIL (wide screens) ============================== -->
+  <!-- The drawing list (sheets and sub-sheets) and the title block, beside the scroll ruler -->
   <div class="rail" id="rail">
-    <p class="rail__title" id="rail-title" aria-hidden="true">FRC 8806</p>
-    <nav class="rail__toc" aria-label="On this page" data-zh-aria="本頁導覽">
+    <nav class="rail__toc dlist" aria-label="On this page" data-zh-aria="本頁導覽">
+      <p class="dlist__head" aria-hidden="true"><span data-zh="圖紙目錄">Drawing list</span></p>
       <ol>
-        <li><a href="#top" data-sec="top" data-zh="FRC 8806">FRC 8806</a></li>
-        <li><a href="#results" data-sec="results" data-zh="戰績">Results</a></li>
-        <li><a href="#partner" data-sec="partner" data-zh="贊助效益">Partner</a></li>
-        <li><a href="#impact" data-sec="impact" data-zh="影響力">Impact</a></li>
-        <li><a href="#team" data-sec="team" data-zh="團隊">Team</a></li>
-        <li><a href="#robot" data-sec="robot" data-zh="機器人">Robot</a></li>
-        <li><a href="#sponsor" data-sec="sponsor" data-zh="支持我們">Sponsor</a></li>
+        <li><a href="#top" data-sec="top"><span class="dlist__n">01</span><span data-zh="FRC 8806">FRC 8806</span></a></li>
+        <li><a href="#results" data-sec="results"><span class="dlist__n">02</span><span data-zh="戰績">Results</span></a></li>
+        <li><a href="#partner" data-sec="partner"><span class="dlist__n">03</span><span data-zh="贊助效益">Partner</span></a></li>
+        <li><a href="#impact" data-sec="impact"><span class="dlist__n">04</span><span data-zh="影響力">Impact</span></a></li>
+        <li><a href="#team" data-sec="team"><span class="dlist__n">05</span><span data-zh="團隊">Team</span></a></li>
+        <li><a href="#robot" data-sec="robot"><span class="dlist__n">06</span><span data-zh="機器人">Robot</span></a></li>
+        <li><a href="#sponsor" data-sec="sponsor"><span class="dlist__n">07</span><span data-zh="支持我們">Sponsor</span></a></li>
+        <li class="dlist__sub"><a href="#pledge" data-sec="pledge"><span class="dlist__n">07.1</span><span data-zh="認養零件">Sponsor a part</span></a></li>
+        <li class="dlist__sub"><a href="#budget" data-sec="budget"><span class="dlist__n">07.2</span><span data-zh="預算">Budget</span></a></li>
+        <li class="dlist__sub"><a href="#contact" data-sec="contact"><span class="dlist__n">07.3</span><span data-zh="聯絡我們">Contact</span></a></li>
       </ol>
+      <i class="dlist__bar" aria-hidden="true"></i>
     </nav>
+    <div class="tblock tblock--rail">
+      <dl class="tblock__cells" aria-hidden="true">
+        <div class="tblock__cell tblock__cell--wide"><dt data-zh="專案">Project</dt><dd>FRC 8806 · OLPDL</dd></div>
+        <div class="tblock__cell tblock__cell--wide"><dt data-zh="繪圖">Drawn by</dt><dd data-zh="45 位學生">45 students</dd></div>
+        <div class="tblock__cell"><dt data-zh="單位">Units</dt><dd>NT$</dd></div>
+        <div class="tblock__cell"><dt data-zh="版次">Rev</dt><dd class="js-rev">E · 2026</dd></div>
+        <div class="tblock__cell tblock__cell--wide"><dt data-zh="圖紙">Sheet</dt><dd><span id="tb-sheet">01</span> / 07</dd></div>
+      </dl>
+      <a class="tblock__approve" href="#sponsor" aria-label="Approved by: your brand? Become a sponsor" data-zh-aria="核准：你的品牌？成為贊助夥伴">
+        <span class="tblock__k" data-zh="核准">Approved by</span>
+        <span class="tblock__v"><span data-zh="你的品牌？">Your brand?</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg></span>
+      </a>
+    </div>
     <div class="ruler" id="ruler" aria-hidden="true"><i class="ruler__marker" id="ruler-marker"></i></div>
   </div>
 
