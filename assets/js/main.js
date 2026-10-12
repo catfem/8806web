@@ -34,12 +34,14 @@ const onLang = (fn) => { listeners.push(fn); fn(); };
 
 // ============================================================ counts from data.js
 
-// Season results: entries flagged `result` (e.g. "Top 8 alliance") are not awards.
-const awardsOf = (season) => season.awards.filter((a) => !a.result);
+// A season's official regionals and their awards. Off-season events (`offseason`) are shown on the
+// season's card but never counted.
+const eventsOf = (season) => season.events || [];
+const awardsOf = (season) => eventsOf(season).flatMap((e) => e.awards || []);
 const N = {
   awards: SEASONS.reduce((n, s) => n + awardsOf(s).length, 0),
   seasons: SEASONS.length,
-  regionals: ALL_SEASONS.reduce((n, s) => n + (s.regionals || 1), 0),
+  regionals: ALL_SEASONS.reduce((n, s) => n + eventsOf(s).length, 0),
   outreach: OUTREACH.length,
   exchanges: EXCHANGES.length,
 };
@@ -47,8 +49,17 @@ const N = {
 // Where we've competed, in season order: "New Taipei City, Hawaii, Istanbul, Arizona and Shanghai".
 // Attendance is a confirmed fact even for a draft season, so places and the regional count read every
 // season; awards and the season cards only read confirmed ones.
-const PLACES_PLAYED = ALL_SEASONS.flatMap((s) => s.places || [])
+const PLACES_PLAYED = ALL_SEASONS.flatMap((s) => eventsOf(s).map((e) => e.place))
   .filter((p, i, all) => all.findIndex((q) => q.en === p.en) === i);
+// Award balloons: the official awards numbered 1, 2, 3… in the order they were won (oldest season
+// first, events in season order), so the headline count is itemized on the cards. Keyed by event.
+const AWARD_NO = new Map();
+[...SEASONS].sort((a, b) => a.year - b.year).reduce((k, s) => eventsOf(s).reduce((k2, e) => {
+  AWARD_NO.set(e, (e.awards || []).map((_, i) => k2 + i + 1));
+  return k2 + (e.awards || []).length;
+}, k), 0);
+// An award's full official name: "Excellence in Engineering Award sponsored by Littelfuse".
+const awardName = (a) => (zh() ? a.zh + (a.by ? `（${a.by.zh}）` : '') : a.en + (a.by ? ` ${a.by.en}` : ''));
 const ABROAD = PLACES_PLAYED.filter((p) => p.en !== 'New Taipei City');
 const joinList = (list, l) => {
   const names = list.map((p) => (l === 'zh' ? p.zh : p.en));
@@ -81,18 +92,21 @@ function fillCounts() {
   $$('.js-abroad-zh').forEach((el) => { el.textContent = joinList(ABROAD, 'zh'); });
   $$('.js-outreach-range').forEach((el) => { el.textContent = OUTREACH_RANGE; });
   $$('.js-season-range').forEach((el) => { el.textContent = SEASON_RANGE; });
-  // Scoreboard cell for the newest season: "2026 — Regional Finalist in Shanghai, + 3 more awards".
+  // Scoreboard cell for the newest season: "2026 — Regional Finalists in Shanghai, plus 3 more awards".
   const latest = [...SEASONS].sort((a, b) => b.year - a.year)[0];
-  const top = awardsOf(latest).find((a) => a.star) || awardsOf(latest)[0];
+  const evs = eventsOf(latest);
+  const topEv = evs.find((e) => (e.awards || []).some((a) => a.star)) || evs.find((e) => e.awards?.length);
+  const top = topEv && (topEv.awards.find((a) => a.star) || topEv.awards[0]);
   const more = awardsOf(latest).length - 1;
   const year = $('#score-latest-year'), label = $('#score-latest');
   if (year && top) {
     year.textContent = latest.year;
-    const where = top.at ? (zh() ? top.at.zh : top.at.en) : '';
     label.textContent = zh()
-      ? `${where}${where && !where.includes('·') ? '區域賽' : ''}${top.zh}${more > 0 ? `，本季再添 ${more} 座獎項` : ''}`
-      : `${top.en}${where ? ` in ${where}` : ''}${more > 0 ? `, plus ${more} more award${more > 1 ? 's' : ''} this season` : ''}`;
+      ? `${topEv.name.zh}${awardName(top)}${more > 0 ? `，本季再添 ${more} 座獎項` : ''}`
+      : `${awardName(top)} in ${topEv.place.en}${more > 0 ? `, plus ${more} more award${more > 1 ? 's' : ''} this season` : ''}`;
   }
+  // When the results were last checked (the title block's "Checked" cell).
+  $$('.js-checked').forEach((el) => { el.textContent = `FRC Events · ${fmtDate(SITE.checked)}`; });
   // Title-block revision: one letter per season (A = the rookie season), so 5 seasons read "E · 2026".
   $$('.js-rev').forEach((el) => { el.textContent = `${String.fromCharCode(64 + N.seasons)} · ${latest.year}`; });
 }
@@ -102,7 +116,7 @@ function fillCounts() {
 const META = {
   en: {
     title: `FRC Team 8806 · ${N.awards} awards in ${N.seasons} seasons · Partner with us`,
-    desc: `45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, ${N.awards} FRC awards, ${N.regionals} regionals in ${joinList(PLACES_PLAYED, 'en')}. See what sponsors get and where every NT$ goes.`,
+    desc: `45 students from Our Lady of Providence High School, New Taipei City. Regional Winners in our 2022 rookie season, ${N.awards} FRC awards, ${N.regionals} regionals in ${joinList(PLACES_PLAYED, 'en')}. See what sponsors get and where every NT$ goes.`,
   },
   'zh-Hant': {
     title: `FRC 8806 崇光高中機器人隊 · ${zhNum(N.seasons)}個賽季、${zhNum(N.awards)}座獎項 · 成為贊助夥伴`,
@@ -264,44 +278,101 @@ function initRail() {
 
 // ============================================================ results
 
-// "Regional Finalist · Istanbul": the venue is shown when a season had more than one regional.
-const withVenue = (a) => esc(t(a)) + (a.at ? `<small>${esc(t(a.at))}</small>` : '');
-
+// Each season is a card: its photo (the newest season, until it has one: a stat panel), the year and
+// game, and an event record laid out like a drawing's revision table: one row per event (EVENT · DATES ·
+// TEAMS · RANK · W-L-T · ALLIANCE · RESULT), the event's awards under it with their numbered balloons
+// (AWARD_NO; blue for the alliance results), then the off-season events, which are never counted.
+// Narrow cards (cad.css, a container query) restack each row as a small card with the same cells.
 // The newest season leads as a wide card; earlier seasons follow, newest first.
 function renderSeasons() {
   const ordered = [...SEASONS].sort((a, b) => b.year - a.year);
-  $('#season-cards').innerHTML = ordered.map((s, i) => {
-    const latest = i === 0;
-    const n = awardsOf(s).length;
-    const media = s.img
-      ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(alt(s))}" loading="lazy" width="640" height="480">`
-      : latest
-        ? `<div class="season__img season__stat"><span class="season__stat-year">${UI(`${s.year} season`, `${s.year} 賽季`)}</span><span><span class="season__stat-num">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${UI(`${s.regionals || 1} regionals`, `${s.regionals || 1} 場區域賽`)}</span></span></div>`
-        : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>';
-    return renderSeason(s, media, latest);
-  }).join('');
+  $('#season-cards').innerHTML = ordered.map((s, i) => renderSeason(s, i === 0)).join('');
   renderGoalsAndLinks();
+  renderResultsNote();
 }
 
-const alt = (s) => (s.img === 'g-arizona-team.webp'
-  ? UI('Team 8806 at the 2025 Arizona East Regional', '第 8806 隊於 2025 亞利桑那東區域賽')
-  : `${t(s.event)} ${s.year}`);
+const ROLE = { captain: { en: 'captain', zh: '隊長' }, pick1: { en: '1st pick', zh: '第一指名' }, pick2: { en: '2nd pick', zh: '第二指名' } };
+const monShort = (m) => new Date(2000, m - 1, 1).toLocaleString('en-US', { month: 'short' });
+// "Mar 12–15" / "3/12–15" (the year is the card's).
+const fmtRange = ([a, b]) => {
+  const [, m1, d1] = a.split('-').map(Number), [, m2, d2] = b.split('-').map(Number);
+  if (zh()) return m1 === m2 ? `${m1}/${d1}–${d2}` : `${m1}/${d1}–${m2}/${d2}`;
+  return m1 === m2 ? `${monShort(m1)} ${d1}–${d2}` : `${monShort(m1)} ${d1} – ${monShort(m2)} ${d2}`;
+};
+const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+// A score ("463–438") never breaks at its dash.
+const scores = (str) => str.replace(/(\d)–(\d)/g, '$1\u2060–\u2060$2');
 
-function renderSeason(s, media, latest) {
-  const result = s.awards.find((a) => a.result);
+function recordTable(s) {
+  const head = [UI('Event', '賽事'), UI('Dates', '日期'), UI('Teams', '隊數'), UI('Rank', '排名'), UI('W-L-T', '勝敗和'), UI('Alliance', '聯盟'), UI('Result', '成績')];
+  // Each cell repeats its column name for the narrow layout, where the header row is hidden.
+  const k = (i) => `<span class="rec__k" aria-hidden="true">${head[i]}</span>`;
+  const v = (main, sub) => `<span class="rec__v">${main}</span>${sub ? `<span class="rec__s">${sub}</span>` : ''}`;
+  const none = `<span aria-hidden="true">—</span><span class="sr-only">${UI('not confirmed', '未確認')}</span>`;
+  const row = (e, off) => {
+    const href = off ? `https://www.thebluealliance.com/event/${e.key}` : `https://frc-events.firstinspires.org/${s.year}/${e.code}`;
+    const al = e.alliance;
+    return `<tr class="rec__ev" role="row">
+      <th class="rec__name" scope="row" role="rowheader"><span class="rec__title">${esc(t(e.name))}</span><span class="rec__meta"><a class="rec__code" href="${href}" target="_blank" rel="noopener">${esc(off ? e.key : e.code)}<span class="sr-only"> – ${off ? 'The Blue Alliance' : 'FRC Events'}</span></a><span class="rec__venue">${esc(t(e.venue))}</span></span></th>
+      <td class="rec__dt" role="cell">${k(1)}${v(esc(fmtRange(e.dates)))}</td>
+      <td class="rec__tm${e.rank ? ' is-dup' : ''}" role="cell">${k(2)}${v(e.teams)}</td>
+      <td class="rec__rk${e.rank ? '' : ' is-na'}" role="cell">${k(3)}${v(e.rank ? UI(`${e.rank} of ${e.teams}`, `${e.rank}／${e.teams}`) : none)}</td>
+      <td class="rec__wl" role="cell">${k(4)}${v(e.wlt)}</td>
+      <td class="rec__al" role="cell">${k(5)}${v(al ? UI(`Alliance ${al.n}`, `第${al.n}聯盟`) : none, al?.role ? esc(t(ROLE[al.role])) : '')}</td>
+      <td class="rec__rs" role="cell">${k(6)}${v(esc(t(e.result)), esc(scores(t(e.result.sub))))}</td>
+    </tr>`;
+  };
+  const awards = (e) => {
+    const list = e.awards || [], nos = AWARD_NO.get(e) || [];
+    if (!list.length && !e.note) return '';
+    return `<tr class="rec__aw" role="row"><td colspan="7" role="cell">
+      ${list.length ? `<ul class="rec__awards" aria-label="${esc(UI(`Awards at the ${e.name.en}`, `${e.name.zh}獎項`))}">${list.map((a, i) => `<li class="${a.star ? 'is-star' : ''}">${balloon(nos[i])}<span>${esc(t(a))}${a.by ? ` <small>${esc(t(a.by))}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+      ${e.note ? `<p class="rec__note">${esc(scores(t(e.note)))}</p>` : ''}
+    </td></tr>`;
+  };
+  const off = s.offseason || [];
+  return `<table class="rec" role="table">
+    <caption class="sr-only">${UI(`${s.year} event record`, `${s.year} 賽季賽事紀錄`)}</caption>
+    <colgroup><col class="rec__c-ev"><col class="rec__c-dt"><col class="rec__c-tm"><col class="rec__c-rk"><col class="rec__c-wl"><col class="rec__c-al"><col class="rec__c-rs"></colgroup>
+    <thead role="rowgroup"><tr role="row">${head.map((h) => `<th scope="col" role="columnheader">${h}</th>`).join('')}</tr></thead>
+    ${eventsOf(s).map((e) => `<tbody class="rec__group" role="rowgroup">${row(e)}${awards(e)}</tbody>`).join('')}
+    ${off.length ? `<tbody class="rec__group rec__group--off" role="rowgroup">
+      <tr class="rec__offhead" role="row"><th colspan="7" scope="colgroup" role="columnheader">${UI(`Off-season event${off.length > 1 ? 's' : ''} · not counted in the FRC awards`, '季後賽 · 不計入 FRC 獎項')}</th></tr>
+      ${off.map((e) => row(e, true)).join('')}
+    </tbody>` : ''}
+  </table>`;
+}
+
+function renderSeason(s, latest) {
+  const n = awardsOf(s).length, r = eventsOf(s).length;
+  const regionals = UI(`${r} regional${r === 1 ? '' : 's'}`, `${r} 場區域賽`);
+  const media = s.img
+    ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(t(s.imgAlt) || `${s.year}`)}" loading="lazy" width="640" height="480">`
+    : latest
+      ? `<div class="season__img season__stat"><span class="season__stat-year">${UI(`${s.year} season`, `${s.year} 賽季`)}</span><span><span class="season__stat-num">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${regionals}</span>${s.record ? `<span class="season__stat-sub">${UI(`Record ${s.record} incl. playoffs`, `戰績 ${s.record}（含淘汰賽）`)}</span>` : ''}</span></div>`
+      : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>';
+  const sum = [s.note && t(s.note), regionals, UI(`${n} FRC award${n === 1 ? '' : 's'}`, `${n} 座 FRC 獎項`)].filter(Boolean).join(' · ');
   return `
-    <article class="season${latest ? ' season--latest' : ''}">
-      ${media}
-      <div class="season__body">
+    <article class="season${latest ? ' season--latest' : ''}" aria-labelledby="season-${s.year}">
+      <div class="season__media">${media}</div>
+      <div class="season__head">
         ${latest ? `<p class="badge season__badge">${UI('Latest season', '最新賽季')}</p>` : ''}
-        <h3 class="season__year">${s.year}</h3>
-        <p class="season__event">${esc(t(s.event))}</p>
-        ${result ? `<p class="season__result">${esc(t(result))}${result.at ? ` · ${esc(t(result.at))}` : ''}</p>` : ''}
-        <ul class="season__awards">${awardsOf(s).map((a) => `<li class="${a.star ? 'star' : ''}">${withVenue(a)}</li>`).join('')}</ul>
-        ${(s.offseason || []).map((o) => `<p class="season__off"><span>${UI('Off-season', '季後賽')}</span>${esc(t(o))}</p>`).join('')}
-        ${s.note ? `<p class="season__note">${esc(t(s.note))}</p>` : ''}
+        <div class="season__title"><h3 class="season__year" id="season-${s.year}">${s.year}</h3><p class="season__game"><span>${UI('Game', '賽題')}</span> ${esc(s.game)}</p></div>
+        ${latest ? '' : `<p class="season__sum">${esc(sum)}</p>`}
       </div>
+      <div class="season__rec">${recordTable(s)}</div>
     </article>`;
+}
+
+// The results footnote: the best confirmed qualification run (the best rank for the field size), and
+// when the results were checked.
+function renderResultsNote() {
+  const best = SEASONS.flatMap((s) => eventsOf(s).filter((e) => e.rank).map((e) => ({ e, year: s.year })))
+    .sort((a, b) => a.e.rank / a.e.teams - b.e.rank / b.e.teams)[0];
+  const checked = UI(`Results checked against FRC Events / The Blue Alliance data, ${fmtDate(SITE.checked)}.`, `戰績已依 FRC Events／The Blue Alliance 資料核對（${fmtDate(SITE.checked)}）。`);
+  $('#results-note').innerHTML = (best
+    ? `<span class="cite__best">${esc(UI(`Best qualification run: ${best.e.wlt}, ranked ${ord(best.e.rank)} of ${best.e.teams} at the ${best.year} ${best.e.name.en}.`, `最佳資格賽表現：${best.year} ${best.e.name.zh}，${best.e.teams} 隊中排名第 ${best.e.rank}（${best.e.wlt}）。`))}</span>${UI(' ', '')}`
+    : '') + `<span>${esc(checked)}</span>`;
 }
 
 function renderGoalsAndLinks() {
@@ -370,6 +441,27 @@ function renderImpact() {
 
 // ============================================================ world map
 
+// A place's label lines: the official regionals played there (from SEASONS, matched by name), then the
+// teams met there. One regional: "2023 Hawaii Regional". Several named after the place: "2 regionals ·
+// 2022, 2025". Several with their own names: "4 regionals", then "İstanbul & Bosphorus 2024" per year.
+function placeLines(p) {
+  const evs = ALL_SEASONS.flatMap((s) => eventsOf(s).map((e) => ({ e, year: s.year }))).filter(({ e }) => e.place.en === p.name.en);
+  const years = [...new Set(evs.map((x) => x.year))];
+  const out = p.home ? [UI('Home', '我們的主場')] : [];
+  if (evs.length === 1) out.push(`${evs[0].year} ${t(evs[0].e.name)}`);
+  else if (evs.length > 1 && evs.every(({ e }) => t(e.short).startsWith(t(p.name)))) {
+    out.push(UI(`${evs.length} regionals · ${years.join(', ')}`, `${evs.length} 場區域賽 · ${years.join('、')}`));
+  } else if (evs.length > 1) {
+    out.push(UI(`${evs.length} regionals`, `${evs.length} 場區域賽`));
+    years.forEach((y) => {
+      const names = evs.filter((x) => x.year === y).map((x) => t(x.e.short));
+      out.push(UI(`${names.join(' & ')} ${y}`, `${y} ${names.join('、')}`));
+    });
+  }
+  if (p.exch) out.push(p.online ? UI(`Online exchange ${p.exch}`, `與 ${p.exch} 線上交流`) : UI(`Exchange ${p.exch}`, `與 ${p.exch} 交流`));
+  return out;
+}
+
 function renderMap() {
   const svg = $('#world-map');
   const { step, lon0, lat0, data } = WORLD;
@@ -407,13 +499,14 @@ function renderMap() {
   inner.appendChild(labels);
   const pos = { home: 'below', istanbul: 'below', hawaii: 'below', shanghai: '', poland: '', arizona: '' };
   onLang(() => {
+    const lines = (p) => placeLines(p).map((l) => `<span>${esc(l)}</span>`).join('');
     labels.innerHTML = PLACES.map((p) => {
       const [x, y] = proj(p);
       const cls = (pos[p.id] ? ' map__label--' + pos[p.id] : '') + (p.home ? ' map__label--home' : '');
-      return `<div class="map__label${cls}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%${p.home ? '' : `;--k:${K[p.id]}`}"><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></div>`;
+      return `<div class="map__label${cls}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%${p.home ? '' : `;--k:${K[p.id]}`}"><b>${esc(t(p.name))}</b>${lines(p)}</div>`;
     }).join('');
     // Narrow screens hide the map labels (except home) and list the places instead.
-    $('#place-list').innerHTML = PLACES.map((p) => `<li><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></li>`).join('');
+    $('#place-list').innerHTML = PLACES.map((p) => `<li><b>${esc(t(p.name))}</b>${lines(p)}</li>`).join('');
   });
   // The map also fades in (data-reveal, .is-in), which is too early for the flight: it waits for a third
   // of the map to be on screen.

@@ -52,6 +52,79 @@
 }
 @media (max-width: 560px) { .hero__callout, .geo-leader { display: none; } }
 
+/* ------------------------------------------------------------------ results: event record (revision table) */
+
+/* Each season's events as a drawing revision table (recordTable in main.js; every figure comes from
+   SEASONS in data.js): a mono header row, one row per event, and the event's awards under it, each on
+   its numbered balloon (the official awards counted 1, 2, 3… in the order they were won, so the headline
+   count is itemized; blue for the alliance results). The off-season events follow under a dashed rule,
+   a hidden line: shown, never counted. Tabular figures throughout. The event code links to its official
+   page (FRC Events; TBA for off-season events). Below 700px of card (the .season__rec container) each
+   event restacks as a block: name and dates, then labelled cells for rank (or teams), record, alliance
+   and result. */
+.rec { width: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+.rec__c-dt { width: 84px; }
+.rec__c-tm { width: 54px; }
+.rec__c-rk { width: 78px; }
+.rec__c-wl { width: 62px; }
+.rec__c-al { width: 104px; }
+.rec__c-rs { width: 148px; }
+.rec thead th {
+  padding: 0 10px 9px 0; text-align: left; vertical-align: bottom; border-bottom: 1px solid var(--rule-2);
+  font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
+}
+.rec__group { border-top: 1px solid var(--rule); }
+.rec thead + .rec__group { border-top: 0; } /* the header's rule is the first event's */
+.rec__ev > * { padding: 15px 10px 15px 0; text-align: left; vertical-align: top; font-weight: inherit; }
+.rec__ev:has(+ .rec__aw) > * { padding-bottom: 0; }
+.rec__title { display: block; font: 600 15px/1.3 var(--f-body); color: var(--text); }
+.rec__meta { display: block; margin-top: 4px; font: 500 11px/1.45 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.rec__code { display: inline-block; padding: 3px 0; margin: -3px 0; color: var(--accent-text); }
+.rec__code::after { content: "\2197" / ""; margin-left: 3px; }
+.rec__code:hover { color: var(--text); }
+.rec__venue::before { content: "\00b7" / ""; margin: 0 0.5em; }
+.rec__v { display: block; font: 500 13px/1.35 var(--f-mono); color: var(--text); }
+.rec__s { display: block; margin-top: 3px; font: 500 11px/1.35 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.rec__k { display: none; }
+.rec__dt .rec__v, .rec__rk .rec__v { white-space: nowrap; }
+.rec__aw > td { padding: 12px 0 16px; }
+.rec__awards { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.rec__awards li { display: flex; align-items: flex-start; gap: 10px; font: 700 16px/1.35 var(--f-display); font-stretch: 106%; letter-spacing: -0.005em; color: var(--text); }
+.rec__awards .balloon { margin-top: -1px; }
+.rec__awards .is-star .balloon { border-color: var(--accent); color: var(--accent-text); }
+.rec__awards small { font: 500 13px/1.35 var(--f-body); font-stretch: 100%; letter-spacing: 0; color: var(--muted); }
+.rec__note { margin-top: 10px; max-width: 72ch; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.rec__group--off { border-top: 1px dashed var(--cad-faint); }
+.rec__offhead th { padding: 14px 0 0; text-align: left; font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim); }
+html[data-lang="zh-Hant"] .rec :is(thead th, .rec__meta, .rec__s, .rec__k, .rec__offhead th) { font-size: 12px; letter-spacing: 0.04em; }
+html[data-lang="zh-Hant"] .rec__title { word-break: keep-all; overflow-wrap: anywhere; } /* never split 區域賽 */
+html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
+
+@container rec (max-width: 699px) {
+  .rec, .rec caption, .rec tbody, .rec tr, .rec__aw > td, .rec__offhead th { display: block; }
+  .rec colgroup { display: none; }
+  .rec { position: relative; }
+  .rec thead, .rec thead th { position: absolute; left: 0; top: 0; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* read, not shown */
+  .rec tr.rec__ev {
+    display: grid; gap: 12px 12px; padding: 15px 0;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.75fr) minmax(0, 1.05fr) minmax(0, 1.25fr);
+    grid-template-areas: "name name name dt" "rk wl al rs";
+  }
+  .rec tr.rec__ev:has(+ .rec__aw) { padding-bottom: 0; }
+  .rec__ev > * { display: block; padding: 0; }
+  .rec__name { grid-area: name; }
+  .rec__dt { grid-area: dt; text-align: right; }
+  .rec__dt .rec__k { display: none; }
+  .rec__tm, .rec__rk { grid-area: rk; }
+  .rec__tm.is-dup, .rec__rk.is-na { display: none; }
+  .rec__wl { grid-area: wl; }
+  .rec__al { grid-area: al; }
+  .rec__rs { grid-area: rs; }
+  .rec__k { display: block; margin-bottom: 4px; font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim); }
+  .rec__aw > td { padding: 14px 0 15px; }
+  .rec__awards { flex-direction: column; gap: 9px; }
+}
+
 /* ------------------------------------------------------------------ zone letters */
 
 /* One letter per 320px band down each sheet, in the gutter beside the column rule (cad.js writes
