@@ -45,6 +45,9 @@ html.lenis { scroll-behavior: auto; }
   transition: opacity var(--t-reveal) var(--ease) var(--d, 0ms), transform var(--t-reveal) var(--ease) var(--d, 0ms);
 }
 .mo [data-stagger] > * { transition-delay: calc(var(--d, 0ms) + min(var(--i, 0), var(--stagger-n)) * var(--stagger)); }
+/* Focus inside a block that hasn't placed yet (Tab moved faster than the reveal): show it at once. */
+html.mo :is([data-reveal], [data-stagger] > *):focus-within:not(.is-in),
+html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none; transition-duration: 0s; transition-delay: 0s; }
 @media screen {
   .mo [data-reveal=""]:not([data-stagger]):not(.is-in),
   .mo [data-stagger]:not(.is-in) > * { opacity: 0; transform: translateY(var(--rise)); }
@@ -217,19 +220,23 @@ html.lenis { scroll-behavior: auto; }
 
 /* selection grips (cad.css) snap in from slightly outside; with reduced motion they only fade */
 :is(.btn, .hotspot__tag)::before { transition: opacity var(--t-micro) var(--ease); }
-.mo :is(.btn, .hotspot__tag)::before { transform: scale(1.06); transition: opacity var(--t-micro) var(--ease), transform var(--t-micro) var(--ease); }
+.mo :is(.btn, .hotspot__tag)::before { transition: opacity var(--t-micro) var(--ease), transform var(--t-micro) var(--ease); }
+/* Full-width buttons (≤760px) reach 18px from the screen edge: a scaled box there would widen the page,
+   so on phones the grips only fade in. */
+@media (min-width: 761px) { .mo :is(.btn, .hotspot__tag)::before { transform: scale(1.06); } }
 @media (hover: hover) { .mo :is(.btn, .hotspot__tag):hover::before { transform: none; } }
 .mo :is(.btn, .hotspot__tag):focus-visible::before { transform: none; }
 
 /* ------------------------------------------------------------------ ambient: map, season clock, photo strip */
 
-/* Map flight plan: the arcs fly out nearest-first (--k, renderMap), the pins land, then the labels;
-   each halo pulses three times and rests as a static disc. */
+/* Map flight plan: the arcs fly out nearest-first (--k, renderMap), and each place's pin and label land
+   together (the labels carry results, so they never wait long); each halo pulses twice, so everything
+   rests within 5 s, and stays as a static disc. */
 .map__arc { stroke-dasharray: 1; stroke-dashoffset: 0; }
 .mo .map__arc { transition: stroke-dashoffset var(--t-long) var(--ease) calc(var(--k, 0) * 140ms); }
-.mo .map__pin:not(.map__pin--home) { transform-box: fill-box; transform-origin: center; transition: transform 240ms var(--ease) calc(var(--k, 0) * 140ms + 1000ms); }
-.mo .map__label:not(.map__label--home) { transition: opacity var(--t-state) var(--ease) calc(var(--k, 0) * 140ms + 1100ms); }
-.mo .map.is-flown .map__halo { animation: halo 2.4s var(--ease) calc(var(--k, 0) * 140ms + 1100ms) 3 backwards; }
+.mo .map__pin:not(.map__pin--home) { transform-box: fill-box; transform-origin: center; transition: transform 240ms var(--ease) calc(var(--k, 0) * 140ms + 600ms); }
+.mo .map__label:not(.map__label--home) { transition: opacity var(--t-state) var(--ease) calc(var(--k, 0) * 140ms + 600ms); }
+.mo .map.is-flown .map__halo { animation: halo 1.6s var(--ease) calc(var(--k, 0) * 140ms + 800ms) 2 backwards; }
 @keyframes halo { from { transform: scale(0.6); opacity: 0.45; } to { transform: scale(2.6); opacity: 0; } }
 @media screen {
   .mo .map:not(.is-flown) .map__arc { stroke-dashoffset: 1; }
@@ -237,8 +244,8 @@ html.lenis { scroll-behavior: auto; }
   .mo .map:not(.is-flown) .map__label:not(.map__label--home) { opacity: 0; }
 }
 
-/* season clock: the "right now" square blinks three times, then stays on */
-.mo .now__pulse { animation: blink 1.6s steps(2, jump-none) 3; }
+/* season clock: the "right now" square blinks three times once the clock is on screen, then stays on */
+.mo .now.is-in .now__pulse { animation: blink 1.6s steps(2, jump-none) 400ms 3; }
 @keyframes blink { 50% { opacity: 0.25; } }
 
 /* Photo strip: the only endless motion, so it has a Pause / Play button (initMarquee in main.js; it is

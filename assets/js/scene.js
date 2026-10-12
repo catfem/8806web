@@ -169,6 +169,10 @@ const GAP = 18, PAD = 8; // GAP = .hotspot__tag margin in main.css
 const PAD_T = { desktop: 44, mobile: 40 }, PAD_B = { desktop: 44, mobile: 48 };
 // The one-shot assembly intro: how far apart the parts start (in `explode` units) and how long they take.
 const INTRO_EXPLODE = 0.35, INTRO_MS = 1100;
+// The idle motion (camera sway, elevator cycle, spinning rollers) starts easing out this long after the
+// last interaction (a drag, a tab, the section coming into view) and is at rest by about 5 s, so nothing
+// moves on its own for longer (WCAG 2.2.2). The next interaction wakes it.
+const IDLE_MS = 3500;
 
 // Where the sponsor panel is and how big it is, if the model exposes it.
 function panelInfo(robot) {
@@ -186,7 +190,10 @@ function panelInfo(robot) {
 }
 
 export async function initShowcase(opts) {
-  const { canvas, wrap, hotspotLayer, hotspots, onHotspot, sponsors, modelUrl, reducedMotion } = opts;
+  const { canvas, wrap, hotspotLayer, hotspots, onHotspot, sponsors, modelUrl } = opts;
+  let reducedMotion = !!opts.reducedMotion; // can change while the page is open (setReducedMotion)
+  let wokeAt = performance.now(), idleAmp = 1, last0 = 0; // idle motion: last wake-up, strength (0..1), last frame
+  const wake = () => { wokeAt = performance.now(); };
   const section = opts.section || wrap;
   const mobile = () => isMobileLayout();
   // Spread the set-up over idle slices of the main thread, so scrolling nearby stays smooth.
@@ -282,6 +289,7 @@ export async function initShowcase(opts) {
   let drag = 0, vel = 0, dragging = false, settle = false, lastX = 0, pid = null;
   canvas.addEventListener('pointerdown', (e) => {
     dragging = true; settle = false; vel = 0; lastX = e.clientX; pid = e.pointerId;
+    wake();
     canvas.setPointerCapture(pid);
   });
   canvas.addEventListener('pointermove', (e) => {
@@ -309,7 +317,12 @@ export async function initShowcase(opts) {
     if (now < holdUntil) { last = now; return; }
     const dt = Math.min(0.05, (now - (last || now)) / 1000);
     last = now;
-    if (!reducedMotion) time += dt;
+    // Idle motion eases out IDLE_MS after the last wake-up (and in again on the next one).
+    const idleTo = !reducedMotion && (dragging || now - wokeAt < IDLE_MS) ? 1 : 0;
+    idleAmp += (idleTo - idleAmp) * (1 - Math.exp(-Math.min(0.25, (now - (last0 || now)) / 1000) * 3));
+    last0 = now;
+    if (Math.abs(idleTo - idleAmp) < 1e-3) idleAmp = idleTo;
+    if (idleAmp > 0) time += dt;
 
     if (k < 1) {
       // wall-clock, so a slow device still lands on the new view in time
@@ -339,18 +352,18 @@ export async function initShowcase(opts) {
 
     // Pose first: the camera target follows the robot's lift in the exploded view.
     const drive = clamp(cur.xray / 0.6); // the drivetrain animates while the bumpers are see-through
-    const still = reducedMotion;
+    const a = reducedMotion ? 0 : idleAmp;
     pose({
       yaw: 0,
       xray: cur.xray,
       lift: cur.lift,
       explode,
-      elevator: cur.elevator + (still ? 0 : cur.cycle * (1 - Math.cos(time * 1.05))),
+      elevator: cur.elevator + a * cur.cycle * (1 - Math.cos(time * 1.05)),
       intake: cur.intake,
-      steer: still ? 0 : drive * Math.sin(time * 0.9) * 0.9,
-      wheelSpeed: still ? 0 : drive * 14,
-      intakeSpeed: still ? 0 : cur.spin * 3,
-      eeSpeed: still ? 0 : cur.spin * 2,
+      steer: a * drive * Math.sin(time * 0.9) * 0.9,
+      wheelSpeed: a * drive * 14,
+      intakeSpeed: a * cur.spin * 3,
+      eeSpeed: a * cur.spin * 2,
       ball: 0,
     }, dt);
     shadow.material.opacity = 1 - explode * 0.6;
@@ -361,7 +374,7 @@ export async function initShowcase(opts) {
     const ref = m ? REF_ASPECT.mobile : REF_ASPECT.desktop;
     let dist = m ? cur.md : cur.dist;
     if (aspect < ref) dist *= Math.pow(ref / aspect, 0.85);
-    const sway = reducedMotion ? 0 : Math.sin(time * 0.35) * cur.sway;
+    const sway = reducedMotion ? 0 : idleAmp * Math.sin(time * 0.35) * cur.sway;
     const az = cur.az + sway + drag;
     const el = cur.el;
     look.set(cur.tx, cur.ty + (robot.root.position.y || 0) * 0.6, cur.tz);
@@ -460,7 +473,7 @@ export async function initShowcase(opts) {
   // otherwise a few materials per idle slice (each render links only the programs it has not seen yet).
   await warmUp(renderer, scene, camera, idle);
   if (!robot.custom) stage('shading');
-  new IntersectionObserver((entries) => { inView = entries.at(-1).isIntersecting; sync(); }).observe(section);
+  new IntersectionObserver((entries) => { inView = entries.at(-1).isIntersecting; if (inView) wake(); sync(); }).observe(section);
   document.addEventListener('visibilitychange', sync);
   requestAnimationFrame(() => { canvas.classList.add('is-ready'); stage('done'); });
 
@@ -473,7 +486,13 @@ export async function initShowcase(opts) {
       k = 0;
       t0 = performance.now();
       settle = true;
+      wake();
       if (reducedMotion) { Object.assign(cur, to); k = 1; drag = 0; vel = 0; }
+    },
+    // Reduced motion switched on or off while the page is open: the robot stops (or may move) at once.
+    setReducedMotion(on) {
+      reducedMotion = !!on;
+      if (reducedMotion) { intro = -1; k = 1; Object.assign(cur, to); drag = 0; vel = 0; } else wake();
     },
     setName(str) { name = str || ''; robot.parts?.setSponsorName?.(name); },
     setLang(l) { lang = langKey(l); renderLabels(); },

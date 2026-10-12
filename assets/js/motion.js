@@ -63,16 +63,26 @@ export function initMotion() {
 
   // Counters (never money): 0 → the value over 900 ms. The box is sized for the final number up front
   // (--digits, tabular figures), so the "+" after it and the label never move.
+  // A number that is already on screen when the page opens (the hero scoreboard) is a fact the visitor
+  // has read: it never resets to 0. Only numbers scrolled into view count up.
+  let opening = true;
   const counters = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
       counters.unobserve(e.target);
-      if (motionOn()) count(e.target);
+      if (motionOn() && !opening) count(e.target);
     });
+    opening = false;
   }, { threshold: 0.6 });
   $$('[data-count]').forEach((el) => {
     el.style.setProperty('--digits', String(+el.dataset.count).length);
     counters.observe(el);
+  });
+
+  // Focus that reaches a block before its reveal (fast tabbing) places it at once and for good.
+  document.addEventListener('focusin', (e) => {
+    const box = e.target.closest?.('[data-reveal], [data-stagger]');
+    if (box && !box.classList.contains('is-in')) box.classList.add('is-in');
   });
 
   // The backstop in the head script removes .mo after 3 s unless this ran; it is never added back.
@@ -90,7 +100,7 @@ export function initMotion() {
 function count(el) {
   const end = +el.dataset.count, t0 = performance.now(), dur = 900;
   const step = (now) => {
-    const k = Math.min(1, (now - t0) / dur);
+    const k = Math.min(1, Math.max(0, (now - t0) / dur)); // a frame stamped before t0 must not go below 0
     el.textContent = Math.round(end * EASE(k));
     if (k < 1) requestAnimationFrame(step);
   };
@@ -111,10 +121,18 @@ const startJump = (safety) => {
   root.classList.add('is-jumping');
   endJump(safety);
 };
-// A native jump (no Lenis): ends on scrollend, or after the fallback when nothing had to move.
+// A native jump (no Lenis): ends on scrollend, or after the fallback when nothing had to move. Its
+// listeners belong to this jump only: the next jump, the visitor's own touch, wheel or keys, Back /
+// Forward, or the safety timer cancels them, so a later scroll is never pulled back to an old target.
+let jumpAc = null;
 const nativeJump = () => {
+  jumpAc?.abort();
+  const ac = (jumpAc = new AbortController()), { signal } = ac;
   startJump(1300);
-  addEventListener('scrollend', () => endJump(), { once: true });
+  setTimeout(() => ac.abort(), 2500);
+  for (const type of ['touchstart', 'wheel', 'keydown', 'popstate']) addEventListener(type, () => ac.abort(), { capture: true, passive: true, signal });
+  addEventListener('scrollend', () => endJump(), { once: true, signal });
+  return signal;
 };
 
 // Focus follows the jump. Sections are not controls: they take focus without a ring.
@@ -131,33 +149,51 @@ function focusOn(el) {
   focusing = false;
 }
 
-let navH = 0; // html scroll-padding-top (= --nav-h): Lenis subtracts it itself, the centre offset needs it
-const readNav = () => { navH = parseFloat(getComputedStyle(root).scrollPaddingTop) || 0; };
+// html scroll-padding: the nav on top (Lenis subtracts it itself, the centre offset needs it) and, on
+// phones, the dock at the bottom; a centred target sits between the two.
+let navH = 0, padB = 0;
+const readNav = () => {
+  const cs = getComputedStyle(root);
+  navH = parseFloat(cs.scrollPaddingTop) || 0;
+  padB = parseFloat(cs.scrollPaddingBottom) || 0;
+};
 
 // Every in-page jump: nav and rail links, the dock, the hero buttons (through the anchor listener below),
 // a price tag to its row of the parts list, the camera tag to the budget.
 export function goTo(el, { block = 'start', hash, focus = el } = {}) {
   if (!el) return;
   if (hash && hash !== location.hash) history.pushState(null, '', hash);
+  // Where the target should sit when the jump ends (a 'start' target just under the nav).
+  const want = () => (block === 'center' ? Math.max(navH, (innerHeight + navH - padB - el.offsetHeight) / 2) : navH);
+  // The glide is measured once, at the click. Something above the target can still change size on the
+  // way (an image, the robot's no-WebGL stand-in), so the landing is checked and corrected at the end.
+  const missed = () => Math.abs(el.getBoundingClientRect().top - want()) > 2;
   if (lenis) {
-    // Measured once, at the click. Lenis lands 'start' under the nav (scroll-padding-top).
-    const offset = block === 'center' ? -Math.max(0, (innerHeight - navH - el.offsetHeight) / 2) : 0;
+    const offset = block === 'center' ? -Math.max(0, (innerHeight - navH - padB - el.offsetHeight) / 2) : 0;
     const dy = el.getBoundingClientRect().top - navH + offset;
     const duration = Math.min(1.2, Math.max(0.6, 0.45 + Math.sqrt(Math.abs(dy)) / 150));
     startJump(duration * 1000 + 300);
-    lenis.scrollTo(el, { offset, duration, easing: EASE, onComplete: () => { focusOn(focus); endJump(); } });
+    lenis.scrollTo(el, { offset, duration, easing: EASE, onComplete: () => {
+      if (missed()) lenis.scrollTo(el, { offset, immediate: true, force: true });
+      focusOn(focus);
+      endJump();
+    } });
     return;
   }
-  nativeJump();
+  readNav();
+  if (!missed()) { jumpAc?.abort(); focusOn(focus); return; } // already there: nothing to scroll or correct
+  const signal = nativeJump();
   el.scrollIntoView({ behavior: REDUCED.matches ? 'auto' : 'smooth', block });
+  addEventListener('scrollend', () => { if (missed()) el.scrollIntoView({ behavior: 'instant', block }); }, { once: true, signal });
   focusOn(focus);
 }
 
 // ============================================================ smooth scrolling
 
 export function initSmoothScroll() {
-  // In-page links. Without Lenis the browser jumps (CSS smooth scrolling on touch, instant with reduced
-  // motion) and only jump mode is added; with Lenis, goTo() glides there. The skip link stays native.
+  // In-page links all go through goTo(): with Lenis it glides there, without it the browser scrolls
+  // (smooth on touch, instant with reduced motion). Either way the hash updates and focus follows, so the
+  // next Tab continues from the section. The skip link stays native.
   document.addEventListener('click', (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.target.closest?.('a[href^="#"]');
@@ -166,7 +202,6 @@ export function initSmoothScroll() {
     let el = null;
     try { el = hash.length > 1 && document.getElementById(decodeURIComponent(hash.slice(1))); } catch (err) { /* malformed */ }
     if (!el) return;
-    if (!lenis) { nativeJump(); return; }
     e.preventDefault();
     goTo(el, { hash });
   });
@@ -184,6 +219,12 @@ export function initSmoothScroll() {
       lerp: 0.1, smoothWheel: true, syncTouch: false, wheelMultiplier: 1,
       autoRaf: true, anchors: false, stopInertiaOnNavigate: true,
       autoResize: true, overscroll: true, allowNestedScroll: false,
+      // Lenis 1.3.26 ends a glide when Math.round(value) === Math.round(target), which never happens for a
+      // target on exactly .5px (38.49… rounds down, 38.5 up): it would glide forever and undo any other
+      // scroll. Small trackpad deltas can add up to such a target, so wheel targets stay on whole pixels.
+      virtualScroll: (d) => {
+        if (lenis && d.event.type.includes('wheel')) d.deltaY = Math.round(lenis.targetScroll + d.deltaY) - lenis.targetScroll;
+      },
     });
     // The keyboard and focus win: a key that scrolls, or focus moving somewhere goTo() didn't send it,
     // stops a glide, then the browser's own scroll runs and Lenis follows it.
@@ -196,9 +237,12 @@ export function initSmoothScroll() {
       lenis.reset();
     }, true);
     document.addEventListener('focusin', () => { if (lenis && !focusing) lenis.reset(); });
+    // Back / Forward during a jump glide: the browser's own scroll restoration wins (reset() also drops the
+    // glide's onComplete, so neither the landing correction nor the focus move runs).
+    addEventListener('popstate', () => { if (lenis?.isScrolling === 'smooth') { lenis.reset(); endJump(0); } });
   }).catch(() => { /* stays native */ });
 
-  const idle = () => (window.requestIdleCallback ? requestIdleCallback(start, { timeout: 1200 }) : setTimeout(start, 1));
-  if (document.readyState === 'complete') idle();
-  else addEventListener('load', idle, { once: true });
+  // Soon after the page is interactive (this module runs after parsing), not after every image has loaded:
+  // on a slow connection 'load' can come seconds after the page is readable. The module is preloaded.
+  if (window.requestIdleCallback) requestIdleCallback(start, { timeout: 300 }); else setTimeout(start, 1);
 }
