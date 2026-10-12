@@ -323,8 +323,6 @@ function renderGoalsAndLinks() {
 function initMarquee() {
   const marquee = $('#marquee');
   const track = $('.marquee__track', marquee);
-  if (reducedMotion) return;
-  track.innerHTML += track.innerHTML.replace(/<img /g, '<img aria-hidden="true" ');
   const btn = $('#marquee-toggle');
   const label = $('span', btn);
   let paused = false;
@@ -340,9 +338,18 @@ function initMarquee() {
     paint();
   });
   onLang(paint);
-  btn.hidden = false;
   const gallery = marquee.closest('.gallery');
   new IntersectionObserver(([e]) => gallery.classList.toggle('is-off', !e.isIntersecting)).observe(gallery);
+  // It only runs (.is-live, main.css) once the track is doubled for a seamless loop and the button is
+  // there; reduced motion stops it, also when switched on or off while the page is open.
+  let doubled = false;
+  const set = (still) => {
+    if (!still && !doubled) { doubled = true; track.innerHTML += track.innerHTML.replace(/<img /g, '<img aria-hidden="true" '); }
+    marquee.classList.toggle('is-live', !still);
+    btn.hidden = still;
+  };
+  set(REDUCED.matches);
+  REDUCED.addEventListener?.('change', (e) => set(e.matches));
 }
 
 // ============================================================ impact
@@ -508,7 +515,8 @@ function syncParts() {
 }
 
 function pledgeLines() {
-  return ALL_PARTS.filter((p) => cart.get(p.id) > 0).map((p) => {
+  // In bill-of-materials order, so the cart and the message read balloon 1, 2, 3…
+  return PARTS_BY_PRICE.filter((p) => cart.get(p.id) > 0).map((p) => {
     const q = cart.get(p.id);
     const amount = p.custom ? q : q * p.price;
     return { p, q, amount, text: p.custom ? t(p.name).split(' — ')[0] : `${q} × ${t(p.name)}` };
@@ -520,7 +528,7 @@ function renderCart() {
   const lines = pledgeLines();
   const total = lines.reduce((s, l) => s + l.amount, 0);
   $('#cart-total').textContent = money(total);
-  $('#cart-lines').innerHTML = lines.map((l) => `<li><span>${balloon(ITEM[l.p.id], true)} ${esc(l.text)}</span><b>${money(l.amount)}</b></li>`).join('');
+  $('#cart-lines').innerHTML = lines.map((l) => `<li><span class="cart__item">${balloon(ITEM[l.p.id], true)}<span>${esc(l.text)}</span></span><b>${money(l.amount)}</b></li>`).join('');
   $('#cart-empty').hidden = lines.length > 0;
   $('#cart-send').disabled = !lines.length;
   $('#cart-clear').hidden = !lines.length;
@@ -758,9 +766,11 @@ function renderContact() {
   $('#contact-buttons').innerHTML = btns.join('');
   const names = SPONSORS.map((s) => t(s));
   $('#hero-sponsors').innerHTML = `<li class="cells__label">${UI('Partners', '合作夥伴')}</li>` + names.map((n) => `<li>${esc(n)}</li>`).join('');
-  $('#contact-sponsors').textContent = zh()
-    ? `與 ${names.slice(0, -1).join('、')}及${names.at(-1)}一起支持我們。`
-    : `Join ${names.slice(0, -1).join(', ')} and ${names.at(-1)}.`;
+  // Chinese names have no spaces to break at, so each one is kept whole.
+  const nw = (n) => `<span class="nowrap">${esc(n)}</span>`;
+  $('#contact-sponsors').innerHTML = zh()
+    ? `與 ${names.slice(0, -1).map(nw).join('、')}及${nw(names.at(-1))}一起支持我們。`
+    : esc(`Join ${names.slice(0, -1).join(', ')} and ${names.at(-1)}.`);
   $('#footer-links').innerHTML = [
     [ig, `Instagram @${SITE.instagram}`],
     [SITE.facebook, 'Facebook'],
@@ -948,6 +958,7 @@ function initShowcase() {
         onCamera,
       });
       engine.setView(view); // in case a tab was picked while the engine was loading
+      REDUCED.addEventListener?.('change', (e) => engine.setReducedMotion?.(e.matches));
       if (engine.custom) initFlatShowcase(view3d, input);
       engine.setName(input.value.trim());
       input.addEventListener('input', () => engine.setName(input.value.trim()));

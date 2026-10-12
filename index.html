@@ -61,6 +61,8 @@
   <script type="importmap">
     { "imports": { "three": "./assets/vendor/three/three.module.min.js", "three/addons/": "./assets/vendor/three/addons/", "lenis": "./assets/vendor/lenis/lenis.mjs" } }
   </script>
+  <!-- smooth scrolling is desktop only (motion.js), so only desktops fetch it early -->
+  <link rel="modulepreload" href="assets/vendor/lenis/lenis.mjs" media="(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)">
   <script type="module" src="assets/js/main.js"></script>
 
   <script type="application/ld+json">
@@ -149,7 +151,7 @@
           <span data-zh="<i class='js-n-seasons-zh'>五</i>個賽季，<i class='js-n-awards-zh'>十一</i>座獎項。"><i class="js-n-awards">11</i> awards. <i class="js-n-seasons">5</i> seasons.</span>
           <span data-zh="由&nbsp;<em class='accent nowrap'>45&nbsp;位學生</em><wbr>親手打造。">Built by <em class="accent">45 students</em>.</span>
         </h1>
-        <p class="hero__sub" data-zh="我們是來自新北市天主教崇光高中的 OLPDL。自 2022 年新秀賽季起，從新北主場一路征戰<i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i> — 下一季，讓你的品牌<span class='nowrap'>與我們同行</span>。">We're OLPDL from Our Lady of Providence High School in New Taipei City. Since our rookie season in 2022 we've competed at home and in <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i> — next season, your brand can come with us.</p>
+        <p class="hero__sub" data-zh="我們是來自新北市天主教崇光高中的 OLPDL。自 2022 年新秀賽季起，從新北主場一路征戰<i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i> — <span class='nowrap'>下一季</span>，讓你的<span class='nowrap'>品牌</span><span class='nowrap'>與我們同行</span>。">We're OLPDL from Our Lady of Providence High School in New Taipei City. Since our rookie season in 2022 we've competed at home and in <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i> — next season, your brand can come with us.</p>
 
         <div class="hero__actions">
           <div class="btns">
@@ -559,7 +561,7 @@
       <div class="pledge" id="pledge">
         <div class="strip strip--sub">
           <p class="strip__id"><span class="strip__n">07.1</span> / <b data-zh="認養零件">Sponsor a part</b></p>
-          <p class="strip__meta" data-zh="物料清單 · 透過 Instagram 傳送">Bill of materials · send via Instagram</p>
+          <p class="strip__meta" data-zh="物料清單<span class='strip__more'> · 透過 Instagram 傳送</span>">Bill of materials<span class="strip__more"> · send via Instagram</span></p>
         </div>
         <div class="pledge__head" data-reveal>
           <h3 class="h3" data-zh="認養一個零件。">Sponsor a part.</h3>
@@ -628,7 +630,7 @@
           <img class="cta__mark" src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy">
           <p class="label" data-zh="敢於夢想，永不放棄。">Dream big, and never give up.</p>
           <h2 class="h1 cta__title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="成為我們">Join our partners</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="下一季的<em class='accent'>贊助夥伴</em>。">for <em class="accent">next season</em>.</span></span></h2>
-          <p class="cta__text" data-zh="不論是企業贊助、器材捐贈或技術指導，我們都很樂意聊聊。">Corporate sponsorship, equipment, or mentoring — we'd love to talk.</p>
+          <p class="cta__text" data-zh="不論是企業贊助、器材捐贈或技術指導，<span class='nowrap'>我們</span>都很樂意聊聊。">Corporate sponsorship, equipment, or mentoring — we'd love to talk.</p>
           <div class="btns btns--center" id="contact-buttons"></div>
           <p class="cta__sponsors" id="contact-sponsors"></p>
         </div>
