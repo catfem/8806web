@@ -121,10 +121,18 @@ const startJump = (safety) => {
   root.classList.add('is-jumping');
   endJump(safety);
 };
-// A native jump (no Lenis): ends on scrollend, or after the fallback when nothing had to move.
+// A native jump (no Lenis): ends on scrollend, or after the fallback when nothing had to move. Its
+// listeners belong to this jump only: the next jump, the visitor's own touch, wheel or keys, Back /
+// Forward, or the safety timer cancels them, so a later scroll is never pulled back to an old target.
+let jumpAc = null;
 const nativeJump = () => {
+  jumpAc?.abort();
+  const ac = (jumpAc = new AbortController()), { signal } = ac;
   startJump(1300);
-  addEventListener('scrollend', () => endJump(), { once: true });
+  setTimeout(() => ac.abort(), 2500);
+  for (const type of ['touchstart', 'wheel', 'keydown', 'popstate']) addEventListener(type, () => ac.abort(), { capture: true, passive: true, signal });
+  addEventListener('scrollend', () => endJump(), { once: true, signal });
+  return signal;
 };
 
 // Focus follows the jump. Sections are not controls: they take focus without a ring.
@@ -141,8 +149,14 @@ function focusOn(el) {
   focusing = false;
 }
 
-let navH = 0; // html scroll-padding-top (= --nav-h): Lenis subtracts it itself, the centre offset needs it
-const readNav = () => { navH = parseFloat(getComputedStyle(root).scrollPaddingTop) || 0; };
+// html scroll-padding: the nav on top (Lenis subtracts it itself, the centre offset needs it) and, on
+// phones, the dock at the bottom; a centred target sits between the two.
+let navH = 0, padB = 0;
+const readNav = () => {
+  const cs = getComputedStyle(root);
+  navH = parseFloat(cs.scrollPaddingTop) || 0;
+  padB = parseFloat(cs.scrollPaddingBottom) || 0;
+};
 
 // Every in-page jump: nav and rail links, the dock, the hero buttons (through the anchor listener below),
 // a price tag to its row of the parts list, the camera tag to the budget.
@@ -150,12 +164,12 @@ export function goTo(el, { block = 'start', hash, focus = el } = {}) {
   if (!el) return;
   if (hash && hash !== location.hash) history.pushState(null, '', hash);
   // Where the target should sit when the jump ends (a 'start' target just under the nav).
-  const want = () => (block === 'center' ? Math.max(navH, (innerHeight + navH - el.offsetHeight) / 2) : navH);
+  const want = () => (block === 'center' ? Math.max(navH, (innerHeight + navH - padB - el.offsetHeight) / 2) : navH);
   // The glide is measured once, at the click. Something above the target can still change size on the
   // way (an image, the robot's no-WebGL stand-in), so the landing is checked and corrected at the end.
   const missed = () => Math.abs(el.getBoundingClientRect().top - want()) > 2;
   if (lenis) {
-    const offset = block === 'center' ? -Math.max(0, (innerHeight - navH - el.offsetHeight) / 2) : 0;
+    const offset = block === 'center' ? -Math.max(0, (innerHeight - navH - padB - el.offsetHeight) / 2) : 0;
     const dy = el.getBoundingClientRect().top - navH + offset;
     const duration = Math.min(1.2, Math.max(0.6, 0.45 + Math.sqrt(Math.abs(dy)) / 150));
     startJump(duration * 1000 + 300);
@@ -166,10 +180,11 @@ export function goTo(el, { block = 'start', hash, focus = el } = {}) {
     } });
     return;
   }
-  nativeJump();
   readNav();
+  if (!missed()) { jumpAc?.abort(); focusOn(focus); return; } // already there: nothing to scroll or correct
+  const signal = nativeJump();
   el.scrollIntoView({ behavior: REDUCED.matches ? 'auto' : 'smooth', block });
-  addEventListener('scrollend', () => { if (missed()) el.scrollIntoView({ behavior: 'instant', block }); }, { once: true });
+  addEventListener('scrollend', () => { if (missed()) el.scrollIntoView({ behavior: 'instant', block }); }, { once: true, signal });
   focusOn(focus);
 }
 
@@ -222,6 +237,9 @@ export function initSmoothScroll() {
       lenis.reset();
     }, true);
     document.addEventListener('focusin', () => { if (lenis && !focusing) lenis.reset(); });
+    // Back / Forward during a jump glide: the browser's own scroll restoration wins (reset() also drops the
+    // glide's onComplete, so neither the landing correction nor the focus move runs).
+    addEventListener('popstate', () => { if (lenis?.isScrolling === 'smooth') { lenis.reset(); endJump(0); } });
   }).catch(() => { /* stays native */ });
 
   // Soon after the page is interactive (this module runs after parsing), not after every image has loaded:
