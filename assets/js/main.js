@@ -312,7 +312,7 @@ const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd
 const scores = (str) => str.replace(/(\d)–(\d)/g, '$1\u2060–\u2060$2');
 
 function recordTable(s) {
-  const head = [UI('Event', '賽事'), UI('Dates', '日期'), UI('Teams', '隊數'), UI('Rank', '排名'), UI('W-L-T', '勝敗和'), UI('Alliance', '聯盟'), UI('Result', '成績')];
+  const head = [UI('Event', '賽事'), UI('Dates', '日期'), UI('Teams', '隊數'), UI('Rank', '排名'), UI('W-L-T<span class="sr-only"> (qualification matches)</span>', '勝敗和<span class="sr-only">（資格賽）</span>'), UI('Alliance', '聯盟'), UI('Result', '成績')];
   // Each cell repeats its column name for the narrow layout, where the header row is hidden.
   const k = (i) => `<span class="rec__k" aria-hidden="true">${head[i]}</span>`;
   const v = (main, sub) => `<span class="rec__v">${main}</span>${sub ? `<span class="rec__s">${sub}</span>` : ''}`;
@@ -321,7 +321,7 @@ function recordTable(s) {
     const href = off ? `https://www.thebluealliance.com/event/${e.key}` : `https://frc-events.firstinspires.org/${s.year}/${e.code}`;
     const al = e.alliance;
     return `<tr class="rec__ev" role="row">
-      <th class="rec__name" scope="row" role="rowheader"><span class="rec__title">${esc(t(e.name))}</span><span class="rec__meta"><a class="rec__code" href="${href}" target="_blank" rel="noopener">${esc(off ? e.key : e.code)}<span class="sr-only"> – ${off ? 'The Blue Alliance' : 'FRC Events'}</span></a><span class="rec__venue">${esc(t(e.venue))}</span></span></th>
+      <th class="rec__name" scope="row" role="rowheader"><span class="rec__title">${zh() ? esc(t(e.name)) : esc(t(e.name)).replace(/[\u3400-\u9fff]+/g, '<span lang="zh-Hant">$&</span>')}</span><span class="rec__meta"><a class="rec__code" href="${href}" target="_blank" rel="noopener">${esc(off ? e.key : e.code)}<span class="sr-only"> – ${off ? 'The Blue Alliance' : 'FRC Events'}</span></a><span class="rec__venue">${esc(t(e.venue))}</span></span></th>
       <td class="rec__dt" role="cell">${k(1)}${v(esc(fmtRange(e.dates)))}</td>
       <td class="rec__tm${e.rank ? ' is-dup' : ''}" role="cell">${k(2)}${v(e.teams)}</td>
       <td class="rec__rk${e.rank ? '' : ' is-na'}" role="cell">${k(3)}${v(e.rank ? UI(`${e.rank} of ${e.teams}`, `${e.rank}／${e.teams}`) : none)}</td>
@@ -343,8 +343,8 @@ function recordTable(s) {
     <caption class="sr-only">${UI(`${s.year} event record`, `${s.year} 賽季賽事紀錄`)}</caption>
     <colgroup><col class="rec__c-ev"><col class="rec__c-dt"><col class="rec__c-tm"><col class="rec__c-rk"><col class="rec__c-wl"><col class="rec__c-al"><col class="rec__c-rs"></colgroup>
     <thead role="rowgroup"><tr role="row">${head.map((h) => `<th scope="col" role="columnheader">${h}</th>`).join('')}</tr></thead>
-    ${eventsOf(s).map((e, i) => `<tbody class="rec__group" role="rowgroup" style="--r:${i}">${row(e)}${awards(e)}</tbody>`).join('')}
-    ${off.length ? `<tbody class="rec__group rec__group--off" role="rowgroup" style="--r:${eventsOf(s).length}">
+    ${eventsOf(s).map((e, i) => `<tbody class="rec__group" role="rowgroup">${row(e)}${awards(e)}</tbody>`).join('')}
+    ${off.length ? `<tbody class="rec__group rec__group--off" role="rowgroup">
       <tr class="rec__offhead" role="row"><th colspan="7" scope="colgroup" role="columnheader">${UI(`Off-season event${off.length > 1 ? 's' : ''} · not counted in the FRC awards`, '季後賽 · 不計入 FRC 獎項')}</th></tr>
       ${off.map((e) => row(e, true)).join('')}
     </tbody>` : ''}
@@ -377,7 +377,7 @@ function renderSeason(s, latest) {
 function renderResultsNote() {
   const best = SEASONS.flatMap((s) => eventsOf(s).filter((e) => e.rank).map((e) => ({ e, year: s.year })))
     .sort((a, b) => a.e.rank / a.e.teams - b.e.rank / b.e.teams)[0];
-  const checked = UI(`Results checked against FRC Events / The Blue Alliance data, ${fmtDate(SITE.checked)}.`, `戰績已依 FRC Events／The Blue Alliance 資料核對（${fmtDate(SITE.checked)}）。`);
+  const checked = UI(`W-L-T and rank are from qualification matches. Results checked against FRC Events / The Blue Alliance data, ${fmtDate(SITE.checked)}.`, `勝敗和與排名為資格賽成績。戰績已依 FRC Events／The Blue Alliance 資料核對（${fmtDate(SITE.checked)}）。`);
   $('#results-note').innerHTML = (best
     ? `<span class="cite__best">${esc(UI(`Best qualification run: ${best.e.wlt}, ranked ${ord(best.e.rank)} of ${best.e.teams} at the ${best.year} ${best.e.name.en}.`, `最佳資格賽表現：${best.year} ${best.e.name.zh}，${best.e.teams} 隊中排名第 ${best.e.rank}（${best.e.wlt}）。`))}</span>${UI(' ', '')}`
     : '') + `<span>${esc(checked)}</span>`;
@@ -687,8 +687,9 @@ function addPart(id, n = 1) {
   syncParts();
 }
 
-// Where the + button's item balloon flies (motion.js fly): its cart line on tablets and desktops; on
-// phones the dock's total while the dock is showing, otherwise nowhere.
+// Where the + button's item balloon flies (motion.js fly): its cart line (fly() skips it when it is off
+// screen, as it usually is at 900px and below, where the cart is stacked under the list); on phones the
+// dock's total while the dock is showing, otherwise nowhere.
 function flyTarget(id) {
   if (!matchMedia('(max-width: 760px)').matches) return $(`#cart-lines li[data-id="${id}"] .balloon`);
   const dock = $('#dock');

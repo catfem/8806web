@@ -101,6 +101,9 @@ export function initMotion() {
   REDUCED.addEventListener?.('change', (e) => {
     if (!e.matches) return;
     root.classList.remove('mo', 'is-boot');
+    // A transition already heading for its final value isn't cancelled by the switch: end it now (scroll-
+    // driven animations have their own timeline and simply stop applying without .mo).
+    document.getAnimations().forEach((a) => { if (a.timeline !== document.timeline) return; try { a.finish(); } catch (err) { a.cancel(); } });
     lenis?.destroy();
     lenis = null;
     $$('.odo, .fly').forEach((el) => el.remove());
@@ -119,16 +122,24 @@ function typeIndex() {
   const strips = $$('.strip');
   const count = (el) => Array.from(el.textContent.replace(/\s+/g, ' ').trim()).length || 1;
   const set = (el, k, v) => { if (el.style.getPropertyValue(k) !== String(v)) el.style.setProperty(k, v); };
+  // A meta line that wraps (phones) can't be typed left to right: it fades in instead (data-wrap).
+  const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return new Set([...r.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top))).size; };
   const index = () => strips.forEach((s) => {
     const id = s.querySelector(':scope > .strip__id'), meta = s.querySelector(':scope > .strip__meta');
     const nId = id ? Math.min(32, count(id)) : 1;
     if (id) set(id, '--n', nId);
-    if (meta) set(meta, '--n', Math.max(1, Math.min(32, 48 - nId, count(meta))));
+    if (meta) {
+      set(meta, '--n', Math.max(1, Math.min(32, 48 - nId, count(meta))));
+      meta.toggleAttribute('data-wrap', lines(meta) > 1); // an attribute the observer below doesn't watch
+    }
     set(s, '--n-id', nId);
   });
   index();
   const mo = new MutationObserver(index);
   strips.forEach((s) => mo.observe(s, { characterData: true, childList: true, subtree: true }));
+  let raf = 0;
+  addEventListener('resize', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; index(); }); });
+  document.fonts?.ready.then(index);
 }
 
 // ------------------------------------------------------------ odometer counts (never money)
@@ -198,14 +209,17 @@ function initCounters() {
 
 // ------------------------------------------------------------ event records, plotted row by row
 
-// Each season ([data-plot]) is plotted once as it arrives (8% up from the bottom; phones 6%): its media
-// and head place, then its record table row by row (motion.css). Seasons are re-rendered on a language
-// switch: a season already plotted comes back final (data-instant, keyed by data-key), the others stay
-// observed. Whatever is reached by a jump, or by keyboard focus, is placed at once.
+// Each season ([data-plot]) places its media and head once as it arrives (8% up from the bottom; phones
+// 6%), and each of its event rows (.rec__group) is plotted on its own as that row arrives, so on a phone,
+// where a season is taller than the screen, every row still draws in where it can be seen (motion.css).
+// Rows that arrive together plot top to bottom (--r). Seasons are re-rendered on a language switch: a
+// season already plotted comes back final (data-instant, keyed by data-key), the others stay observed.
+// Whatever is reached by a jump, or by keyboard focus, is placed at once.
 function initPlot() {
   const plotted = new Set();
+  const settle = (g) => { g.dataset.instant = ''; g.style.setProperty('--r', 0); g.classList.add('is-in'); rows.unobserve(g); };
   const place = (el, instant) => {
-    if (instant) el.dataset.instant = '';
+    if (instant) { el.dataset.instant = ''; el.querySelectorAll('.rec__group').forEach(settle); }
     plotted.add(el.dataset.key);
     el.classList.add('is-in');
     io.unobserve(el);
@@ -215,23 +229,49 @@ function initPlot() {
   // visitor's first input).
   let landing = !!location.hash;
   if (landing) {
-    const stop = () => { landing = false; };
-    const after = () => requestAnimationFrame(() => requestAnimationFrame(stop));
+    // When the landing ends, whatever it put on screen (or above it) is final, even where an observer
+    // hasn't reported yet (the browser's jump to the hash can come late on a slow load).
+    const stop = () => {
+      if (!landing) return;
+      $$('[data-plot]:not(.is-in)').forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) place(el, true); });
+      $$('.rec__group:not(.is-in)').forEach((g) => { if (g.getBoundingClientRect().top < innerHeight) settle(g); });
+      landing = false;
+    };
+    // The browser can still move to the hash just after 'load' (the season cards are rendered by script):
+    // the landing lasts a moment longer, or until the visitor's first input.
+    const after = () => setTimeout(() => requestAnimationFrame(stop), 600);
     if (document.readyState === 'complete') after(); else addEventListener('load', after, { once: true });
     for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) addEventListener(type, stop, { once: true, passive: true, capture: true });
   }
+  const margin = { rootMargin: `100000px 0px ${phone() ? '-6%' : '-8%'} 0px` };
   const io = new IntersectionObserver((es) => es.forEach((e) => {
     if (e.isIntersecting) place(e.target, landing || jumping());
-  }), { rootMargin: `100000px 0px ${phone() ? '-6%' : '-8%'} 0px` });
+  }), margin);
+  const rows = new IntersectionObserver((es) => {
+    const instant = landing || jumping();
+    let n = 0;
+    es.filter((e) => e.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+      .forEach((e) => {
+        const g = e.target;
+        if (instant) { settle(g); return; }
+        g.style.setProperty('--r', e.boundingClientRect.bottom <= 0 ? 0 : Math.min(n++, 5));
+        g.classList.add('is-in');
+        rows.unobserve(g);
+      });
+  }, margin);
   const scan = (box) => box.querySelectorAll('[data-plot]').forEach((el) => {
     if (el.classList.contains('is-in')) return;
-    if (plotted.has(el.dataset.key)) place(el, true); else io.observe(el);
+    if (plotted.has(el.dataset.key)) place(el, true);
+    else { io.observe(el); el.querySelectorAll('.rec__group').forEach((g) => rows.observe(g)); }
   });
   scan(document);
   $$('[data-plot-host]').forEach((h) => new MutationObserver(() => scan(h)).observe(h, { childList: true }));
   document.addEventListener('focusin', (e) => {
     const el = e.target.closest?.('[data-plot]');
     if (el && !el.classList.contains('is-in')) place(el, true);
+    const g = e.target.closest?.('.rec__group');
+    if (g && !g.classList.contains('is-in')) settle(g);
   });
 }
 

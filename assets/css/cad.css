@@ -100,7 +100,7 @@
 .rec__group--off { border-top: 1px dashed var(--cad-faint); }
 .rec__offhead th { padding: 14px 0 0; text-align: left; font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim); }
 html[data-lang="zh-Hant"] .rec :is(thead th, .rec__meta, .rec__s, .rec__k, .rec__offhead th) { font-size: 12px; letter-spacing: 0.04em; }
-html[data-lang="zh-Hant"] .rec__title { word-break: keep-all; overflow-wrap: anywhere; } /* never split 區域賽 */
+html[data-lang="zh-Hant"] :is(.rec__title, .rec__venue, .rec__s) { word-break: keep-all; overflow-wrap: anywhere; } /* never split 區域賽, 籃球館, 落敗 */
 html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
 /* Each event row group carries the plotter's pen line on its top rule (motion.css plots it once) and,
    picked by hover or by focus on its event-code link, lights that rule blue. --c and --a order the

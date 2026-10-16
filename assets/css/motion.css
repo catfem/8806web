@@ -303,6 +303,10 @@ html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none
     animation: type calc(var(--n, 12) * var(--t-type)) steps(var(--n, 12), jump-end) var(--meta-at) both,
                caret-out var(--t-micro) step-end calc(var(--meta-at) + var(--n, 12) * var(--t-type)) both;
   }
+  /* a meta line that wraps (data-wrap, motion.js) would be wiped column by column under a tall caret:
+     it fades in when the id is done instead */
+  .mo .strip .strip__meta[data-wrap]::after { border-left-color: transparent; }
+  .mo .strip.is-in:not([data-instant]) .strip__meta[data-wrap]::after { animation: caret-out var(--t-state) var(--ease) var(--meta-at) both; }
 }
 @keyframes type { from { transform: none; } to { transform: translateX(calc(100% - 1.2ch)); } }
 @keyframes caret-out { from { opacity: 1; } to { opacity: 0; } }
@@ -317,7 +321,7 @@ html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none
 /* ------------------------------------------------------------------ results: records plotted row by row (E5) */
 
 /* Each season (data-plot) is plotted as it arrives: its photo or stat panel and its head place, then the
-   record table top to bottom. A blue pen line draws along each event's top rule and fades into the grey
+   record table, each event row (.rec__group) as it arrives on its own. A blue pen line draws along each event's top rule and fades into the grey
    (or dashed) rule; the row's cells place left to right behind it (--r row, --c column, cad.css) and its
    award balloons land in numbered order. The column headers and rules are the drawing's frame: there
    first. Every cell is final within 750 ms. A season reached by a jump, by focus, or re-rendered by a
@@ -326,22 +330,23 @@ html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none
    only transitions into a pick, never out of the plot. */
 .mo .rec__group:is(:hover, :focus-within)::before { transition: opacity var(--t-micro) var(--ease); }
 .mo [data-plot] :is(.season__media, .season__head) { transition: opacity var(--t-reveal) var(--ease), transform var(--t-reveal) var(--ease); }
-.mo [data-plot] :is(.rec__ev > *, .rec__note, .rec__offhead th) {
+.mo .rec__group :is(.rec__ev > *, .rec__note, .rec__offhead th) {
   transition: opacity var(--t-state) var(--ease) calc(min(var(--r, 0), 5) * var(--row-step) + 80ms + var(--c, 0) * 20ms);
 }
-.mo [data-plot] .rec__awards li, .mo [data-plot] .rec__awards .balloon {
+.mo .rec__group .rec__awards li, .mo .rec__group .rec__awards .balloon {
   transition: opacity var(--t-state) var(--ease), transform var(--t-state) var(--ease);
   transition-delay: calc(min(var(--r, 0), 5) * var(--row-step) + 200ms + var(--a, 0) * 60ms);
 }
-.mo [data-plot].is-in:not([data-instant]) .rec__group::before {
+.mo .rec__group.is-in:not([data-instant])::before {
   animation: row-pen var(--t-reveal) var(--ease) calc(min(var(--r, 0), 5) * var(--row-step)) backwards;
 }
-.mo [data-plot][data-instant] :is(.season__media, .season__head, .rec__ev > *, .rec__note, .rec__offhead th, .rec__awards li, .rec__awards .balloon) { transition: none; }
+.mo [data-plot][data-instant] :is(.season__media, .season__head) { transition: none; }
+.mo .rec__group[data-instant] :is(.rec__ev > *, .rec__note, .rec__offhead th, .rec__awards li, .rec__awards .balloon) { transition: none; }
 @media screen {
   .mo [data-plot]:not(.is-in) :is(.season__media, .season__head) { opacity: 0; transform: translateY(var(--rise)); }
-  .mo [data-plot]:not(.is-in) :is(.rec__ev > *, .rec__note, .rec__offhead th, .rec__awards li) { opacity: 0; }
-  .mo [data-plot]:not(.is-in) .rec__awards .balloon { transform: scale(0.6); }
-  .mo [data-plot]:not(.is-in) .rec__group::before { opacity: 1; transform: scaleX(0); }
+  .mo .rec__group:not(.is-in) :is(.rec__ev > *, .rec__note, .rec__offhead th, .rec__awards li) { opacity: 0; }
+  .mo .rec__group:not(.is-in) .rec__awards .balloon { transform: scale(0.6); }
+  .mo .rec__group:not(.is-in)::before { opacity: 1; transform: scaleX(0); }
 
   /* The 2026 stat panel is cut in section: a cover with a 1px blue cutter edge slides off the panel with
      the scroll and leaves the 135° hatch behind it (a cover, not a scale: the hatch never distorts). The
