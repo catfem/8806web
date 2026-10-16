@@ -33,9 +33,13 @@
       // Motion on (.mo) unless reduced motion is asked for: every hidden starting state in motion.css
       // hangs off it. Backstop: if motion.js hasn't started its observers within 3 s (a failed or slow
       // main.js), .mo goes and everything shows. The frame draws itself on a fresh desktop load (is-boot).
+      // .sda: the linework is plotted by the scroll (CSS scroll-driven animations) where the browser has
+      // them; elsewhere, or with ?sda=0, the one-shot plotter draws it.
       var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
       d.className = d.className.replace('no-js', 'js') + (rm ? '' : ' mo');
       if (!rm) {
+        if (window.CSS && CSS.supports('animation-timeline: view()') && CSS.supports('animation-range: entry 0% cover 50%')
+            && !/[?&]sda=0/.test(location.search)) d.classList.add('sda');
         setTimeout(function () { if (!window.__motionReady) d.classList.remove('mo'); }, 3000);
         if (!location.hash && matchMedia('(min-width: 761px)').matches) {
           d.classList.add('is-boot'); setTimeout(function () { d.classList.remove('is-boot'); }, 1600);
@@ -219,7 +223,7 @@
           <figcaption class="caption"><span class="sq" aria-hidden="true"></span><span data-zh="2025 新北市區域賽 · 團隊意象獎">2025 New Taipei City Regional · Imagery Award in honor of Jack Kamen</span></figcaption>
         </figure>
       </div>
-      <div class="seasons" id="season-cards" data-reveal data-stagger></div>
+      <div class="seasons" id="season-cards" data-plot-host></div>
       <div class="pad results__end">
         <div class="goals" id="goals" data-reveal></div>
         <div class="results__foot" data-reveal>

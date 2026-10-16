@@ -8,7 +8,10 @@
    corners and leaders. Grey linework frames the page; blue and white stay
    for facts and actions. Final states only: nothing here animates, and
    whatever sits on static content is drawn without JavaScript. Decorative
-   geometry is aria-hidden and never takes pointer events.
+   geometry is aria-hidden and never takes pointer events. Picked states
+   (the zone cursor, a lit record row, selection grips, the budget's lit
+   dimension, the cross-probed cart balloon, the robot's tab bar) are here as
+   plain state changes; motion.css only times them.
    ========================================================================= */
 
 :root {
@@ -99,6 +102,18 @@
 html[data-lang="zh-Hant"] .rec :is(thead th, .rec__meta, .rec__s, .rec__k, .rec__offhead th) { font-size: 12px; letter-spacing: 0.04em; }
 html[data-lang="zh-Hant"] .rec__title { word-break: keep-all; overflow-wrap: anywhere; } /* never split 區域賽 */
 html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
+/* Each event row group carries the plotter's pen line on its top rule (motion.css plots it once) and,
+   picked by hover or by focus on its event-code link, lights that rule blue. --c and --a order the
+   cells and the award balloons for the row-by-row plot. */
+.rec__group { position: relative; }
+.rec__group::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px;
+  background: var(--accent); transform-origin: left; opacity: 0; pointer-events: none;
+}
+.rec__group:is(:hover, :focus-within)::before { opacity: 1; }
+.rec__ev > :nth-child(2) { --c: 1; } .rec__ev > :nth-child(3) { --c: 2; } .rec__ev > :nth-child(4) { --c: 3; }
+.rec__ev > :nth-child(5) { --c: 4; } .rec__ev > :nth-child(6) { --c: 5; } .rec__ev > :nth-child(7) { --c: 6; }
+.rec__awards li:nth-child(2) { --a: 1; } .rec__awards li:nth-child(3) { --a: 2; } .rec__awards li:nth-child(n+4) { --a: 3; }
 
 @container rec (max-width: 699px) {
   .rec, .rec caption, .rec tbody, .rec tr, .rec__aw > td, .rec__offhead th { display: block; }
@@ -128,8 +143,10 @@ html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
 /* ------------------------------------------------------------------ zone letters */
 
 /* One letter per 320px band down each sheet, in the gutter beside the column rule (cad.js writes
-   the bands). Left gutter only while the rail holds the right one. */
-.sec > .zones { border-top: 0; } /* .sec > * + * would otherwise add a rule */
+   the bands). Left gutter only while the rail holds the right one. The band under the reading line
+   (35% down the screen) is the zone cursor: its letter turns white and its boundary tick becomes a 12px
+   blue tick, "you are in 03-B". */
+.sec > :is(.zones, .trace) { border-top: 0; } /* .sec > * + * would otherwise add a rule */
 .zones { position: absolute; inset: 0; pointer-events: none; display: none; }
 @media (min-width: 1100px) { .zones { display: block; } }
 .zones i { position: absolute; left: 0; right: 0; top: calc(var(--i) * var(--zone)); height: var(--zone); }
@@ -143,6 +160,10 @@ html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
 .zones i::after { left: 100%; background: linear-gradient(var(--cad-faint), var(--cad-faint)) left top / 6px 1px no-repeat; display: none; }
 .zones i:first-child::before, .zones i:first-child::after { background: none; } /* the "+" tick owns the section top */
 @media (min-width: 1100px) and (max-width: 1439px) { .zones i::after { display: grid; } }
+.zones i.is-lit::before, .zones i.is-lit::after {
+  color: var(--text); background-image: linear-gradient(var(--accent), var(--accent)); background-size: 12px 1px;
+}
+.zones i.is-lit:first-child::before, .zones i.is-lit:first-child::after { background: none; } /* the "+" owns the sheet top */
 
 /* ------------------------------------------------------------------ title block */
 
@@ -175,6 +196,9 @@ html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
 .tblock__approve:hover { background: var(--bg-2); }
 .tblock__approve:hover .tblock__v { color: var(--text); }
 .tblock__approve:focus-visible { outline-offset: -2px; }
+/* the current sheet number rolls up inside its cell when the sheet changes (motion.js rollIn) */
+#tb-sheet { display: inline-block; }
+.tblock dd:has(> #tb-sheet) { overflow: clip; }
 
 /* ------------------------------------------------------------------ right rail: drawing list + title block */
 
@@ -236,6 +260,24 @@ html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
 :is(.btn, .hotspot__tag):focus-visible::before { opacity: 1; }
 .btn:disabled::before { display: none; }
 
+/* Cards select like CAD entities: four 6px grips on the corners, centred on the 1px grid lines (inside
+   the card on phones, where the grid meets the screen edge), and the card's index tag (01, B.01, T.01)
+   inverts to a blue "selected" tag. On hover where there is hover, and whenever focus is inside. The
+   tag's 3px pad is a box-shadow, so nothing moves. White on --accent is 4.57:1. */
+:is(.reason, .benefit, .subteam, .kpis .cell) { position: relative; }
+:is(.reason, .benefit, .subteam, .kpis .cell)::after {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0;
+  --g: linear-gradient(var(--accent-text), var(--accent-text));
+  background: var(--g) 0 0 / 6px 6px no-repeat, var(--g) 100% 0 / 6px 6px no-repeat,
+              var(--g) 0 100% / 6px 6px no-repeat, var(--g) 100% 100% / 6px 6px no-repeat;
+}
+@media (min-width: 761px) { :is(.reason, .benefit, .subteam, .kpis .cell)::after { inset: -3px; } }
+:is(.reason, .benefit, .subteam, .kpis .cell):focus-within::after { opacity: 1; }
+@media (hover: hover) { :is(.reason, .benefit, .subteam, .kpis .cell):hover::after { opacity: 1; } }
+.cell__n { width: fit-content; }
+:is(.reason, .benefit, .subteam):focus-within .cell__n { background: var(--accent); color: #fff; box-shadow: 0 0 0 3px var(--accent); }
+@media (hover: hover) { :is(.reason, .benefit, .subteam):hover .cell__n { background: var(--accent); color: #fff; box-shadow: 0 0 0 3px var(--accent); } }
+
 /* ------------------------------------------------------------------ budget dimensions */
 
 /* The full-season bar is a dimensioned part (renderStack in main.js; every value comes from BUDGET):
@@ -278,6 +320,13 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
 .dim--chain + .dim--chain .dim__ln { left: -2px; }
 .dim--chain .dim__lbl, .dim--chain .dim__val { display: block; }
 .dim--chain .dim__val { margin-top: 2px; }
+
+/* The dimension that measures the pressed budget scope is lit (initBudget sets data-scope): the build
+   span of the chain for "Build & compete", the overall dimension for "Incl. team travel". Lines and
+   arrowheads follow currentColor; the figure itself (.dim__val) stays white, money is never blue.
+   --accent-text on --bg is 7.47:1. */
+#budget-stack[data-scope="build"] .dim--chain:first-child, #budget-stack[data-scope="all"] .dim--total { color: var(--accent); }
+#budget-stack[data-scope="build"] .dim--chain:first-child .dim__lbl, #budget-stack[data-scope="all"] .dim--total .dim__lbl { color: var(--accent-text); }
 
 /* the chain on tablets and up, the legend (main.css) on phones: one of them is ever rendered */
 @media (min-width: 641px) { .stack__legend { display: none; } }
@@ -332,6 +381,11 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
 }
 .no-js .bom__head { display: none; }
 
+/* Cross-probing: the BOM row under the pointer (or holding focus) lights its cart line's balloon. */
+.cart__lines li.is-probe .balloon { border-color: var(--accent); color: var(--accent-text); }
+/* the stepper's quantity rolls in (motion.js tickDigit) */
+.stepper__q { display: inline-block; }
+
 /* the cart's total rule: a drawing-style double line under the lines, above the actions */
 .cart__lines:not(:empty) { border-bottom: 3px double var(--rule-2); padding-bottom: 4px; }
 /* balloon, then the text: a wrapped line starts under the text, not under the balloon */
@@ -364,6 +418,20 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
   .showcase__corner--tr { display: none; }
   #view-status[data-state="rest"] .vs-note { display: inline; }
 }
+/* the view label rolls up to the new view inside its corner (motion.js rollIn) */
+#view-label { overflow: clip; }
+#view-label b { display: inline-block; }
+/* The tabs' selection bar (initShowcase in main.js): one bar that slides to the selected tab, by
+   transform only (a 3px × 28px base on tablets and desktops, 100px × 2px on phones), in place of the
+   selected tab's inset shadow. */
+.cells--tabs.has-bar { position: relative; }
+.cells--tabs.has-bar button[aria-selected="true"] { box-shadow: none; }
+.tabs__bar {
+  position: absolute; z-index: 1; left: 0; top: 0; width: 3px; height: 28px;
+  background: var(--accent); transform-origin: 0 0; pointer-events: none;
+}
+@media (max-width: 760px) { .tabs__bar { width: 100px; height: 2px; } }
+
 /* a custom model in the price tab lists its tags in this corner (main.css) */
 .is-flat[data-view="price"] .showcase__corner--bl { display: none; }
 

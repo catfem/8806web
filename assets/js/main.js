@@ -4,7 +4,7 @@ import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, E
 const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
 import { initZones, balloon, sheetRef } from './cad.js';
-import { initMotion, initSmoothScroll, goTo, getLenis, REDUCED } from './motion.js';
+import { initMotion, initSmoothScroll, goTo, getLenis, REDUCED, PEN, EASE_CSS, rollIn, remeasure, tickDigit, fly, armSend } from './motion.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -193,7 +193,8 @@ function initRail() {
   const bar = $('.dlist__bar');
   const sheetNo = $('#tb-sheet');
   const navLists = [$$('.nav__links a'), $$('.menu a')];
-  let current = 'top';
+  const wide = matchMedia('(min-width: 1440px)'); // the rail (and its title block) shows from here
+  let current = 'top', painted = false;
 
   // One labelled tick per section, at the scroll position where that section reaches the top.
   ruler.insertAdjacentHTML('beforeend', RAIL_SECTIONS.map((id, i) => `<span class="ruler__tick" data-sec="${id}"><b>${String(i + 1).padStart(2, '0')}</b></span>`).join(''));
@@ -247,7 +248,12 @@ function initRail() {
       a.classList.toggle('is-before', id !== parent && ORDER.indexOf(id) < i);
     });
     ticks.forEach((tk) => tk.classList.toggle('is-active', tk.dataset.sec === (parent || current)));
-    sheetNo.textContent = SHEET[current];
+    // The title block's sheet number rolls up to the new one (not on the first paint, nor during a jump).
+    if (sheetNo.textContent !== SHEET[current]) {
+      sheetNo.textContent = SHEET[current];
+      if (painted && wide.matches) rollIn(sheetNo);
+    }
+    painted = true;
     // Nav and menu: the exact link if the list has one, otherwise the parent's; never two in a list.
     navLists.forEach((links) => {
       const hit = links.find((a) => a.getAttribute('href') === `#${current}`)
@@ -256,7 +262,7 @@ function initRail() {
     });
     placeBar();
   };
-  // A sheet is current while it crosses a line 35% down the viewport. Sub-sheets sit inside 07 and
+  // A sheet is current while it crosses the reading line, 35% down the viewport (PEN). Sub-sheets sit inside 07 and
   // come after it in ORDER, so the deepest one on the line wins; off every sheet (the photo strip)
   // the last one stays. A fast jump can queue enter + leave in one batch, so apply them in order.
   const live = new Set();
@@ -266,7 +272,7 @@ function initRail() {
     if (next === current) return;
     current = next;
     paint();
-  }, { rootMargin: '-35% 0px -64% 0px' });
+  }, { rootMargin: PEN });
   ORDER.forEach((id) => io.observe(document.getElementById(id)));
   paint();
   addEventListener('resize', layoutRows);
@@ -283,7 +289,9 @@ function initRail() {
 // TEAMS · RANK · W-L-T · ALLIANCE · RESULT), the event's awards under it with their numbered balloons
 // (AWARD_NO; blue for the alliance results), then the off-season events, which are never counted.
 // Narrow cards (cad.css, a container query) restack each row as a small card with the same cells.
-// The newest season leads as a wide card; earlier seasons follow, newest first.
+// The newest season leads as a wide card; earlier seasons follow, newest first. Each season is plotted
+// as it arrives (data-plot, keyed by year so a language switch never replays it; motion.js), row group
+// by row group (--r).
 function renderSeasons() {
   const ordered = [...SEASONS].sort((a, b) => b.year - a.year);
   $('#season-cards').innerHTML = ordered.map((s, i) => renderSeason(s, i === 0)).join('');
@@ -335,8 +343,8 @@ function recordTable(s) {
     <caption class="sr-only">${UI(`${s.year} event record`, `${s.year} 賽季賽事紀錄`)}</caption>
     <colgroup><col class="rec__c-ev"><col class="rec__c-dt"><col class="rec__c-tm"><col class="rec__c-rk"><col class="rec__c-wl"><col class="rec__c-al"><col class="rec__c-rs"></colgroup>
     <thead role="rowgroup"><tr role="row">${head.map((h) => `<th scope="col" role="columnheader">${h}</th>`).join('')}</tr></thead>
-    ${eventsOf(s).map((e) => `<tbody class="rec__group" role="rowgroup">${row(e)}${awards(e)}</tbody>`).join('')}
-    ${off.length ? `<tbody class="rec__group rec__group--off" role="rowgroup">
+    ${eventsOf(s).map((e, i) => `<tbody class="rec__group" role="rowgroup" style="--r:${i}">${row(e)}${awards(e)}</tbody>`).join('')}
+    ${off.length ? `<tbody class="rec__group rec__group--off" role="rowgroup" style="--r:${eventsOf(s).length}">
       <tr class="rec__offhead" role="row"><th colspan="7" scope="colgroup" role="columnheader">${UI(`Off-season event${off.length > 1 ? 's' : ''} · not counted in the FRC awards`, '季後賽 · 不計入 FRC 獎項')}</th></tr>
       ${off.map((e) => row(e, true)).join('')}
     </tbody>` : ''}
@@ -349,11 +357,11 @@ function renderSeason(s, latest) {
   const media = s.img
     ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(t(s.imgAlt) || `${s.year}`)}" loading="lazy" width="640" height="480">`
     : latest
-      ? `<div class="season__img season__stat"><span class="season__stat-year">${UI(`${s.year} season`, `${s.year} 賽季`)}</span><span><span class="season__stat-num">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${regionals}</span>${s.record ? `<span class="season__stat-sub">${UI(`Record ${s.record} incl. playoffs`, `戰績 ${s.record}（含淘汰賽）`)}</span>` : ''}</span></div>`
+      ? `<div class="season__img season__stat"><span class="season__stat-year">${UI(`${s.year} season`, `${s.year} 賽季`)}</span><span><span class="season__stat-num" data-count="${n}">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${regionals}</span>${s.record ? `<span class="season__stat-sub">${UI(`Record ${s.record} incl. playoffs`, `戰績 ${s.record}（含淘汰賽）`)}</span>` : ''}</span></div>`
       : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>';
   const sum = [s.note && t(s.note), regionals, UI(`${n} FRC award${n === 1 ? '' : 's'}`, `${n} 座 FRC 獎項`)].filter(Boolean).join(' · ');
   return `
-    <article class="season${latest ? ' season--latest' : ''}" aria-labelledby="season-${s.year}">
+    <article class="season${latest ? ' season--latest' : ''}" aria-labelledby="season-${s.year}" data-plot data-key="${s.year}">
       <div class="season__media">${media}</div>
       <div class="season__head">
         ${latest ? `<p class="badge season__badge">${UI('Latest season', '最新賽季')}</p>` : ''}
@@ -584,7 +592,7 @@ function renderParts() {
           : `<p class="part__price">${money(p.price)}</p>
              <div class="stepper" role="group" aria-label="${esc(t(p.name))}">
                <button type="button" data-step="-1" aria-label="${UI('Remove one', '減少一個')}">−</button>
-               <output aria-live="polite">${cart.get(p.id) || 0}</output>
+               <output aria-live="polite"><span class="stepper__q">${cart.get(p.id) || 0}</span></output>
                <button type="button" data-step="1" aria-label="${UI('Add one', '增加一個')}">+</button>
              </div>`}
       </div>
@@ -597,7 +605,7 @@ function syncParts() {
     const p = ALL_PARTS.find((x) => x.id === li.dataset.id);
     const q = cart.get(p.id) || 0;
     li.classList.toggle('is-picked', q > 0);
-    const out = li.querySelector('output');
+    const out = li.querySelector('output .stepper__q');
     if (out) {
       out.textContent = q;
       li.querySelector('[data-step="-1"]').disabled = q === 0;
@@ -617,13 +625,22 @@ function pledgeLines() {
 }
 
 let shownTotal = null;
+let shownIds = new Set(); // the items in the cart at the last render: a line for a new item slides in (.is-new)
+let probeId = null; // the BOM row under the pointer or focus: its cart line's balloon is lit (cross-probe)
 function renderCart() {
   const lines = pledgeLines();
   const total = lines.reduce((s, l) => s + l.amount, 0);
   $('#cart-total').textContent = money(total);
-  $('#cart-lines').innerHTML = lines.map((l) => `<li><span class="cart__item">${balloon(ITEM[l.p.id], true)}<span>${esc(l.text)}</span></span><b>${money(l.amount)}</b></li>`).join('');
+  $('#cart-lines').innerHTML = lines.map((l) => {
+    const cls = [shownTotal !== null && !shownIds.has(l.p.id) ? 'is-new' : '', l.p.id === probeId ? 'is-probe' : ''].filter(Boolean).join(' ');
+    return `<li data-id="${l.p.id}"${cls ? ` class="${cls}"` : ''}><span class="cart__item">${balloon(ITEM[l.p.id], true)}<span>${esc(l.text)}</span></span><b>${money(l.amount)}</b></li>`;
+  }).join('');
+  shownIds = new Set(lines.map((l) => l.p.id));
   $('#cart-empty').hidden = lines.length > 0;
-  $('#cart-send').disabled = !lines.length;
+  // The first time the pledge becomes sendable (and again after a Clear), Send arms (motion.js).
+  const send = $('#cart-send'), wasOff = send.disabled;
+  send.disabled = !lines.length;
+  if (wasOff && !send.disabled) armSend(send);
   $('#cart-clear').hidden = !lines.length;
   const mail = $('#cart-mail');
   mail.hidden = !SITE.email || !lines.length;
@@ -633,7 +650,7 @@ function renderCart() {
   if (shownTotal !== null && total !== shownTotal && root.classList.contains('mo')) {
     ['#cart-total', '#dock-total'].forEach((sel) => $(sel).animate?.(
       [{ transform: 'translateY(-6px)', opacity: 0.4 }, { transform: 'none', opacity: 1 }],
-      { duration: 240, easing: 'cubic-bezier(.22,1,.36,1)' }));
+      { duration: 240, easing: EASE_CSS }));
   }
   shownTotal = total;
 }
@@ -670,13 +687,35 @@ function addPart(id, n = 1) {
   syncParts();
 }
 
+// Where the + button's item balloon flies (motion.js fly): its cart line on tablets and desktops; on
+// phones the dock's total while the dock is showing, otherwise nowhere.
+function flyTarget(id) {
+  if (!matchMedia('(max-width: 760px)').matches) return $(`#cart-lines li[data-id="${id}"] .balloon`);
+  const dock = $('#dock');
+  return dock && !dock.classList.contains('is-hidden') && !$('#dock-cart').hidden ? $('#dock-total') : null;
+}
+
 function initPledge() {
   const list = $('#parts');
+  // + / −: the quantity is written first, then it rolls in; a + also sends the item's balloon to the cart.
   list.addEventListener('click', (e) => {
     const b = e.target.closest('[data-step]');
     if (!b) return;
-    addPart(b.closest('.part').dataset.id, +b.dataset.step);
+    const row = b.closest('.part'), id = row.dataset.id, dir = +b.dataset.step, was = cart.get(id) || 0;
+    addPart(id, dir);
+    if ((cart.get(id) || 0) === was) return;
+    tickDigit(row.querySelector('output .stepper__q'), dir);
+    if (dir > 0) fly(b, flyTarget(id), ITEM[id]);
   });
+  // Cross-probing: the BOM row under the pointer (or holding focus) lights its cart line's balloon.
+  const probe = (id) => {
+    probeId = id;
+    $$('#cart-lines li').forEach((li) => li.classList.toggle('is-probe', li.dataset.id === id));
+  };
+  list.addEventListener('pointerenter', (e) => { if (e.target.matches?.('.part')) probe(e.target.dataset.id); }, true);
+  list.addEventListener('pointerleave', (e) => { if (e.target.matches?.('.part') && probeId === e.target.dataset.id) probe(null); }, true);
+  list.addEventListener('focusin', (e) => { const p = e.target.closest('.part'); if (p) probe(p.dataset.id); });
+  list.addEventListener('focusout', (e) => { const p = e.target.closest('.part'); if (p && !p.contains(e.relatedTarget) && probeId === p.dataset.id) probe(null); });
   list.addEventListener('input', (e) => {
     if (!e.target.matches('.part__custom input')) return;
     const v = Math.max(0, Math.floor(+e.target.value || 0));
@@ -697,6 +736,7 @@ async function sendPledge() {
     ? UI('Copied! Paste it into the Instagram chat that just opened.', '已複製！請貼到剛開啟的 Instagram 對話中。')
     : UI('Open the chat and tell us what you\'d like to sponsor.', '請在對話中告訴我們你想認養的項目。');
   note.classList.add('is-done');
+  if (root.classList.contains('mo')) note.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: EASE_CSS });
   window.open(`https://ig.me/m/${SITE.instagram}`, '_blank', 'noopener');
 }
 
@@ -781,8 +821,10 @@ function renderStack() {
 }
 
 let scope = 'build';
-function renderBudget() {
-  renderStack();
+// The stack (the dimensioned bar) does not depend on the scope: a scope change keeps it, so its lit
+// dimension can change colour and re-measure in place.
+function renderBudget({ stack = true } = {}) {
+  if (stack) renderStack();
   const rows = BUDGET.filter((b) => scope === 'all' || b.group === 'build').sort((a, b) => b.amount - a.amount);
   const total = sum(rows);
   const max = rows[0].amount;
@@ -804,17 +846,25 @@ function renderBudget() {
 }
 
 function initBudget() {
-  const toggles = $$('[data-scope]');
+  const toggles = $$('button[data-scope]');
   const bars = $('#bars');
+  const stack = $('#budget-stack');
+  // The dimension that measures the pressed scope is lit (cad.css): the build span of the chain, or the
+  // overall dimension for the full season.
+  stack.dataset.scope = scope;
   toggles.forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.scope === scope) return;
     scope = b.dataset.scope;
+    stack.dataset.scope = scope;
     toggles.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     // A new scope replots the line items (quickly, motion.css .is-replot): the new bars are born under
     // their covers, then uncovered. A language switch re-renders in place and replots nothing.
     const replot = root.classList.contains('mo') && bars.classList.contains('is-in');
     if (replot) bars.classList.remove('is-in', 'is-replot');
-    renderBudget();
+    renderBudget({ stack: false });
     if (replot) requestAnimationFrame(() => requestAnimationFrame(() => bars.classList.add('is-in', 'is-replot')));
+    // ...and the lit dimension re-measures (motion.js; only the parts that are drawn at this width).
+    remeasure($$(scope === 'all' ? '.dim--total .dim__ln' : '.dim--chain:first-child .dim__ln', stack).filter((el) => el.getClientRects().length));
   }));
   const tip = $('#bars-tip');
   const box = $('#budget');
@@ -974,6 +1024,34 @@ function initShowcase() {
   let view = 'build';
   let engine = null;
 
+  // The selection bar slides between the tabs (motion.css; reduced motion jumps). It moves by transform
+  // only, from tab geometry cached at start, once fonts load, on resize and after a language switch, never
+  // on scroll: a 3px bar down the selected tab's left edge on tablets and desktops, a 2px bar across its
+  // top on phones (where the tabs sit side by side).
+  const tablist = $('#robot-tabs');
+  const tabBar = document.createElement('i');
+  tabBar.className = 'tabs__bar';
+  tabBar.setAttribute('aria-hidden', 'true');
+  tablist.append(tabBar);
+  tablist.classList.add('has-bar');
+  const narrow = matchMedia('(max-width: 760px)');
+  let tabGeo = [];
+  const placeTabBar = () => {
+    const g = tabGeo[tabs.findIndex((b) => b.getAttribute('aria-selected') === 'true')];
+    if (!g?.w) return;
+    // inside the tab's 1px border, where its inset selection shadow was
+    tabBar.style.transform = narrow.matches
+      ? `translate(${g.left + 1}px, ${g.top + 1}px) scaleX(${((g.w - 2) / 100).toFixed(4)})`
+      : `translate(${g.left + 1}px, ${g.top + 1}px) scaleY(${((g.h - 2) / 28).toFixed(4)})`;
+  };
+  const layoutTabs = () => {
+    tabGeo = tabs.map((b) => ({ left: b.offsetLeft, top: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight }));
+    placeTabBar();
+  };
+  layoutTabs();
+  addEventListener('resize', layoutTabs);
+  document.fonts?.ready.then(() => { layoutTabs(); requestAnimationFrame(() => tabBar.classList.add('is-placed')); });
+
   // Status line: idle → working ("Regenerating · 3/7 · Electronics": the stage in progress) → done
   // ("Regenerated", 1.2s) → rest. Each finished stage writes the text and the bar once.
   let order = SITE.robotModelUrl ? ['model'] : BUILD_STAGES, built = 0, state = 'idle';
@@ -1001,6 +1079,7 @@ function initShowcase() {
   const onCamera = (az, el) => { azOut.textContent = deg(az); elOut.textContent = deg(el); };
 
   const select = (btn, focus) => {
+    const changed = btn.dataset.view !== view;
     view = btn.dataset.view;
     tabs.forEach((b) => {
       const on = b === btn;
@@ -1009,7 +1088,9 @@ function initShowcase() {
     });
     panels.forEach((p) => p.classList.toggle('is-active', p.dataset.view === view));
     view3d.dataset.view = view;
+    placeTabBar();
     viewLabel.textContent = t(VIEW_LABELS[view]);
+    if (changed) rollIn(viewLabel);
     if (focus) btn.focus();
     engine?.setView(view);
   };
@@ -1023,7 +1104,7 @@ function initShowcase() {
     });
   });
   view3d.dataset.view = view;
-  onLang(() => { viewLabel.textContent = t(VIEW_LABELS[view]); paintStatus(); });
+  onLang(() => { viewLabel.textContent = t(VIEW_LABELS[view]); paintStatus(); layoutTabs(); });
 
   const input = $('#namer-input');
   view3d.addEventListener('pointerdown', () => view3d.classList.add('is-dragged'), { once: true });
