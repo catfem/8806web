@@ -460,48 +460,38 @@ html[data-lang="zh-Hant"] .hero__partners > * { font-size: 12.5px; letter-spacin
   .results__photo { justify-self: start; max-width: 640px; margin-top: 12px; }
 }
 
-.seasons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.seasons:focus-visible, .marquee:focus-visible { outline-offset: -2px; } /* edge-to-edge scrollers: keep the ring inside */
-.season { display: flex; flex-direction: column; min-width: 0; border-left: 1px solid var(--rule); }
-.season:nth-child(2) { border-left: 0; }
+/* Seasons: one wide row per season, newest first (renderSeasons in main.js). The media column (the
+   season's photo, or the newest season's stat panel until it has one) runs beside the year, the game
+   and the event record (the revision table, cad.css). Phones: the photo becomes a thumbnail beside the
+   year and the stat panel leads the newest season at full width. */
+.marquee:focus-visible { outline-offset: -2px; } /* edge-to-edge scroller: keep the ring inside */
+.season {
+  display: grid; grid-template-columns: clamp(200px, 22%, 300px) minmax(0, 1fr);
+  grid-template-areas: "media head" "media rec"; grid-template-rows: auto 1fr;
+  border-top: 1px solid var(--rule);
+}
+.season:first-child { border-top: 0; }
+.season__media { grid-area: media; display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--rule); }
 .season__img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-bottom: 1px solid var(--rule); }
-.season__body { padding: 22px var(--cell-pad) 26px; display: flex; flex-direction: column; flex: 1; }
+.season__head { grid-area: head; min-width: 0; padding: 24px var(--cell-pad) 0; }
+.season__rec { grid-area: rec; min-width: 0; padding: 18px var(--cell-pad) 26px; container: rec / inline-size; } /* cad.css restacks the table under 700px */
+.season__badge { margin-bottom: 14px; }
+.season__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
 .season__year { font: 800 44px/1 var(--f-display); font-stretch: 112%; letter-spacing: -0.04em; color: var(--text); font-variant-numeric: tabular-nums; }
-.season__event { margin-top: 12px; font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--text); }
-.season__result { margin-top: 6px; font: 500 11px/1.5 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
-.season__awards { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
-.season__awards li {
-  position: relative; padding-left: 18px;
-  font: 700 18px/1.22 var(--f-display); font-stretch: 106%; letter-spacing: -0.01em; color: var(--text);
-}
-.season__awards li::before { content: ""; position: absolute; left: 0; top: 0.4em; width: 8px; height: 8px; background: var(--rule-3); }
-.season__awards li.star::before { background: var(--accent); }
-.season__awards small { display: block; margin-top: 5px; font: 500 11px/1.4 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
-html[data-lang="zh-Hant"] .season__awards li { letter-spacing: 0.02em; }
-.season__off { margin-top: 16px; font-size: 14px; font-weight: 600; line-height: 1.45; color: var(--text); }
-.season__off span {
-  display: inline-block; margin-right: 8px; padding: 3px 6px;
-  border: 1px solid var(--rule-2);
-  font: 500 11px/1.2 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
-}
-.season__note { margin-top: auto; padding-top: 20px; font: 500 11px/1.5 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
-html[data-lang="zh-Hant"] :is(.season__result, .season__note, .season__awards small) { font-size: 12px; letter-spacing: 0.06em; }
-.season__badge { align-self: flex-start; margin-bottom: 14px; }
-
-/* Newest season: a wide row leading the grid. Without a photo it shows a stat panel. */
-.season--latest { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); border-left: 0; border-bottom: 1px solid var(--rule); }
-.season--latest .season__img { height: 100%; min-height: 300px; aspect-ratio: auto; border-bottom: 0; border-right: 1px solid var(--rule); }
-.season--latest .season__body { padding: clamp(26px, 3vw, 40px) var(--pad); }
 .season--latest .season__year { font-size: 56px; }
-.season--latest .season__event { font-size: 17px; }
-html[data-lang="zh-Hant"] .season__event { word-break: keep-all; overflow-wrap: anywhere; } /* never split 區域賽 */
-.season--latest .season__awards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; margin-top: 26px; }
-.season--latest .season__awards li { font-size: 22px; }
+.season__game, .season__sum { font: 500 11px/1.5 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; }
+.season__game { color: var(--text); }
+.season__game span { color: var(--dim); }
+.season__sum { margin-top: 8px; color: var(--dim); }
+html[data-lang="zh-Hant"] :is(.season__game, .season__sum) { font-size: 12px; }
+/* the newest season's stat panel fills its column */
 .season__stat {
-  display: flex; flex-direction: column; justify-content: space-between; gap: 16px;
-  padding: clamp(24px, 3vw, 36px) var(--pad);
+  flex: 1; display: flex; flex-direction: column; gap: 28px; /* top-aligned: the row is as tall as its event record */
+  padding: clamp(24px, 3vw, 36px) var(--cell-pad);
   background: var(--bg-2) var(--hatch-section); /* a "cut" surface: drafting section hatch (cad.css) */
+  position: relative; overflow: hidden; /* the cutter's cover (motion.css) slides out of it */
 }
+.season__stat > * { position: relative; z-index: 1; } /* the text sits above the cut, always visible */
 /* small text never sits on the hatch: each label gets a solid chip */
 .season__stat-year, .season__stat-label, .season__stat-sub {
   width: fit-content; padding: 2px 6px; margin-left: -6px; background: var(--bg-2); /* text stays on the column inset */
@@ -510,7 +500,7 @@ html[data-lang="zh-Hant"] .season__event { word-break: keep-all; overflow-wrap: 
 }
 .season__stat-year { color: var(--dim); }
 .season__stat-num {
-  display: block; font: 800 clamp(120px, 13vw, 184px)/0.86 var(--f-display); font-stretch: 112%; letter-spacing: -0.05em;
+  display: block; font: 800 clamp(96px, 11vw, 160px)/0.86 var(--f-display); font-stretch: 112%; letter-spacing: -0.05em;
   color: var(--accent-text);
 }
 .season__stat-label { display: block; margin-top: 14px; color: var(--text); font-weight: 700; }
@@ -519,35 +509,20 @@ html[data-lang="zh-Hant"] .season__event { word-break: keep-all; overflow-wrap: 
 .season__img--empty { display: grid; place-items: center; aspect-ratio: 4 / 3; width: 100%; background: var(--bg-2); }
 .season__img--empty img { width: 30%; opacity: .5; }
 
-@media (max-width: 1099px) {
-  .seasons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* wider crop in two columns, so the small season photos are never shown much above native size */
-  .season:not(.season--latest) .season__img { aspect-ratio: 16 / 9; }
-  .season:nth-child(4) { border-left: 0; }
-  .season:nth-child(n+4) { border-top: 1px solid var(--rule); }
-}
-@media (max-width: 900px) {
-  .season--latest { grid-template-columns: minmax(0, 1fr); }
-  .season--latest .season__img { min-height: 0; aspect-ratio: 16 / 9; border-right: 0; border-bottom: 1px solid var(--rule); }
-  .season--latest .season__stat { aspect-ratio: auto; } /* sized by its content, not a photo crop */
-}
 @media (max-width: 760px) {
-  /* a swipeable row of cards */
-  .seasons {
-    display: flex; overflow-x: auto; overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory; scrollbar-width: none;
-  }
-  .seasons::-webkit-scrollbar { display: none; }
-  .season, .season--latest { flex: none; width: min(84vw, 400px); scroll-snap-align: start; display: flex; border-left: 1px solid var(--rule); border-bottom: 0; border-top: 0 !important; }
-  .season:first-child { border-left: 0; }
-  .season:nth-child(2), .season:nth-child(4) { border-left: 1px solid var(--rule); }
-  .season--latest .season__img { aspect-ratio: 4 / 3; height: auto; }
-  .season--latest .season__body { padding: 22px var(--cell-pad) 26px; }
+  .season { grid-template-columns: minmax(0, 1fr) 120px; grid-template-areas: "head media" "rec rec"; grid-template-rows: auto auto; }
+  .season__media { border-right: 0; padding: 22px var(--pad) 0 0; }
+  .season__img { border: 1px solid var(--rule); }
+  .season__head { padding: 22px 12px 0 var(--pad); }
+  .season__rec { padding: 16px var(--pad) 24px; }
+  .season--latest { grid-template-columns: minmax(0, 1fr); grid-template-areas: "media" "head" "rec"; }
+  .season--latest .season__media { padding: 0; border-bottom: 1px solid var(--rule); }
+  .season--latest .season__head { padding-right: var(--pad); }
   .season--latest .season__year { font-size: 44px; }
-  .season--latest .season__awards { grid-template-columns: 1fr; gap: 12px; margin-top: 20px; }
-  .season--latest .season__awards li { font-size: 18px; }
+  .season__stat { aspect-ratio: auto; padding: 22px var(--pad); } /* full width: sized by its content, not a photo crop */
   .season__stat-num { font-size: 112px; }
 }
+@media (max-width: 400px) { .season:not(.season--latest) { grid-template-columns: minmax(0, 1fr) 96px; } }
 
 .goals { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; }
 .goals__label { flex-basis: 100%; }
@@ -558,6 +533,7 @@ html[data-lang="zh-Hant"] .season__event { word-break: keep-all; overflow-wrap: 
 
 .results__foot { margin-top: 22px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 24px; }
 .cite { font-size: 14px; color: var(--dim); }
+.cite__best { color: var(--muted); }
 .verify { display: flex; flex-wrap: wrap; gap: 0 22px; }
 .verify a { display: inline-flex; align-items: center; min-height: 40px; font: 700 11.5px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--muted); transition: color .2s; }
 .verify a:hover { color: var(--text); }
@@ -698,7 +674,7 @@ html[data-lang="zh-Hant"] .benefit__post-body { font-weight: 900; letter-spacing
   font: 500 11px/1.35 var(--f-mono); letter-spacing: 0; text-transform: uppercase;
 }
 .map__label b { display: block; font-weight: 700; color: var(--text); }
-.map__label span { color: var(--dim); }
+.map__label span { display: block; color: var(--dim); }
 .map__label--home b { color: var(--accent-text); }
 .map__label--below { transform: translate(-50%, 9px); }
 .place-list { display: none; }
@@ -829,6 +805,7 @@ html[data-lang="zh-Hant"] .showcase__head .h2 { font-size: clamp(28px, 3.3cqi, 4
 }
 #robot-canvas:active { cursor: grabbing; }
 #robot-canvas.is-ready { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { #robot-canvas { transition: none; } }
 .showcase__fallback { display: none; }
 .showcase__corner, .showcase__hint {
   position: absolute; z-index: 2; pointer-events: none;

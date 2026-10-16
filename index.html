@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>FRC Team 8806 · 11 awards in 5 seasons · Partner with us</title>
-  <meta name="description" content="45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, 11 FRC awards, 9 regionals in New Taipei City, Hawaii, Istanbul, Arizona and Shanghai. See what sponsors get and where every NT$ goes.">
+  <meta name="description" content="45 students from Our Lady of Providence High School, New Taipei City. Regional Winners in our 2022 rookie season, 11 FRC awards, 9 regionals in New Taipei City, Hawaii, Istanbul, Arizona and Shanghai. See what sponsors get and where every NT$ goes.">
   <meta name="theme-color" content="#121316">
   <meta name="color-scheme" content="dark">
   <meta property="og:type" content="website">
   <meta property="og:title" content="FRC Team 8806 — 11 awards in 5 seasons. Partner with us.">
-  <meta property="og:description" content="45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, 11 FRC awards, 9 regionals in New Taipei City, Hawaii, Istanbul, Arizona and Shanghai. See what sponsors get and where every NT$ goes.">
+  <meta property="og:description" content="45 students from Our Lady of Providence High School, New Taipei City. Regional Winners in our 2022 rookie season, 11 FRC awards, 9 regionals in New Taipei City, Hawaii, Istanbul, Arizona and Shanghai. See what sponsors get and where every NT$ goes.">
   <meta property="og:image" content="assets/img/og-image.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
@@ -33,9 +33,13 @@
       // Motion on (.mo) unless reduced motion is asked for: every hidden starting state in motion.css
       // hangs off it. Backstop: if motion.js hasn't started its observers within 3 s (a failed or slow
       // main.js), .mo goes and everything shows. The frame draws itself on a fresh desktop load (is-boot).
+      // .sda: the linework is plotted by the scroll (CSS scroll-driven animations) where the browser has
+      // them; elsewhere, or with ?sda=0, the one-shot plotter draws it.
       var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
       d.className = d.className.replace('no-js', 'js') + (rm ? '' : ' mo');
       if (!rm) {
+        if (window.CSS && CSS.supports('animation-timeline: view()') && CSS.supports('animation-range: entry 0% cover 50%')
+            && !/[?&]sda=0/.test(location.search)) d.classList.add('sda');
         setTimeout(function () { if (!window.__motionReady) d.classList.remove('mo'); }, 3000);
         if (!location.hash && matchMedia('(min-width: 761px)').matches) {
           d.classList.add('is-boot'); setTimeout(function () { d.classList.remove('is-boot'); }, 1600);
@@ -193,7 +197,7 @@
           </div>
           <div class="score">
             <dt class="score__num" id="score-latest-year">2026</dt>
-            <dd class="score__label" id="score-latest">Regional Finalist in Shanghai, plus 3 more awards this season</dd>
+            <dd class="score__label" id="score-latest">Regional Finalists in Shanghai, plus 3 more awards this season</dd>
           </div>
           <div class="score">
             <dt class="score__num"><span data-count="12" class="js-outreach-count">12</span></dt>
@@ -212,18 +216,19 @@
       <div class="sec__head sec__head--media">
         <div>
           <h2 class="h2" id="results-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="從新秀，">From rookies</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="到國際舞台。">to the international stage.</span></span></h2>
-          <p class="lead" data-reveal data-zh="2021 年成軍，2022 年首次參賽便奪下<strong>聯盟冠軍</strong>；此後每一季，我們把 8806 帶到更遠的地方 — <i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i>。">Founded in 2021, we won the <strong>Regional</strong> in our very first season in 2022 — and every season since, we've taken 8806 further afield: <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i>.</p>
+          <p class="lead" data-reveal data-zh="2022 年新秀賽季的第一場比賽 — 新北市 x 鴻海區域賽，我們就與聯盟夥伴拿下<strong>聯盟冠軍</strong>。此後我們也在<i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i>出賽，每一場的戰績都列在下方。">In our 2022 rookie season, our very first event — the New Taipei City x Hon Hai Regional — ended with our alliance as <strong>Regional Winners</strong>. Since then we've also competed in <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i>; every event's record is below.</p>
         </div>
         <figure class="photo results__photo" data-reveal>
-          <img src="assets/img/award-2025.webp" width="640" height="480" loading="lazy" alt="Team 8806 with the Imagery Award at the 2025 New Taipei City Regional" data-zh-alt="第 8806 隊於 2025 新北市區域賽獲頒榮譽意象獎">
-          <figcaption class="caption"><span class="sq" aria-hidden="true"></span><span data-zh="2025 新北市區域賽 · 榮譽意象獎">2025 New Taipei City Regional · Imagery Award</span></figcaption>
+          <img src="assets/img/award-2025.webp" width="640" height="480" loading="lazy" alt="Team 8806 with the Imagery Award in honor of Jack Kamen at the 2025 New Taipei City Regional" data-zh-alt="第 8806 隊於 2025 新北市區域賽獲頒團隊意象獎">
+          <figcaption class="caption"><span class="sq" aria-hidden="true"></span><span data-zh="2025 新北市區域賽 · 團隊意象獎">2025 New Taipei City Regional · Imagery Award in honor of Jack Kamen</span></figcaption>
         </figure>
       </div>
-      <div class="seasons" id="season-cards" data-reveal data-stagger data-lenis-prevent-horizontal></div>
+      <div class="seasons" id="season-cards" data-plot-host></div>
       <div class="pad results__end">
         <div class="goals" id="goals" data-reveal></div>
         <div class="results__foot" data-reveal>
-          <p class="cite" data-zh="巔峰時期，綜合能力曾躋身世界百強。">At our peak, our overall ability ranked among the world's top 100 teams.</p>
+          <!-- filled from data.js (renderResultsNote): the best confirmed qualification run and when the results were checked -->
+          <p class="cite" id="results-note">Best qualification run: 8-1-0, ranked 2nd of 51 at the 2024 İstanbul Regional.</p>
           <p class="verify" id="verify-links"></p>
         </div>
       </div>
@@ -262,7 +267,7 @@
         <li class="cell reason">
           <span class="cell__n">01</span>
           <b class="h4" data-zh="實績證明">Proven</b>
-          <p data-zh="<i class='js-n-seasons-zh'>五</i>個賽季 <i class='js-n-awards'>11</i> 座 FRC 獎項，包含 2022 聯盟冠軍，以及 2024、2026 聯盟亞軍。"><i class="js-n-awards">11</i> FRC awards in <i class="js-n-seasons">5</i> seasons, including Regional Winner (2022) and Regional Finalist (2024 and 2026).</p>
+          <p data-zh="<i class='js-n-seasons-zh'>五</i>個賽季 <i class='js-n-awards'>11</i> 座 FRC 獎項，包含 2022 新秀賽季的聯盟冠軍，以及 2024 伊斯坦堡、2026 上海區域賽的聯盟亞軍。"><i class="js-n-awards">11</i> FRC awards in <i class="js-n-seasons">5</i> seasons, including Regional Winners in our 2022 rookie season and Regional Finalists at İstanbul (2024) and Shanghai (2026).</p>
         </li>
         <li class="cell reason">
           <span class="cell__n">02</span>
@@ -317,10 +322,10 @@
       </div>
 
       <div class="split callout--partner" data-reveal>
-        <img src="assets/img/media-offseason-2024.webp" alt="Team 8806 at the 2024 national FRC off-season event they hosted" data-zh-alt="第 8806 隊於自己主辦的 2024 全國 FRC 季後賽" width="640" height="480" loading="lazy">
+        <img src="assets/img/media-offseason-2024.webp" alt="Team 8806 at the 2024 national FRC off-season event they hosted" data-zh-alt="第 8806 隊於自己承辦的 2024 全國 FRC 季後賽" width="640" height="480" loading="lazy">
         <div class="split__body">
           <p class="label" data-zh="不只為自己的隊伍">Beyond our own team</p>
-          <p class="callout__text" data-zh="2024 年 8 月，我們舉辦了全國高級中等學校 FRC 季後賽；2025、2026 年，崇光也是雙北盃 FRC 季後賽的協辦學校。">In August 2024 we hosted the national high-school FRC off-season event, and our school co-organized the Taipei–New Taipei FRC off-season (<span lang="zh-Hant">雙北盃</span>) in 2025 and 2026.</p>
+          <p class="callout__text" data-zh="2024 年 8 月，我們承辦了在臺北和平籃球館舉行的全國高級中等學校 FRC 季後賽；2025、2026 年 8 月，崇光也是雙北盃 FRC 季後賽的協辦學校。">In August 2024 we hosted the national high-school FRC off-season event at Taipei's Heping Basketball Gymnasium, and our school was a co-organizer of the Taipei–New Taipei FRC off-season (<span lang="zh-Hant">雙北盃</span>) in August 2025 and August 2026.</p>
         </div>
       </div>
     </section>
@@ -333,7 +338,7 @@
       </div>
       <div class="sec__head">
         <h2 class="h2" id="impact-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="機器人之外，">The robot is</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="才是重點。">just the start.</span></span></h2>
-        <p class="lead" data-reveal data-zh="我們把 FRC 帶進國小教室、廣播電台與電視，甚至主辦全國季後賽 — 讓更多孩子相信自己也能成為工程師。">We bring FRC into elementary classrooms, onto radio and TV, and even host a national off-season event — so more kids believe they can become engineers.</p>
+        <p class="lead" data-reveal data-zh="我們把 FRC 帶進國小教室、廣播電台與電視，甚至承辦全國季後賽 — 讓更多孩子相信自己也能成為工程師。">We bring FRC into elementary classrooms, onto radio and TV, and even host a national off-season event — so more kids believe they can become engineers.</p>
       </div>
 
       <dl class="grid grid--4 kpis" data-reveal data-stagger>
@@ -513,12 +518,12 @@
         </div>
 
         <div class="showcase__view" id="robot-view">
-          <canvas id="robot-canvas" aria-label="Interactive 3D model of the team's robot (illustrative, not to scale). Drag to rotate." data-zh-aria="隊伍機器人的互動 3D 示意模型（未依比例），可拖曳旋轉。" role="img"></canvas>
+          <canvas id="robot-canvas" aria-label="Interactive 3D model in the style of the team's 2025 REEFSCAPE robot (illustrative, not to scale). Drag to rotate." data-zh-aria="以隊伍 2025 REEFSCAPE 賽季機器人為藍本的互動 3D 示意模型（未依比例），可拖曳旋轉。" role="img"></canvas>
           <img class="showcase__fallback" src="assets/img/g-match-reef.webp" alt="Team 8806's robot on the REEFSCAPE field" data-zh-alt="第 8806 隊的機器人在 REEFSCAPE 場地上" width="720" height="480" loading="lazy">
           <div class="hotspots" id="hotspots"></div>
           <!-- CAD viewport corners (cad.css): the drawing view of the current tab; the regenerate status, then
                the camera's azimuth / elevation (phones: the note). Filled in by initShowcase() in main.js. -->
-          <span class="showcase__corner showcase__corner--tl" aria-hidden="true">FRC 8806 · REEFSCAPE</span>
+          <span class="showcase__corner showcase__corner--tl" aria-hidden="true" data-zh="FRC 8806 · 2025 REEFSCAPE 型機器人">FRC 8806 · 2025 REEFSCAPE-style robot</span>
           <p class="showcase__corner showcase__corner--tr" id="view-label" aria-hidden="true"><b></b><span data-zh="示意模型 · 未依比例">Illustrative model · not to scale</span></p>
           <p class="showcase__corner showcase__corner--bl" id="view-status" aria-hidden="true">
             <span class="vs-regen"><i class="vs-sq"></i><span class="vs-txt"></span><i class="vs-bar"></i></span>
@@ -656,6 +661,7 @@
           <div class="tblock__cell"><dt data-zh="單位">Units</dt><dd>NT$</dd></div>
           <div class="tblock__cell"><dt data-zh="圖紙數">Sheets</dt><dd>07</dd></div>
           <div class="tblock__cell"><dt data-zh="版次">Rev</dt><dd class="js-rev">E · 2026</dd></div>
+          <div class="tblock__cell tblock__cell--wide"><dt data-zh="核對">Checked</dt><dd class="js-checked">FRC Events · Oct 2026</dd></div>
         </dl>
         <a class="tblock__approve" href="#sponsor" aria-label="Approved by: your brand? Become a sponsor" data-zh-aria="核准：你的品牌？成為贊助夥伴">
           <span class="tblock__k" data-zh="核准">Approved by</span>
@@ -696,6 +702,7 @@
         <div class="tblock__cell tblock__cell--wide"><dt data-zh="繪圖">Drawn by</dt><dd data-zh="45 位學生">45 students</dd></div>
         <div class="tblock__cell"><dt data-zh="單位">Units</dt><dd>NT$</dd></div>
         <div class="tblock__cell"><dt data-zh="版次">Rev</dt><dd class="js-rev">E · 2026</dd></div>
+        <div class="tblock__cell tblock__cell--wide"><dt data-zh="核對">Checked</dt><dd class="js-checked">FRC Events · Oct 2026</dd></div>
         <div class="tblock__cell tblock__cell--wide"><dt data-zh="圖紙">Sheet</dt><dd><span id="tb-sheet">01</span> / 07</dd></div>
       </dl>
       <a class="tblock__approve" href="#sponsor" aria-label="Approved by: your brand? Become a sponsor" data-zh-aria="核准：你的品牌？成為贊助夥伴">

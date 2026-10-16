@@ -169,6 +169,9 @@ const GAP = 18, PAD = 8; // GAP = .hotspot__tag margin in main.css
 const PAD_T = { desktop: 44, mobile: 40 }, PAD_B = { desktop: 44, mobile: 48 };
 // The one-shot assembly intro: how far apart the parts start (in `explode` units) and how long they take.
 const INTRO_EXPLODE = 0.35, INTRO_MS = 1100;
+// The entry scrub: as the viewport rises into view the parts converge with the scroll and the camera
+// swings this far (about 20°) into its datum view; once the whole viewport is on screen it latches.
+const ENTER_SWING = 0.35; // rad
 // The idle motion (camera sway, elevator cycle, spinning rollers) starts easing out this long after the
 // last interaction (a drag, a tab, the section coming into view) and is at rest by about 5 s, so nothing
 // moves on its own for longer (WCAG 2.2.2). The next interaction wakes it.
@@ -264,18 +267,36 @@ export async function initShowcase(opts) {
     sp.s.textContent = sp.h.tag[lang] ?? sp.h.tag.en;
     sp.ref.textContent = sp.h.ref ?? '';
     sp.ref.classList.toggle('balloon--sheet', typeof sp.h.ref !== 'number');
-    sp.w = 0;
   });
   renderLabels();
+  // Each tag's size, for placing it beside its part: reported by a ResizeObserver (a new language, the
+  // fonts, a narrower view), so frame() never reads layout.
+  const tagSize = new ResizeObserver((entries) => entries.forEach((e) => {
+    const sp = spots.find((x) => x.btn === e.target), box = e.borderBoxSize?.[0];
+    if (sp && box?.inlineSize) { sp.w = box.inlineSize; sp.th = box.blockSize; }
+  }));
+  spots.forEach((sp) => tagSize.observe(sp.btn));
+
+  // Where the viewport sits on the page, for the entry scrub: cached here (at start, on resize, on load
+  // and whenever #main changes size, since anything above can), never read in frame().
+  let wrapTop = 0, wrapH = 1, navH = 0;
+  const measure = () => {
+    wrapTop = wrap.getBoundingClientRect().top + scrollY;
+    wrapH = Math.max(1, wrap.offsetHeight);
+    navH = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  };
+  addEventListener('load', measure);
+  const main = document.getElementById('main');
+  if (main) new ResizeObserver(measure).observe(main);
 
   let W = 1, H = 1;
   const resize = () => {
+    measure();
     W = Math.max(1, wrap.clientWidth); H = Math.max(1, wrap.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile() ? 1.5 : 2));
     renderer.setSize(W, H, false);
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
-    spots.forEach((sp) => { sp.w = 0; });
   };
   resize();
   new ResizeObserver(resize).observe(wrap);
@@ -308,8 +329,11 @@ export async function initShowcase(opts) {
   const v = new THREE.Vector3();
   const look = new THREE.Vector3();
   let name = '';
-  // Assembly intro: 0 = not started, -1 = played or skipped, otherwise its start time.
+  // Assembly intro: 0 = not started, -1 = played or skipped, 'scroll' = the entry scrub (the view is still
+  // rising into the screen on the first frame), otherwise the start time of the timed intro (the view was
+  // already in place: a deep link, or a model that finished loading late).
   let intro = reducedMotion ? -1 : 0;
+  let scrubAz = 0, scrubEx = 0; // the scrub's last offsets, folded into a tab change's tween
   let camAz = null, camEl = null; // the last angles reported to opts.onCamera
 
   function frame(now) {
@@ -340,11 +364,24 @@ export async function initShowcase(opts) {
       }
     }
 
-    // The one-shot assembly intro (the "regenerated" payoff): on the first rendered frame of the build
-    // view the parts start a little apart and converge (quart-out). Skipped in any other first view.
-    if (intro === 0) intro = to === views.build ? now : -1;
-    let explode = cur.explode;
-    if (intro > 0) {
+    // The one-shot assembly (the "regenerated" payoff), in the build view only. While the viewport rises
+    // into the screen the parts converge and the camera swings in with the scroll (quart-out of how far
+    // it has entered; scrollY and innerHeight only, no layout read); fully in view, it latches assembled.
+    // If the view is already in place on the first frame, the parts converge over INTRO_MS instead.
+    const enter = reducedMotion ? 1 : clamp((scrollY + innerHeight - wrapTop) / Math.max(1, Math.min(wrapH, innerHeight - navH)));
+    if (intro === 0) intro = to !== views.build ? -1 : enter < 0.98 ? 'scroll' : now;
+    let explode = cur.explode, azOff = 0;
+    if (intro === 'scroll') {
+      if (to !== views.build) intro = -1; // a tab change ends the scrub
+      else {
+        const e = 1 - (1 - enter) ** 4;
+        scrubEx = (1 - e) * INTRO_EXPLODE;
+        scrubAz = (1 - e) * ENTER_SWING;
+        explode += scrubEx;
+        azOff = scrubAz;
+        if (enter >= 1) intro = -1;
+      }
+    } else if (intro > 0) {
       const a = Math.min(1, (now - intro) / INTRO_MS);
       explode += (1 - a) ** 4 * INTRO_EXPLODE;
       if (a >= 1) intro = -1;
@@ -375,7 +412,7 @@ export async function initShowcase(opts) {
     let dist = m ? cur.md : cur.dist;
     if (aspect < ref) dist *= Math.pow(ref / aspect, 0.85);
     const sway = reducedMotion ? 0 : idleAmp * Math.sin(time * 0.35) * cur.sway;
-    const az = cur.az + sway + drag;
+    const az = cur.az + sway + drag + azOff;
     const el = cur.el;
     look.set(cur.tx, cur.ty + (robot.root.position.y || 0) * 0.6, cur.tz);
     camera.position.set(
@@ -402,7 +439,7 @@ export async function initShowcase(opts) {
       sp.anchor.getWorldPosition(v);
       v.project(camera);
       const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H;
-      if (!sp.w) { sp.w = sp.btn.offsetWidth || 160; sp.th = sp.btn.offsetHeight || 44; }
+      if (!sp.w) { sp.w = 160; sp.th = 44; } // until the ResizeObserver reports
       // Put the tag on the preferred side if it fits, else the roomier side, then nudge it inside the view.
       const fitsRight = x + GAP + sp.w <= W - PAD, fitsLeft = x - GAP - sp.w >= PAD;
       const wantLeft = sp.h.left || x > W * 0.66;
@@ -482,6 +519,9 @@ export async function initShowcase(opts) {
     setView(id) {
       if (!views[id]) return;
       from = { ...cur };
+      // A tab picked during the entry scrub tweens on from where the scrub left the robot, and the scrub
+      // ends for good (the robot never re-explodes).
+      if (intro === 'scroll' && views[id] !== views.build) { from.az += scrubAz; from.explode += scrubEx; intro = -1; }
       to = views[id];
       k = 0;
       t0 = performance.now();
