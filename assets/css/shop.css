@@ -2,13 +2,13 @@
    FRC 8806 — 8806 Supply (the team shop: shop/index.html, product.html,
    bag.html). Built on main.css (tokens, nav, cards, buttons, steppers) and
    motion.css (reveals); this file adds the shop's own parts: the bag pill,
-   product cards on lit stages, the product page, the bag and the toast.
+   product cards on plain stages, the product page, the bag and the toast.
    The product images are transparent studio renders, so every image sits
-   on a stage: a dark rounded box with a pool of blue light.
+   on a stage: a plain dark panel, lit from above in neutral grey.
    ========================================================================= */
 
 :root {
-  --stage: radial-gradient(58% 52% at 50% 46%, rgba(42, 109, 244, 0.22), transparent 72%), linear-gradient(180deg, #15171d, #0b0c0f);
+  --stage: linear-gradient(180deg, #16181c, #0e0f12);
 }
 /* no phone dock on the shop pages */
 @media (max-width: 900px) { body[data-page] { padding-bottom: 0; } }
@@ -19,7 +19,7 @@
 .nav__bag svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
 .nav__count {
   display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; margin-right: -8px;
-  border-radius: 999px; background: var(--accent); color: #fff;
+  border-radius: 4px; background: var(--accent); color: #fff;
   font: 600 12px/1 var(--f-mono); font-variant-numeric: tabular-nums;
 }
 .nav__count[hidden] { display: none; }
@@ -28,11 +28,6 @@
 
 .shophero__sub { max-width: 640px; margin: 28px auto 0; text-align: center; }
 .shophero__shot { position: relative; z-index: 1; max-width: 1240px; margin: clamp(28px, 4vw, 56px) auto 0; padding: 0 var(--pad); }
-.shophero__shot::before { /* the light it stands in */
-  content: ""; position: absolute; z-index: -1; left: 50%; top: 10%; width: 80%; height: 80%; transform: translateX(-50%);
-  background: radial-gradient(closest-side, rgba(42, 109, 244, 0.3), rgba(42, 109, 244, 0.06) 60%, transparent);
-  filter: blur(10px); pointer-events: none;
-}
 .shophero__shot img { width: 100%; height: auto; }
 
 /* ------------------------------------------------------------------ collection */
@@ -47,9 +42,9 @@
 .product__link {
   display: flex; flex-direction: column; height: 100%; padding: 8px 8px 18px;
   border: 1px solid var(--rule); border-radius: var(--r-lg); background: var(--bg-2); background-image: var(--card);
-  transition: border-color .25s, box-shadow .25s;
+  transition: border-color .2s;
 }
-.product__link:hover { border-color: rgba(122, 170, 255, 0.32); box-shadow: 0 30px 80px -50px rgba(42, 109, 244, 0.7); }
+.product__link:hover { border-color: var(--rule-3); }
 .product__stage { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: calc(var(--r-lg) - 7px); background: var(--stage); }
 .product__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity .45s var(--ease), transform .8s var(--ease); }
 .product__img--alt { opacity: 0; }
@@ -62,8 +57,7 @@
 @media (prefers-reduced-motion: reduce) { .product__img { transition: opacity .2s; } .product__link:hover .product__img { transform: none; } }
 .product__badge {
   position: absolute; left: 12px; top: 12px; padding: 7px 11px;
-  border: 1px solid var(--rule-2); border-radius: 999px; background: rgba(14, 16, 20, 0.7);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid var(--rule-2); border-radius: 4px; background: var(--bg-2);
   font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--text);
 }
 .product__info { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 16px 10px 0; }
@@ -122,22 +116,22 @@ html[data-lang="zh-Hant"] .product__name { font-weight: 700; letter-spacing: 0.0
 .pdp__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(28px, 4vw, 64px); align-items: start; margin-inline: var(--pad); }
 .pdp__grid[hidden] { display: none; }
 .pdp__gallery { position: sticky; top: calc(var(--nav-h) + 12px); }
-.pdp__stage { aspect-ratio: 1; overflow: hidden; border: 1px solid var(--rule); border-radius: var(--r-xl); background: var(--stage); box-shadow: var(--shadow); }
+.pdp__stage { aspect-ratio: 1; overflow: hidden; border: 1px solid var(--rule); border-radius: var(--r-xl); background: var(--stage); }
 .pdp__stage img { width: 100%; height: 100%; object-fit: contain; }
 .pdp__thumbs { display: flex; gap: 10px; margin-top: 12px; }
 .pdp__thumbs[hidden] { display: none; }
 .pdp__thumbs button {
   width: 88px; height: 88px; padding: 4px; cursor: pointer;
   border: 1px solid var(--rule-2); border-radius: var(--r-md); background: var(--stage);
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .2s;
 }
 .pdp__thumbs button:hover { border-color: rgba(255, 255, 255, 0.4); }
-.pdp__thumbs button[aria-pressed="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 3px rgba(42, 109, 244, 0.3); }
+.pdp__thumbs button[aria-pressed="true"] { border-color: var(--accent-text); box-shadow: inset 0 0 0 1px var(--accent-text); }
 .pdp__thumbs img { width: 100%; height: 100%; object-fit: contain; }
 
 .pdp__badge {
   display: inline-flex; margin-bottom: 18px; padding: 7px 12px;
-  border: 1px solid rgba(122, 170, 255, 0.35); border-radius: 999px; background: rgba(42, 109, 244, 0.08);
+  border: 1px solid var(--rule-3); border-radius: 4px; background: transparent;
   font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--accent-text);
 }
 .pdp__badge[hidden] { display: none; }
@@ -202,7 +196,7 @@ html[data-lang="zh-Hant"] .pdp__name { font-weight: 700; letter-spacing: 0.01em;
 .pdp-story__panel {
   margin-inline: var(--pad); padding: clamp(32px, 5vw, 76px);
   border: 1px solid var(--rule); border-radius: var(--r-xl);
-  background: radial-gradient(60% 90% at 0% 0%, rgba(42, 109, 244, 0.18), transparent 60%), var(--bg-2);
+  border-top: 2px solid var(--accent); background: var(--bg-2);
 }
 .pdp-story__text { margin-top: 18px; max-width: 900px; font: 500 clamp(21px, 2.3vw, 31px)/1.4 var(--f-display); letter-spacing: -0.02em; color: var(--text); text-wrap: pretty; }
 html[data-lang="zh-Hant"] .pdp-story__text { letter-spacing: 0.02em; line-height: 1.6; }
@@ -248,7 +242,7 @@ html[data-lang="zh-Hant"] .pdp-story__text { letter-spacing: 0.02em; line-height
 
 .bag__side { position: sticky; top: calc(var(--nav-h) + 12px); }
 .bag__side[hidden] { display: none; }
-.bag__summary { padding: 28px var(--cell-pad) 30px; border: 1px solid var(--rule); border-radius: var(--r-xl); background: var(--bg-2); background-image: var(--card); box-shadow: var(--shadow); }
+.bag__summary { padding: 28px var(--cell-pad) 30px; border: 1px solid var(--rule); border-radius: var(--r-xl); background: var(--bg-2); }
 .sum { margin: 16px 0 24px; }
 .sum > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 11px 0; border-top: 1px solid var(--rule); font-size: 15px; }
 .sum dt { color: var(--muted); }
@@ -262,7 +256,7 @@ html[data-lang="zh-Hant"] .pdp-story__text { letter-spacing: 0.02em; line-height
 .shipopt input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
 .shipopt b { display: block; font-size: 15px; font-weight: 600; color: var(--text); }
 .shipopt small { display: block; margin-top: 3px; font-size: 13px; line-height: 1.45; color: var(--muted); }
-.shipopt:has(input:checked) { border-color: rgba(122, 170, 255, 0.55); background: rgba(42, 109, 244, 0.08); }
+.shipopt:has(input:checked) { border-color: var(--accent-text); background: var(--bg-3); }
 .bag__summary .field input { height: 50px; font-size: 16px; }
 .bag__empty { padding: clamp(40px, 6vw, 88px) var(--cell-pad); text-align: center; border: 1px solid var(--rule); border-radius: var(--r-xl); background: var(--bg-2); background-image: var(--card); }
 .bag__empty[hidden] { display: none; }
@@ -279,14 +273,13 @@ html[data-lang="zh-Hant"] .pdp-story__text { letter-spacing: 0.02em; line-height
   position: fixed; z-index: 60; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   width: max-content; max-width: calc(100% - 24px);
   display: flex; align-items: center; gap: 16px; padding: 8px 8px 8px 20px;
-  border: 1px solid var(--rule-2); border-radius: 999px; background: rgba(14, 16, 20, 0.88);
-  -webkit-backdrop-filter: saturate(160%) blur(18px); backdrop-filter: saturate(160%) blur(18px);
-  box-shadow: 0 20px 50px -18px rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--rule-2); border-radius: var(--r-md); background: var(--bg-3);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.8);
   font-size: 14.5px; line-height: 1.4; color: var(--text);
 }
 .toast[hidden] { display: none; }
 .toast b { font-weight: 600; }
-.toast a { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; white-space: nowrap; }
+.toast a { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: var(--r-sm); background: #fff; color: var(--ink); font-weight: 600; white-space: nowrap; }
 .toast a svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; }
 @media (max-width: 560px) { .toast { width: calc(100% - 24px); justify-content: space-between; border-radius: var(--r-lg); padding: 10px 10px 10px 16px; font-size: 14px; } }
 

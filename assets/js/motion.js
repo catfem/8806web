@@ -369,6 +369,9 @@ export function goTo(el, { block = 'start', hash, focus = el } = {}) {
   // way (an image, the robot's no-WebGL stand-in), so the landing is checked and corrected at the end.
   const missed = () => Math.abs(el.getBoundingClientRect().top - want()) > 2;
   if (lenis) {
+    // Lenis aims at an element from its own scroll value. If the page moved without it (a scrollbar drag,
+    // a script, a glide cut short), that value is stale and the jump would land off target: resync first.
+    if (Math.abs(lenis.animatedScroll - lenis.actualScroll) > 1) lenis.reset();
     const offset = block === 'center' ? -Math.max(0, (innerHeight - navH - padB - el.offsetHeight) / 2) : 0;
     const dy = el.getBoundingClientRect().top - navH + offset;
     const duration = Math.min(1.2, Math.max(0.6, 0.45 + Math.sqrt(Math.abs(dy)) / 150));

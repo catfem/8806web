@@ -1,4 +1,4 @@
-// The floating nav, shared by every page: the phone / tablet menu and the reading hairline.
+// The nav bar, shared by every page: the phone / tablet menu and the reading line.
 import { getLenis } from './motion.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -19,7 +19,7 @@ export function initMenu() {
   addEventListener('resize', () => { if (!menu.hidden && innerWidth > 1180) set(false); });
 }
 
-// A hairline along the nav pill shows how far down the page you are (--p, one write per frame).
+// A line along the nav's bottom rule shows how far down the page you are (--p, one write per frame).
 export function initProgress() {
   const bar = $('.nav__progress');
   let maxScroll = 1, raf = 0;
