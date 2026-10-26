@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>FRC Team 8806 · 11 awards in 5 seasons · Partner with us</title>
   <meta name="description" content="45 students from Our Lady of Providence High School, New Taipei City. Regional Winners in our 2022 rookie season, 11 FRC awards, 9 regionals in New Taipei City, Hawaii, Istanbul, Arizona and Shanghai. See what sponsors get and where every NT$ goes.">
-  <meta name="theme-color" content="#121316">
+  <meta name="theme-color" content="#08090b">
   <meta name="color-scheme" content="dark">
   <meta property="og:type" content="website">
   <meta property="og:title" content="FRC Team 8806 — 11 awards in 5 seasons. Partner with us.">
@@ -19,9 +19,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- Web fonts never block the first paint (system fonts show first); Noto Sans TC loads only for Chinese.
-       Archivo (display, variable width), Inter (body) and JetBrains Mono (labels) share one request. -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,700..900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,700..900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&amp;display=swap"></noscript>
+       Geist (display and body) and Geist Mono (labels and data) share one request. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&amp;display=swap"></noscript>
   <link rel="stylesheet" href="assets/css/main.css">
   <link rel="stylesheet" href="assets/css/cad.css">
   <link rel="stylesheet" href="assets/css/motion.css">
@@ -32,7 +32,7 @@
       var d = document.documentElement, l;
       // Motion on (.mo) unless reduced motion is asked for: every hidden starting state in motion.css
       // hangs off it. Backstop: if motion.js hasn't started its observers within 3 s (a failed or slow
-      // main.js), .mo goes and everything shows. The frame draws itself on a fresh desktop load (is-boot).
+      // main.js), .mo goes and everything shows.
       // .sda: the linework is plotted by the scroll (CSS scroll-driven animations) where the browser has
       // them; elsewhere, or with ?sda=0, the one-shot plotter draws it.
       var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,9 +41,6 @@
         if (window.CSS && CSS.supports('animation-timeline: view()') && CSS.supports('animation-range: entry 0% cover 50%')
             && !/[?&]sda=0/.test(location.search)) d.classList.add('sda');
         setTimeout(function () { if (!window.__motionReady) d.classList.remove('mo'); }, 3000);
-        if (!location.hash && matchMedia('(min-width: 761px)').matches) {
-          d.classList.add('is-boot'); setTimeout(function () { d.classList.remove('is-boot'); }, 1600);
-        }
       }
       var q = /[?&]lang=(zh|en)/i.exec(location.search);
       if (q) l = q[1].toLowerCase() === 'zh' ? 'zh-Hant' : 'en';
@@ -83,8 +80,6 @@
   </script>
 </head>
 <body>
-  <!-- Boot: the nav rule and the column rules draw themselves on a fresh desktop load (motion.css) -->
-  <div class="boot" aria-hidden="true"><i class="boot__n"></i><i class="boot__l"></i><i class="boot__r"></i></div>
   <a class="skip" href="#main" data-zh="跳至主要內容">Skip to content</a>
 
   <!-- ============================== NAV ============================== -->
@@ -112,9 +107,10 @@
       </a>
       <a class="nav__cta" href="#sponsor" data-zh="成為贊助夥伴">Sponsor us</a>
     </div>
+    <i class="nav__progress" aria-hidden="true"></i>
   </header>
 
-  <!-- Phone / tablet menu (the right rail does this job on wide screens) -->
+  <!-- Phone / tablet menu: the section list below 1180px -->
   <nav class="menu" id="menu" aria-label="Sections" data-zh-aria="頁面區塊" data-lenis-prevent hidden>
     <ol>
       <li><a href="#top"><span class="menu__n">01</span><span data-zh="總覽">Overview</span></a></li>
@@ -139,46 +135,42 @@
       </div>
 
       <div class="hero__body">
-        <!-- The crest as Detail A: the ring, centre-line stubs and leader are drafting geometry (cad.css) -->
-        <div class="hero__mark" data-draw>
-          <svg class="hero__geo" viewBox="0 0 148 148" aria-hidden="true" focusable="false">
-            <circle class="geo-sketch" cx="74" cy="74" r="60" pathLength="1"/>
-            <circle class="geo-ring" cx="74" cy="74" r="60"/>
-            <path class="geo-cl" d="M74 0v8M74 140v8M0 74h8M140 74h8"/>
-            <path class="geo-leader" d="M116.4 116.4 128 128h22" pathLength="1"/>
-          </svg>
-          <div class="hero__icon"><img src="assets/img/mark-white.webp" width="512" height="512" alt="The OLPDL scorpion crest" data-zh-alt="OLPDL 蠍子隊徽"></div>
-          <span class="hero__callout" aria-hidden="true"><span data-zh="詳圖 A · 隊徽">Detail A · Crest</span></span>
-        </div>
-        <p class="hero__brand"><span class="badge">8806</span><span class="wordmark">OLP<em>DL</em></span></p>
+        <p class="hero__eyebrow" data-reveal><span class="badge">8806</span><span data-zh="FRC 第 8806 隊 · 崇光高中 OLPDL · 新北市">FRC Team 8806 · OLPDL · New Taipei City</span></p>
         <h1 class="h1 hero__title" id="hero-title">
           <span data-zh="<i class='js-n-seasons-zh'>五</i>個賽季，<i class='js-n-awards-zh'>十一</i>座獎項。"><i class="js-n-awards">11</i> awards. <i class="js-n-seasons">5</i> seasons.</span>
           <span data-zh="由&nbsp;<em class='accent nowrap'>45&nbsp;位學生</em><wbr>親手打造。">Built by <em class="accent">45 students</em>.</span>
         </h1>
         <p class="hero__sub" data-zh="我們是來自新北市天主教崇光高中的 OLPDL。自 2022 年新秀賽季起，從新北主場一路征戰<i class='js-abroad-zh'>夏威夷、伊斯坦堡、亞利桑那與上海</i> — <span class='nowrap'>下一季</span>，讓你的<span class='nowrap'>品牌</span><span class='nowrap'>與我們同行</span>。">We're OLPDL from Our Lady of Providence High School in New Taipei City. Since our rookie season in 2022 we've competed at home and in <i class="js-abroad">Hawaii, Istanbul, Arizona and Shanghai</i> — next season, your brand can come with us.</p>
-
-        <div class="hero__actions">
-          <div class="btns">
-            <a class="btn btn--primary" href="#pledge">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v9M4 8l4 4 4-4M3 14h10"/></svg>
-              <span data-zh="贊助 8806">Sponsor 8806</span>
-            </a>
-            <a class="btn btn--ghost" href="#partner">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h1M2.5 8h1M2.5 12h1M6 4h7.5M6 8h7.5M6 12h7.5"/></svg>
-              <span data-zh="贊助效益">What sponsors get</span>
-            </a>
-            <a class="btn btn--ghost" href="https://www.instagram.com/frc_team_8806/" target="_blank" rel="noopener">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3.4"/><circle cx="8" cy="8" r="2.8"/><circle cx="11.6" cy="4.4" r=".5" fill="currentColor" stroke="none"/></svg>
-              <span>Instagram</span>
-            </a>
-          </div>
-          <p class="caption" data-zh="FRC 第 8806 隊 · 台灣新北市 · 2022 新秀">FRC Team 8806 · New Taipei City, Taiwan · Rookie 2022</p>
+        <div class="btns hero__actions">
+          <a class="btn btn--primary" href="#sponsor"><span data-zh="成為贊助夥伴">Become a partner</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          <a class="btn btn--ghost" href="#results"><span data-zh="查看戰績">See the record</span></a>
         </div>
+      </div>
 
-        <a class="more" href="#results"><span data-zh="查看戰績">See the results</span> <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M3.5 9 8 13.5 12.5 9"/></svg></a>
+      <!-- The product shot: a studio render of the team's own 3D model (assets/js/robot-model.js), with
+           hairline callouts placed on the parts (positions in % of the render). -->
+      <figure class="hero__product" data-reveal>
+        <div class="hero__render" id="hero-render">
+          <picture>
+            <source media="(max-width: 760px)" srcset="assets/img/robot-studio-900.webp">
+            <img src="assets/img/robot-studio-1600.webp" width="1600" height="1169" fetchpriority="high"
+                 alt="Studio render of the team's robot model: swerve drive, ground intake, two-stage elevator and a side panel carrying the crest"
+                 data-zh-alt="隊伍機器人模型的棚拍渲染：Swerve 底盤、地面夾取、兩節升降機構，以及印有隊徽的側板">
+          </picture>
+          <ul class="callouts" aria-hidden="true">
+            <li class="callout callout--l" style="--k: 0; --x: 52.2%; --y: 3%; --to: -14%"><span><b>01</b><em data-zh="視覺鏡頭">Vision camera</em></span></li>
+            <li class="callout callout--r" style="--k: 1; --x: 47.2%; --y: 27.4%; --to: 114%"><span><b>02</b><em data-zh="兩節升降機構">Two-stage elevator</em></span></li>
+            <li class="callout callout--r callout--logo" style="--k: 2; --x: 62%; --y: 41.4%; --to: 114%"><span><b>03</b><em data-zh="你的品牌在這裡">Your logo here</em></span></li>
+            <li class="callout callout--l" style="--k: 3; --x: 27.5%; --y: 72.8%; --to: -14%"><span><b>04</b><em data-zh="地面夾取">Ground intake</em></span></li>
+            <li class="callout callout--r" style="--k: 4; --x: 49%; --y: 69.7%; --to: 114%"><span><b>05</b><em data-zh="Swerve 底盤 · Kraken X60">Swerve drive · Kraken X60</em></span></li>
+          </ul>
+        </div>
+        <figcaption class="caption hero__note" data-zh="隊伍 3D 模型的棚拍渲染 · 示意圖，未依比例">Studio render of our 3D model · illustrative, not to scale</figcaption>
+      </figure>
 
-        <ul class="cells cells--center hero__partners" id="hero-sponsors" aria-label="Our partners include" data-zh-aria="合作夥伴包括">
-          <li class="cells__label" data-zh="合作夥伴">Partners</li>
+      <div class="hero__partners-wrap" data-reveal>
+        <p class="label" data-zh="支持我們的夥伴">Supported by</p>
+        <ul class="hero__partners" id="hero-sponsors" aria-label="Our partners include" data-zh-aria="合作夥伴包括">
           <li>Zebra Technologies</li><li>Pan-International</li><li>New Taipei City Education Bureau</li><li>Lions Clubs International</li><li>Our Lady of Providence High School</li>
         </ul>
         <p class="caption hero__press"><span data-zh="媒體報導">Featured by</span> · <span data-zh="PTS 公共電視 · 國立教育廣播電台">Public Television Service (PTS) · National Education Radio</span></p>
@@ -653,21 +645,6 @@
           <span data-zh="天主教崇光高級中學 · 新北市">Our Lady of Providence High School · New Taipei City, Taiwan</span>
         </div>
       </div>
-      <!-- Drawing title block below 1440px (the right rail carries it on wide screens) -->
-      <div class="tblock tblock--footer">
-        <dl class="tblock__cells">
-          <div class="tblock__cell tblock__cell--wide"><dt data-zh="專案">Project</dt><dd>FRC 8806 · OLPDL</dd></div>
-          <div class="tblock__cell"><dt data-zh="繪圖">Drawn by</dt><dd data-zh="45 位學生">45 students</dd></div>
-          <div class="tblock__cell"><dt data-zh="單位">Units</dt><dd>NT$</dd></div>
-          <div class="tblock__cell"><dt data-zh="圖紙數">Sheets</dt><dd>07</dd></div>
-          <div class="tblock__cell"><dt data-zh="版次">Rev</dt><dd class="js-rev">E · 2026</dd></div>
-          <div class="tblock__cell tblock__cell--wide"><dt data-zh="核對">Checked</dt><dd class="js-checked">FRC Events · Oct 2026</dd></div>
-        </dl>
-        <a class="tblock__approve" href="#sponsor" aria-label="Approved by: your brand? Become a sponsor" data-zh-aria="核准：你的品牌？成為贊助夥伴">
-          <span class="tblock__k" data-zh="核准">Approved by</span>
-          <span class="tblock__v"><span data-zh="你的品牌？">Your brand?</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg></span>
-        </a>
-      </div>
       <ul class="cells footer__links" id="footer-links"></ul>
     </div>
     <div class="footer__legal">
@@ -675,42 +652,6 @@
       <p id="concept-notice" hidden data-zh="本網站為提供給 FRC 8806 的概念設計範例，並非官方網站。">Concept site prepared for FRC Team 8806 — not an official team page.</p>
     </div>
   </footer>
-  </div>
-
-  <!-- ============================== RIGHT RAIL (wide screens) ============================== -->
-  <!-- The drawing list (sheets and sub-sheets) and the title block, beside the scroll ruler -->
-  <div class="rail" id="rail">
-    <nav class="rail__toc dlist" aria-label="On this page" data-zh-aria="本頁導覽">
-      <p class="dlist__head" aria-hidden="true"><span data-zh="圖紙目錄">Drawing list</span></p>
-      <ol>
-        <li><a href="#top" data-sec="top"><span class="dlist__n">01</span><span data-zh="FRC 8806">FRC 8806</span></a></li>
-        <li><a href="#results" data-sec="results"><span class="dlist__n">02</span><span data-zh="戰績">Results</span></a></li>
-        <li><a href="#partner" data-sec="partner"><span class="dlist__n">03</span><span data-zh="贊助效益">Partner</span></a></li>
-        <li><a href="#impact" data-sec="impact"><span class="dlist__n">04</span><span data-zh="影響力">Impact</span></a></li>
-        <li><a href="#team" data-sec="team"><span class="dlist__n">05</span><span data-zh="團隊">Team</span></a></li>
-        <li><a href="#robot" data-sec="robot"><span class="dlist__n">06</span><span data-zh="機器人">Robot</span></a></li>
-        <li><a href="#sponsor" data-sec="sponsor"><span class="dlist__n">07</span><span data-zh="支持我們">Sponsor</span></a></li>
-        <li class="dlist__sub"><a href="#pledge" data-sec="pledge"><span class="dlist__n">07.1</span><span data-zh="認養零件">Sponsor a part</span></a></li>
-        <li class="dlist__sub"><a href="#budget" data-sec="budget"><span class="dlist__n">07.2</span><span data-zh="預算">Budget</span></a></li>
-        <li class="dlist__sub"><a href="#contact" data-sec="contact"><span class="dlist__n">07.3</span><span data-zh="聯絡我們">Contact</span></a></li>
-      </ol>
-      <i class="dlist__bar" aria-hidden="true"></i>
-    </nav>
-    <div class="tblock tblock--rail">
-      <dl class="tblock__cells" aria-hidden="true">
-        <div class="tblock__cell tblock__cell--wide"><dt data-zh="專案">Project</dt><dd>FRC 8806 · OLPDL</dd></div>
-        <div class="tblock__cell tblock__cell--wide"><dt data-zh="繪圖">Drawn by</dt><dd data-zh="45 位學生">45 students</dd></div>
-        <div class="tblock__cell"><dt data-zh="單位">Units</dt><dd>NT$</dd></div>
-        <div class="tblock__cell"><dt data-zh="版次">Rev</dt><dd class="js-rev">E · 2026</dd></div>
-        <div class="tblock__cell tblock__cell--wide"><dt data-zh="核對">Checked</dt><dd class="js-checked">FRC Events · Oct 2026</dd></div>
-        <div class="tblock__cell tblock__cell--wide"><dt data-zh="圖紙">Sheet</dt><dd><span id="tb-sheet">01</span> / 07</dd></div>
-      </dl>
-      <a class="tblock__approve" href="#sponsor" aria-label="Approved by: your brand? Become a sponsor" data-zh-aria="核准：你的品牌？成為贊助夥伴">
-        <span class="tblock__k" data-zh="核准">Approved by</span>
-        <span class="tblock__v"><span data-zh="你的品牌？">Your brand?</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg></span>
-      </a>
-    </div>
-    <div class="ruler" id="ruler" aria-hidden="true"><i class="ruler__marker" id="ruler-marker"></i></div>
   </div>
 
   <!-- ============================== MOBILE DOCK ============================== -->

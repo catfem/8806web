@@ -1,17 +1,15 @@
-// Motion ("the plotter": the page is the CAD session that plots Drawing Set 8806) and smooth scrolling.
-// Three drivers share one grammar; the CSS lives in motion.css, this file flips state classes and runs
-// the few script animations.
-// - Scroll is the pen. Linework (the drawing border trace, sheet cuts and "+" ticks, the BOM rules, the
-//   budget's dimensions, the 2026 hatch) is plotted by the visitor's scroll through CSS scroll-driven
-//   animations (html.sda, set by the head script where they are supported; ?sda=0 forces the fallback).
-//   It stops when scrolling stops and un-draws on the way back up. Never text, never a fact. Without
-//   scroll timelines the one-shot plotter below draws the same linework once, and a small JS trace
-//   (initPlotFallback) keeps the border trace.
-// - Arrival regenerates. Blocks that carry text arrive once, in 1 s or less: headlines are cut in by a
-//   toolpath, sheet headers type in, counts are read off odometer wheels (roll), event records are plotted
-//   row by row (initPlot). .is-in is added once and never taken away.
-// - Touch picks: hover and focus select (grips, a lit row); clicks answer (the item balloon flies into the
-//   pledge, the budget re-measures, the robot's tab bar slides).
+// Motion and smooth scrolling. The page moves like a product page: calm, slow-settling arrivals and
+// small, exact answers to the visitor's hand. The CSS lives in motion.css; this file flips state classes
+// and runs the few script animations.
+// - Arrival. Blocks that carry text arrive once, in 1 s or less: headlines rise line by line out of
+//   their masks, counts are read off odometer wheels (roll), event records place row by row (initPlot).
+//   .is-in is added once and never taken away.
+// - Scroll. A little fine linework (the budget's dimensions, the parts list's balloons) is drawn by the
+//   visitor's scroll through CSS scroll-driven animations (html.sda, set by the head script where they
+//   are supported; ?sda=0 forces the fallback), and un-draws on the way back up. Never text, never a
+//   fact. Without scroll timelines the same linework is drawn once.
+// - Touch. Hover and focus light what they touch (a record row, a card); clicks answer (the item balloon
+//   flies into the pledge, the budget re-measures, the robot's tab bar slides).
 // html.mo ("motion on") is set by the head script unless reduced motion is asked for. Every hidden
 // starting state in motion.css hangs off it, so without it (reduced motion, print, no JavaScript, or the
 // head script's 3 s backstop when this file never runs) the page paints its final state, and every helper
@@ -25,10 +23,9 @@ export const REDUCED = matchMedia('(prefers-reduced-motion: reduce)');
 export const EASE = (t) => 1 - (1 - t) ** 4;
 export const EASE_CSS = 'cubic-bezier(.22,1,.36,1)';
 const EASE_IO_CSS = 'cubic-bezier(.65,0,.35,1)';
-// The reading line, 35% down the screen: the sheet being read is the one under it (the rail, the zone
-// cursor, the border trace). As an IntersectionObserver rootMargin it is a line, not a band (a box that
-// touches it counts), so a zone or sheet boundary switches exactly there; the CSS twin is
-// view-timeline-inset: 35% 65% (motion.css).
+// The reading line, 35% down the screen: the section being read is the one under it (the nav's current
+// link). As an IntersectionObserver rootMargin it is a line, not a band (a box that touches it counts),
+// so a section boundary switches exactly there.
 export const PEN = '-35% 0px -65% 0px';
 
 const root = document.documentElement;
@@ -51,14 +48,13 @@ export function initMotion() {
     index();
     new MutationObserver(index).observe(box, { childList: true });
   });
-  typeIndex();
 
   // One-shot observers. An element is in once its top passes a line near the bottom of the screen. The
   // observed area reaches far above the screen, so whatever is already above (a deep link) or was
   // scrolled past between two frames (a fast scroll or jump) counts as in too, and nothing can stay
   // hidden. What enters together on screen is staggered top to bottom, then left to right (the entry's
   // own rect: no layout read), 60 ms apart and at most 6 steps (phones: 40 ms, 4). During an in-page
-  // jump nothing waits, and a sheet header passed on the way is simply there (data-instant: no typing).
+  // jump nothing waits.
   const once = (targets, bottom, stagger) => {
     const io = new IntersectionObserver((entries) => {
       const jump = jumping();
@@ -73,17 +69,16 @@ export function initMotion() {
             const d = jump || e.boundingClientRect.bottom <= 0 ? 0 : Math.min(n++, cap) * step;
             if (d) el.style.setProperty('--d', d + 'ms'); else el.style.removeProperty('--d');
           }
-          if (jump && el.classList.contains('strip')) el.dataset.instant = '';
           el.classList.add('is-in');
           io.unobserve(el);
         });
     }, { rootMargin: `100000px 0px ${bottom} 0px`, threshold: 0 });
     targets.forEach((el) => io.observe(el));
   };
-  // Content (fades and rises; the "+" ticks and zone letters of a sheet) 8% up from the bottom (phones
-  // 6%), then geometry (draw-ins and the sheet headers) 15% up.
+  // Content (fades and rises, a section's chapter label) 8% up from the bottom (phones 6%), then
+  // linework (draw-ins) 15% up.
   once($$('[data-reveal], .sec, .gallery'), phone() ? '-6%' : '-8%', true);
-  once($$('[data-draw], .strip'), '-15%', false);
+  once($$('[data-draw]'), '-15%', false);
 
   initCounters();
   initPlot();
@@ -100,7 +95,7 @@ export function initMotion() {
   // Reduced motion switched on while the page is open: final states, native scrolling, no overlays.
   REDUCED.addEventListener?.('change', (e) => {
     if (!e.matches) return;
-    root.classList.remove('mo', 'is-boot');
+    root.classList.remove('mo');
     // A transition already heading for its final value isn't cancelled by the switch: end it now (scroll-
     // driven animations have their own timeline and simply stop applying without .mo).
     document.getAnimations().forEach((a) => { if (a.timeline !== document.timeline) return; try { a.finish(); } catch (err) { a.cancel(); } });
@@ -109,37 +104,6 @@ export function initMotion() {
     $$('.odo, .fly').forEach((el) => el.remove());
   });
 
-  initPlotFallback();
-}
-
-// ------------------------------------------------------------ sheet headers: typed in (motion.css)
-
-// Each label types in one step per character (at most 32), so the caret ends exactly after the last
-// glyph. The id and the meta line run one after the other, and together they finish within 1 s: the
-// meta gets the steps the id leaves (48 in all). Rewritten when the text changes (a language switch); a
-// finished animation stays finished.
-function typeIndex() {
-  const strips = $$('.strip');
-  const count = (el) => Array.from(el.textContent.replace(/\s+/g, ' ').trim()).length || 1;
-  const set = (el, k, v) => { if (el.style.getPropertyValue(k) !== String(v)) el.style.setProperty(k, v); };
-  // A meta line that wraps (phones) can't be typed left to right: it fades in instead (data-wrap).
-  const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return new Set([...r.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top))).size; };
-  const index = () => strips.forEach((s) => {
-    const id = s.querySelector(':scope > .strip__id'), meta = s.querySelector(':scope > .strip__meta');
-    const nId = id ? Math.min(32, count(id)) : 1;
-    if (id) set(id, '--n', nId);
-    if (meta) {
-      set(meta, '--n', Math.max(1, Math.min(32, 48 - nId, count(meta))));
-      meta.toggleAttribute('data-wrap', lines(meta) > 1); // an attribute the observer below doesn't watch
-    }
-    set(s, '--n-id', nId);
-  });
-  index();
-  const mo = new MutationObserver(index);
-  strips.forEach((s) => mo.observe(s, { characterData: true, childList: true, subtree: true }));
-  let raf = 0;
-  addEventListener('resize', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; index(); }); });
-  document.fonts?.ready.then(index);
 }
 
 // ------------------------------------------------------------ odometer counts (never money)
@@ -275,62 +239,6 @@ function initPlot() {
   });
 }
 
-// ------------------------------------------------------------ the border trace without scroll timelines
-
-// Where CSS scroll-driven animations are missing (or ?sda=0), the sheet trace in the drawing border
-// (≥761px) and the phone nav bar (≤760px) are driven from here: one rAF per scroll writes two transforms.
-// Geometry is cached at start, on resize, load, fonts.ready and when #main changes size; nothing is
-// measured while scrolling.
-function initPlotFallback() {
-  const mo = motionOn(), sda = root.classList.contains('sda');
-  const jsTrace = mo && !sda;
-  const jsNav = mo && (!sda || !CSS.supports('timeline-scope: none'));
-  if (!jsTrace && !jsNav) return;
-  const secs = $$('main > .sec');
-  const traces = secs.map((s) => {
-    const t = s.querySelector(':scope > .trace');
-    return t && { t, ln: t.querySelector('.trace__ln'), pen: t.querySelector('.trace__pen') };
-  });
-  const bars = $$('#nav .nav__plot > span');
-  let geo = [], cur = -1, raf = 0;
-  const paint = () => {
-    raf = 0;
-    const y = scrollY + innerHeight * 0.35;
-    let i = -1;
-    for (let k = 0; k < geo.length; k++) if (geo[k].top <= y && y < geo[k].top + geo[k].h) { i = k; break; }
-    if (i !== cur) {
-      if (cur >= 0) {
-        const o = traces[cur];
-        if (jsTrace && o) { o.t.classList.remove('is-cur'); o.ln.style.removeProperty('transform'); o.pen.style.removeProperty('transform'); }
-        if (jsNav && bars[cur]) { bars[cur].classList.remove('is-cur'); bars[cur].style.removeProperty('transform'); }
-      }
-      cur = i;
-      if (i >= 0) {
-        if (jsTrace) traces[i]?.t.classList.add('is-cur');
-        if (jsNav) bars[i]?.classList.add('is-cur');
-      }
-    }
-    if (i < 0) return;
-    const { top, h } = geo[i], p = (y - top) / h;
-    const o = traces[i];
-    if (jsTrace && o) {
-      o.ln.style.transform = `scaleY(${p.toFixed(4)})`;
-      o.pen.style.transform = `translateY(${(p * h - 2.5).toFixed(1)}px)`;
-    }
-    if (jsNav && bars[i]) bars[i].style.transform = `scaleX(${p.toFixed(4)})`;
-  };
-  const measure = () => {
-    geo = secs.map((s) => { const r = s.getBoundingClientRect(); return { top: r.top + scrollY, h: Math.max(1, r.height) }; });
-    paint();
-  };
-  addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(paint); }, { passive: true });
-  addEventListener('resize', measure);
-  addEventListener('load', measure);
-  document.fonts?.ready.then(measure);
-  new ResizeObserver(measure).observe(document.getElementById('main'));
-  measure();
-}
-
 // ------------------------------------------------------------ small script animations (clicks, state)
 
 // A label that changes (the title block's sheet number, the robot's view label) rolls up into place.
@@ -450,7 +358,7 @@ const readNav = () => {
   padB = parseFloat(cs.scrollPaddingBottom) || 0;
 };
 
-// Every in-page jump: nav and rail links, the dock, the hero buttons (through the anchor listener below),
+// Every in-page jump: nav and menu links, the dock, the hero buttons (through the anchor listener below),
 // a price tag to its row of the parts list, the camera tag to the budget.
 export function goTo(el, { block = 'start', hash, focus = el } = {}) {
   if (!el) return;

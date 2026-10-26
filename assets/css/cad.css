@@ -1,59 +1,21 @@
 /* =========================================================================
-   FRC 8806 — CAD layer ("Drawing Set 8806")
-   The page reads as the team's own engineering drawing set: drafting
-   tokens and linetypes, the hero crest as Detail A, the rail's drawing
-   list and title block (the footer's below 1440px), zone letters in the
-   drawing border, selection grips on actions, the budget bar's dimensions,
-   the bill of materials with its item balloons, and the robot viewport's
-   corners and leaders. Grey linework frames the page; blue and white stay
-   for facts and actions. Final states only: nothing here animates, and
-   whatever sits on static content is drawn without JavaScript. Decorative
-   geometry is aria-hidden and never takes pointer events. Picked states
-   (the zone cursor, a lit record row, selection grips, the budget's lit
-   dimension, the cross-probed cart balloon, the robot's tab bar) are here as
-   plain state changes; motion.css only times them.
+   FRC 8806 — fine detail
+   Precision kept small: the event records as revision tables, the budget
+   bar's dimensions, the bill of materials with its item balloons, and the
+   robot viewport's corner readouts and leaders. Grey hairlines frame;
+   blue and white stay for facts and actions. Final states only: nothing
+   here animates (motion.css times the state changes), and whatever sits on
+   static content is drawn without JavaScript. Decorative geometry is
+   aria-hidden and never takes pointer events.
    ========================================================================= */
 
 :root {
   --cad: var(--tick);          /* #6e7179, 3.80:1: dimension, extension and leader lines, arrowheads */
-  --cad-faint: var(--rule-3);  /* #5c5f67, decorative only: centre and construction lines, zone ticks, hidden lines (the goals, main.css) */
+  --cad-faint: var(--rule-3);  /* decorative only: centre and hidden lines (the goals, main.css; the off-season rule) */
   /* long-dash-dot centre line (16 · 4 · 3 · 4), horizontal; set `color` on the element */
   --ln-center: repeating-linear-gradient(90deg, currentColor 0 16px, transparent 16px 20px, currentColor 20px 23px, transparent 23px 27px);
-  /* section hatch on "cut" surfaces (the 2026 stat panel, main.css): 1px lines at an 8px pitch, 135°, over --bg-2 */
-  --hatch-section: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 8px);
-  --zone: 320px;               /* zone height in the drawing border (Z in cad.js) */
   --balloon: 22px;             /* item balloon diameter (the small variant is 18px) */
 }
-
-/* ------------------------------------------------------------------ hero: Detail A */
-
-/* The ring, its centre-line stubs and the leader to the callout, drawn over the crest disc
-   (the box and the disc are in main.css). The sketch circle is the plotter's construction
-   line: invisible at rest. */
-.hero__geo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.hero__geo * { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.geo-ring, .geo-cl { stroke: var(--cad-faint); }
-.geo-ring { stroke-dasharray: 16 4 3 4; } /* r = 60: about 14 whole periods, no visible seam */
-.geo-sketch { stroke: var(--accent-text); opacity: 0; }
-.geo-leader { stroke: var(--cad); }
-/* the column-wide horizontal centre line; .frame is the inline-size container, so 100cqi is the
-   column and the line can't overflow. The disc covers its middle; the crest row holds no text. */
-.hero__mark::before {
-  content: ""; position: absolute; z-index: 0; top: 50%; left: 50%;
-  width: calc(100cqi - 2 * var(--pad)); height: 1px;
-  translate: -50% 0; color: var(--rule-2); background: var(--ln-center); pointer-events: none;
-}
-/* starts where the leader's shoulder ends (x 150, y 128 in the 148 box) */
-.hero__callout {
-  position: absolute; left: calc(100% + 6px); top: calc(50% + 54px); translate: 0 -50%;
-  white-space: nowrap; pointer-events: none;
-  font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
-}
-@media (max-width: 760px) {
-  .hero__mark::before { display: none; }
-  .hero__callout { left: calc(100% + 4px); top: calc(50% + 42px); }
-}
-@media (max-width: 560px) { .hero__callout, .geo-leader { display: none; } }
 
 /* ------------------------------------------------------------------ results: event record (revision table) */
 
@@ -140,143 +102,18 @@ html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
   .rec__awards { flex-direction: column; gap: 9px; }
 }
 
-/* ------------------------------------------------------------------ zone letters */
+/* ------------------------------------------------------------------ cards: soft-lit on touch */
 
-/* One letter per 320px band down each sheet, in the gutter beside the column rule (cad.js writes
-   the bands). Left gutter only while the rail holds the right one. The band under the reading line
-   (35% down the screen) is the zone cursor: its letter turns white and its boundary tick becomes a 12px
-   blue tick, "you are in 03-B". */
-.sec > :is(.zones, .trace) { border-top: 0; } /* .sec > * + * would otherwise add a rule */
-.zones { position: absolute; inset: 0; pointer-events: none; display: none; }
-@media (min-width: 1100px) { .zones { display: block; } }
-.zones i { position: absolute; left: 0; right: 0; top: calc(var(--i) * var(--zone)); height: var(--zone); }
-.zones i::before, .zones i::after {
-  content: attr(data-l); position: absolute; top: 0; bottom: 0; width: min(var(--L), 44px);
-  display: grid; place-items: center;
-  font: 500 11px/1 var(--f-mono); color: var(--dim);
+/* A card under the pointer (or holding focus) lifts its border into the light and its index number
+   turns blue. Nothing moves: a hover changes colour only. */
+:is(.reason, .benefit, .subteam, .kpis .cell) { transition: border-color var(--t-micro, 160ms) ease, box-shadow var(--t-micro, 160ms) ease; }
+:is(.reason, .benefit, .subteam, .kpis .cell):focus-within { border-color: rgba(122, 170, 255, 0.4); box-shadow: 0 30px 80px -50px rgba(42, 109, 244, 0.7); }
+@media (hover: hover) {
+  :is(.reason, .benefit, .subteam, .kpis .cell):hover { border-color: rgba(122, 170, 255, 0.32); box-shadow: 0 30px 80px -50px rgba(42, 109, 244, 0.7); }
 }
-/* a 6px boundary tick off the column rule at the top of each band */
-.zones i::before { right: 100%; background: linear-gradient(var(--cad-faint), var(--cad-faint)) right top / 6px 1px no-repeat; }
-.zones i::after { left: 100%; background: linear-gradient(var(--cad-faint), var(--cad-faint)) left top / 6px 1px no-repeat; display: none; }
-.zones i:first-child::before, .zones i:first-child::after { background: none; } /* the "+" tick owns the section top */
-@media (min-width: 1100px) and (max-width: 1439px) { .zones i::after { display: grid; } }
-.zones i.is-lit::before, .zones i.is-lit::after {
-  color: var(--text); background-image: linear-gradient(var(--accent), var(--accent)); background-size: 12px 1px;
-}
-.zones i.is-lit:first-child::before, .zones i.is-lit:first-child::after { background: none; } /* the "+" owns the sheet top */
-
-/* ------------------------------------------------------------------ title block */
-
-/* Drawing title block: the rail's (≥1440px, decorative cells) and the footer's (below 1440px, real
-   content; its placement is in main.css). Inner lines are 1px gaps over the rule colour, like .grid. */
-.tblock__cells {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
-  background: var(--rule); border: 1px solid var(--rule-2);
-}
-.tblock__cell { background: var(--bg); padding: 6px 10px; min-width: 0; }
-.tblock__cell--wide { grid-column: 1 / -1; }
-.tblock dt, .tblock__k { font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim); }
-.tblock dd {
-  margin-top: 2px; font: 700 12px/1.35 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
-}
-/* "Approved by: your brand?": the block's one live cell, a standing call to action. One row where it
-   fits; in a narrow rail the value drops under the label as a whole, like the cells above. */
-.tblock__approve {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 2px 8px;
-  min-height: 40px; padding: 6px 10px;
-  border: 1px solid var(--rule-2); border-top: 0; background: var(--bg);
-}
-.tblock__k { white-space: nowrap; }
-.tblock__v {
-  flex: 1 0 auto; display: inline-flex; justify-content: space-between; align-items: center; gap: 8px;
-  font: 700 12px/1.35 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent-text); white-space: nowrap;
-}
-.tblock__v svg { flex: none; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; }
-.tblock__approve:hover { background: var(--bg-2); }
-.tblock__approve:hover .tblock__v { color: var(--text); }
-.tblock__approve:focus-visible { outline-offset: -2px; }
-/* the current sheet number rolls up inside its cell when the sheet changes (motion.js rollIn) */
-#tb-sheet { display: inline-block; }
-.tblock dd:has(> #tb-sheet) { overflow: clip; }
-
-/* ------------------------------------------------------------------ right rail: drawing list + title block */
-
-@media (min-width: 1440px) {
-  /* right: 56px clears the 50px ruler and its tick labels */
-  .dlist, .tblock--rail { position: absolute; left: 16px; right: 56px; pointer-events: auto; }
-  .dlist { top: 20px; border: 1px solid var(--rule-2); background: var(--bg); }
-  .dlist__head {
-    display: flex; align-items: center; height: 30px; padding: 0 10px;
-    border-bottom: 1px solid var(--rule);
-    font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
-  }
-  .dlist a {
-    display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center;
-    min-height: 28px; padding: 5px 10px; /* rows may wrap to two lines */
-    font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
-  }
-  .dlist__n { font-variant-numeric: tabular-nums; }
-  .dlist__sub .dlist__n { letter-spacing: 0; } /* "07.1" fills the column when tracked: keep a gap before the label */
-  /* sub-sheets 07.1–07.3 hang off 07 on a tree line (a background image, so the current row's fill keeps it) */
-  .dlist__sub a {
-    padding-left: 22px;
-    background-image: linear-gradient(var(--rule-2), var(--rule-2)); background-size: 1px 100%;
-    background-position: 14px 0; background-repeat: no-repeat;
-  }
-  /* sheets already read, hover, the current sheet's parent, the current sheet */
-  .dlist a.is-before { color: var(--muted); }
-  .dlist a:hover { color: #c4c6cc; }
-  .dlist a.is-parent { color: var(--text); }
-  .dlist a[aria-current="true"] { color: var(--text); background-color: var(--bg-2); }
-  .dlist a:focus-visible { outline-offset: -2px; }
-  /* the current-row bar: moved by transform only (initRail caches the row geometry) */
-  .dlist__bar {
-    position: absolute; left: -1px; top: 0; width: 2px; height: 28px;
-    background: var(--accent); transform-origin: top; pointer-events: none;
-  }
-  .no-js .dlist__bar { display: none; }
-  .tblock--rail { bottom: 20px; }
-}
-/* short screens: only the approve row stays */
-@media (min-width: 1440px) and (max-height: 760px) {
-  .tblock--rail .tblock__cells { display: none; }
-  .tblock--rail .tblock__approve { border-top: 1px solid var(--rule-2); }
-}
-
-/* ------------------------------------------------------------------ selection grips */
-
-/* A selected CAD entity: four 5px grips on the corners of a box 4px outside the control, flush with
-   the outer corners of the 2px focus ring. On hover where there is hover, and on keyboard focus. */
-:is(.btn, .hotspot__tag) { position: relative; }
-:is(.btn, .hotspot__tag)::before {
-  content: ""; position: absolute; inset: -5px; /* both controls have a 1px border: -4px from their edge */
-  pointer-events: none; opacity: 0;
-  --g: linear-gradient(var(--accent-text), var(--accent-text));
-  background: var(--g) 0 0 / 5px 5px no-repeat, var(--g) 100% 0 / 5px 5px no-repeat,
-              var(--g) 0 100% / 5px 5px no-repeat, var(--g) 100% 100% / 5px 5px no-repeat;
-}
-@media (hover: hover) { :is(.btn, .hotspot__tag):hover::before { opacity: 1; } }
-:is(.btn, .hotspot__tag):focus-visible::before { opacity: 1; }
-.btn:disabled::before { display: none; }
-
-/* Cards select like CAD entities: four 6px grips on the corners, centred on the 1px grid lines (inside
-   the card on phones, where the grid meets the screen edge), and the card's index tag (01, B.01, T.01)
-   inverts to a blue "selected" tag. On hover where there is hover, and whenever focus is inside. The
-   tag's 3px pad is a box-shadow, so nothing moves. White on --accent is 4.57:1. */
-:is(.reason, .benefit, .subteam, .kpis .cell) { position: relative; }
-:is(.reason, .benefit, .subteam, .kpis .cell)::after {
-  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0;
-  --g: linear-gradient(var(--accent-text), var(--accent-text));
-  background: var(--g) 0 0 / 6px 6px no-repeat, var(--g) 100% 0 / 6px 6px no-repeat,
-              var(--g) 0 100% / 6px 6px no-repeat, var(--g) 100% 100% / 6px 6px no-repeat;
-}
-@media (min-width: 761px) { :is(.reason, .benefit, .subteam, .kpis .cell)::after { inset: -3px; } }
-:is(.reason, .benefit, .subteam, .kpis .cell):focus-within::after { opacity: 1; }
-@media (hover: hover) { :is(.reason, .benefit, .subteam, .kpis .cell):hover::after { opacity: 1; } }
-.cell__n { width: fit-content; }
-:is(.reason, .benefit, .subteam):focus-within .cell__n { background: var(--accent); color: #fff; box-shadow: 0 0 0 3px var(--accent); }
-@media (hover: hover) { :is(.reason, .benefit, .subteam):hover .cell__n { background: var(--accent); color: #fff; box-shadow: 0 0 0 3px var(--accent); } }
+.cell__n { width: fit-content; transition: color var(--t-micro, 160ms) ease; }
+:is(.reason, .benefit, .subteam):focus-within .cell__n { color: var(--accent-text); }
+@media (hover: hover) { :is(.reason, .benefit, .subteam):hover .cell__n { color: var(--accent-text); } }
 
 /* ------------------------------------------------------------------ budget dimensions */
 
@@ -344,22 +181,12 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
   font: 700 11px/1 var(--f-mono); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums;
 }
 .balloon--sm { width: 18px; height: 18px; margin-right: 6px; }
-.balloon--sheet { width: auto; height: 18px; padding: 0 5px; border-radius: 0; }
+.balloon--sheet { width: auto; height: 18px; padding: 0 6px; border-radius: 999px; }
 .part.is-picked .balloon { border-color: var(--accent); color: var(--accent-text); }
 
-/* In the list the balloon hangs off the icon box's top-left corner on a 6px 45° leader whose end
-   touches the corner (centre 17px out along the diagonal: 11px radius + 6px). Phones have an 18px
-   gutter, too narrow for balloon + leader, so there the balloon sits on the corner instead. */
-.part__icon .balloon { position: absolute; z-index: 1; top: -24px; left: -24px; }
-.part__icon .balloon::after {
-  content: ""; position: absolute; left: 50%; top: calc(50% - 0.5px); width: 6px; height: 1px;
-  background: var(--cad); transform-origin: 0 50%; transform: rotate(45deg) translateX(11px);
-}
-@media (max-width: 760px) {
-  .part__icon .balloon { top: -11px; left: -11px; } /* centred on the icon's corner, clear of the screen edge */
-  .part__icon .balloon::after { display: none; }
-}
-@media (max-width: 560px) { .part__icon .balloon { width: 18px; height: 18px; top: -12px; left: -12px; } }
+/* In the list the balloon sits on the icon box's top-left corner, like a badge. */
+.part__icon .balloon { position: absolute; z-index: 1; top: -9px; left: -9px; width: 20px; height: 20px; }
+@media (max-width: 560px) { .part__icon .balloon { width: 18px; height: 18px; top: -8px; left: -8px; } }
 
 /* Column header and column rules: the rows share the header's columns (56px item · part · price),
    and the rules run down the middle of the two gaps, through the header and every row. Rows touch,
@@ -369,15 +196,15 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
 @media (min-width: 561px) {
   .bom__head {
     position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) var(--buy-w); gap: 20px;
-    padding: 10px var(--pad); border-bottom: 1px solid var(--rule); /* the grid's own top rule is the head's */
+    padding: 14px var(--bom-pad) 12px; border-bottom: 1px solid var(--rule);
     font: 500 11px/1.3 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--dim);
   }
   .bom__head > :last-child { text-align: right; }
   .bom__head::before, .bom__head::after, .part::before, .part::after {
     content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--rule); pointer-events: none;
   }
-  .bom__head::before, .part::before { left: calc(var(--pad) + 66px); }
-  .bom__head::after, .part::after { right: calc(var(--pad) + var(--buy-w) + 10px); }
+  .bom__head::before, .part::before { left: calc(var(--bom-pad) + 66px); }
+  .bom__head::after, .part::after { right: calc(var(--bom-pad) + var(--buy-w) + 10px); }
 }
 .no-js .bom__head { display: none; }
 
@@ -386,7 +213,7 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
 /* the stepper's quantity rolls in (motion.js tickDigit) */
 .stepper__q { display: inline-block; }
 
-/* the cart's total rule: a drawing-style double line under the lines, above the actions */
+/* the cart's total rule: a double line under the lines, above the actions */
 .cart__lines:not(:empty) { border-bottom: 3px double var(--rule-2); padding-bottom: 4px; }
 /* balloon, then the text: a wrapped line starts under the text, not under the balloon */
 .cart__item { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
@@ -403,7 +230,7 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
 }
 .showcase__corner--tr b, .vs-readout b { color: var(--muted); font-weight: 700; }
 /* clear of the "drag to rotate" hint in the other bottom corner */
-.showcase__corner--bl { left: 16px; bottom: 16px; max-width: calc(100% - 180px); }
+.showcase__corner--bl { left: 16px; bottom: 18px; max-width: calc(100% - 190px); }
 .showcase__corner--bl > * { display: none; }
 #view-status:is([data-state="working"], [data-state="done"]) .vs-regen { display: grid; }
 .vs-regen { grid-template-columns: 7px auto; align-items: center; gap: 6px 8px; }
@@ -421,16 +248,15 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
 /* the view label rolls up to the new view inside its corner (motion.js rollIn) */
 #view-label { overflow: clip; }
 #view-label b { display: inline-block; }
-/* The tabs' selection bar (initShowcase in main.js): one bar that slides to the selected tab, by
-   transform only (a 3px × 28px base on tablets and desktops, 100px × 2px on phones), in place of the
-   selected tab's inset shadow. */
+/* The tabs' selection pill (initShowcase in main.js): one lit pill that slides to the selected tab, by
+   transform, its size set to the tab's. */
 .cells--tabs.has-bar { position: relative; }
-.cells--tabs.has-bar button[aria-selected="true"] { box-shadow: none; }
 .tabs__bar {
-  position: absolute; z-index: 1; left: 0; top: 0; width: 3px; height: 28px;
-  background: var(--accent); transform-origin: 0 0; pointer-events: none;
+  position: absolute; z-index: 0; left: 0; top: 0; width: 0; height: 0;
+  border-radius: calc(var(--r-lg) - 5px); pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.06));
+  box-shadow: inset 0 0 0 1px var(--rule-2), 0 10px 30px -12px rgba(42, 109, 244, 0.6);
 }
-@media (max-width: 760px) { .tabs__bar { width: 100px; height: 2px; } }
 
 /* a custom model in the price tab lists its tags in this corner (main.css) */
 .is-flat[data-view="price"] .showcase__corner--bl { display: none; }

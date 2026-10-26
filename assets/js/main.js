@@ -3,7 +3,7 @@ import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, E
 // Seasons marked `draft` (results not yet confirmed) stay off the page and out of every count.
 const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
-import { initZones, balloon, sheetRef } from './cad.js';
+import { balloon, sheetRef } from './cad.js';
 import { initMotion, initSmoothScroll, goTo, getLenis, REDUCED, PEN, EASE_CSS, rollIn, remeasure, tickDigit, fly, armSend } from './motion.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -105,10 +105,6 @@ function fillCounts() {
       ? `${topEv.name.zh}${awardName(top)}${more > 0 ? `，本季再添 ${more} 座獎項` : ''}`
       : `${awardName(top)} in ${topEv.place.en}${more > 0 ? `, plus ${more} more award${more > 1 ? 's' : ''} this season` : ''}`;
   }
-  // When the results were last checked (the title block's "Checked" cell).
-  $$('.js-checked').forEach((el) => { el.textContent = `FRC Events · ${fmtDate(SITE.checked)}`; });
-  // Title-block revision: one letter per season (A = the rookie season), so 5 seasons read "E · 2026".
-  $$('.js-rev').forEach((el) => { el.textContent = `${String.fromCharCode(64 + N.seasons)} · ${latest.year}`; });
 }
 
 // ============================================================ i18n
@@ -161,7 +157,7 @@ $('#lang-toggle').addEventListener('click', () => {
   applyLang();
 });
 
-// ============================================================ nav + rail
+// ============================================================ nav + menu
 
 // Phone / tablet menu: a button in the nav opens the list of sections.
 function initMenu() {
@@ -178,48 +174,25 @@ function initMenu() {
   addEventListener('resize', () => { if (!menu.hidden && innerWidth > 1180) set(false); });
 }
 
-// Which sheet is being read: it lights its row in the rail's drawing list (the sponsor block's
-// sub-sheets 07.1–07.3 under 07), the ruler tick, the title block's sheet number and the matching
-// nav / menu link. The rail itself only shows on wide screens (CSS).
-const RAIL_SECTIONS = ['top', 'results', 'partner', 'impact', 'team', 'robot', 'sponsor'];
-function initRail() {
-  const ORDER = [...RAIL_SECTIONS, 'pledge', 'budget', 'contact']; // each sub-sheet after its parent
+const NAV_SECTIONS = ['top', 'results', 'partner', 'impact', 'team', 'robot', 'sponsor'];
+// The nav marks the section being read (the reading line, PEN: 35% down the viewport) and a hairline
+// along the pill shows how far down the page you are. Sub-sections (pledge, budget, contact) mark
+// their parent's link when the list has no link of their own; never two links in one list.
+function initNav() {
+  const ORDER = [...NAV_SECTIONS, 'pledge', 'budget', 'contact']; // each sub-section after its parent
   const PARENT = { pledge: 'sponsor', budget: 'sponsor', contact: 'sponsor' };
-  const SHEET = { top: '01', results: '02', partner: '03', impact: '04', team: '05', robot: '06', sponsor: '07', pledge: '07.1', budget: '07.2', contact: '07.3' };
-  const ruler = $('#ruler');
-  const marker = $('#ruler-marker');
-  const sections = RAIL_SECTIONS.map((id) => document.getElementById(id));
-  const rows = $$('.dlist a');
-  const bar = $('.dlist__bar');
-  const sheetNo = $('#tb-sheet');
   const navLists = [$$('.nav__links a'), $$('.menu a')];
-  const wide = matchMedia('(min-width: 1440px)'); // the rail (and its title block) shows from here
-  let current = 'top', painted = false;
+  const bar = $('.nav__progress');
+  let current = 'top';
 
-  // One labelled tick per section, at the scroll position where that section reaches the top.
-  ruler.insertAdjacentHTML('beforeend', RAIL_SECTIONS.map((id, i) => `<span class="ruler__tick" data-sec="${id}"><b>${String(i + 1).padStart(2, '0')}</b></span>`).join(''));
-  const ticks = $$('.ruler__tick', ruler);
-  let maxScroll = 1, rulerH = 0;
-  const layout = () => {
-    maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-    rulerH = ruler.clientHeight;
-    sections.forEach((sec, i) => {
-      const y = Math.min(1, Math.max(0, (sec.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(root).scrollPaddingTop || 0)) / maxScroll));
-      ticks[i].style.top = (y * 100).toFixed(2) + '%';
-    });
-    move();
-  };
-  let raf = 0;
-  const move = () => {
-    raf = 0;
-    const p = Math.min(1, Math.max(0, scrollY / maxScroll));
-    marker.style.transform = `translateY(${(p * rulerH).toFixed(1)}px)`;
-  };
+  let maxScroll = 1, raf = 0;
+  const layout = () => { maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight); move(); };
+  const move = () => { raf = 0; bar?.style.setProperty('--p', Math.min(1, Math.max(0, scrollY / maxScroll)).toFixed(4)); };
   addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(move); }, { passive: true });
   addEventListener('resize', layout);
   addEventListener('load', layout);
-  // The page grew or shrank (images, a language switch, the zone letters): Lenis re-measures too, unless
-  // it is gliding (its own resize debounce catches up then).
+  // The page grew or shrank (images, a language switch): Lenis re-measures too, unless it is gliding
+  // (its own resize debounce catches up then).
   new ResizeObserver(() => {
     layout();
     const lenis = getLenis();
@@ -227,44 +200,15 @@ function initRail() {
   }).observe($('#main'));
   layout();
 
-  // The current-row bar only moves by transform, from row geometry cached here (relative to the
-  // list, which is fixed): measured at start, once fonts load, on resize and after a language switch
-  // (Chinese rows are a different height), never on scroll.
-  let geo = {};
-  const placeBar = () => {
-    const g = geo[current];
-    if (g?.h) bar.style.transform = `translateY(${g.top}px) scaleY(${g.h / 28})`;
-  };
-  const layoutRows = () => {
-    geo = Object.fromEntries(rows.map((a) => [a.dataset.sec, { top: a.offsetTop, h: a.offsetHeight }]));
-    placeBar();
-  };
   const paint = () => {
-    const i = ORDER.indexOf(current), parent = PARENT[current];
-    rows.forEach((a) => {
-      const id = a.dataset.sec;
-      a.setAttribute('aria-current', String(id === current));
-      a.classList.toggle('is-parent', id === parent);
-      a.classList.toggle('is-before', id !== parent && ORDER.indexOf(id) < i);
-    });
-    ticks.forEach((tk) => tk.classList.toggle('is-active', tk.dataset.sec === (parent || current)));
-    // The title block's sheet number rolls up to the new one (not on the first paint, nor during a jump).
-    if (sheetNo.textContent !== SHEET[current]) {
-      sheetNo.textContent = SHEET[current];
-      if (painted && wide.matches) rollIn(sheetNo);
-    }
-    painted = true;
-    // Nav and menu: the exact link if the list has one, otherwise the parent's; never two in a list.
+    const parent = PARENT[current];
     navLists.forEach((links) => {
       const hit = links.find((a) => a.getAttribute('href') === `#${current}`)
         || (parent && links.find((a) => a.getAttribute('href') === `#${parent}`));
       links.forEach((a) => a.setAttribute('aria-current', String(a === hit)));
     });
-    placeBar();
   };
-  // A sheet is current while it crosses the reading line, 35% down the viewport (PEN). Sub-sheets sit inside 07 and
-  // come after it in ORDER, so the deepest one on the line wins; off every sheet (the photo strip)
-  // the last one stays. A fast jump can queue enter + leave in one batch, so apply them in order.
+  // The deepest section on the reading line wins; a fast jump can queue enter + leave in one batch.
   const live = new Set();
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e) => { if (e.isIntersecting) live.add(e.target.id); else live.delete(e.target.id); });
@@ -275,11 +219,6 @@ function initRail() {
   }, { rootMargin: PEN });
   ORDER.forEach((id) => io.observe(document.getElementById(id)));
   paint();
-  addEventListener('resize', layoutRows);
-  // Once the rows have their final size the bar may slide between them (motion.css); before that it
-  // would slide in from the list head on load.
-  document.fonts?.ready.then(() => { layoutRows(); requestAnimationFrame(() => bar.classList.add('is-placed')); });
-  onLang(layoutRows);
 }
 
 // ============================================================ results
@@ -909,7 +848,7 @@ function renderContact() {
   ];
   $('#contact-buttons').innerHTML = btns.join('');
   const names = SPONSORS.map((s) => t(s));
-  $('#hero-sponsors').innerHTML = `<li class="cells__label">${UI('Partners', '合作夥伴')}</li>` + names.map((n) => `<li>${esc(n)}</li>`).join('');
+  $('#hero-sponsors').innerHTML = names.map((n) => `<li>${esc(n)}</li>`).join('');
   // Chinese names have no spaces to break at, so each one is kept whole.
   const nw = (n) => `<span class="nowrap">${esc(n)}</span>`;
   $('#contact-sponsors').innerHTML = zh()
@@ -1025,25 +964,22 @@ function initShowcase() {
   let view = 'build';
   let engine = null;
 
-  // The selection bar slides between the tabs (motion.css; reduced motion jumps). It moves by transform
-  // only, from tab geometry cached at start, once fonts load, on resize and after a language switch, never
-  // on scroll: a 3px bar down the selected tab's left edge on tablets and desktops, a 2px bar across its
-  // top on phones (where the tabs sit side by side).
+  // The selection pill slides between the tabs (motion.css; reduced motion jumps), sized to the selected
+  // tab, from tab geometry cached at start, once fonts load, on resize and after a language switch, never
+  // on scroll.
   const tablist = $('#robot-tabs');
   const tabBar = document.createElement('i');
   tabBar.className = 'tabs__bar';
   tabBar.setAttribute('aria-hidden', 'true');
   tablist.append(tabBar);
   tablist.classList.add('has-bar');
-  const narrow = matchMedia('(max-width: 760px)');
   let tabGeo = [];
   const placeTabBar = () => {
     const g = tabGeo[tabs.findIndex((b) => b.getAttribute('aria-selected') === 'true')];
     if (!g?.w) return;
-    // inside the tab's 1px border, where its inset selection shadow was
-    tabBar.style.transform = narrow.matches
-      ? `translate(${g.left + 1}px, ${g.top + 1}px) scaleX(${((g.w - 2) / 100).toFixed(4)})`
-      : `translate(${g.left + 1}px, ${g.top + 1}px) scaleY(${((g.h - 2) / 28).toFixed(4)})`;
+    tabBar.style.width = g.w + 'px';
+    tabBar.style.height = g.h + 'px';
+    tabBar.style.transform = `translate(${g.left}px, ${g.top}px)`;
   };
   const layoutTabs = () => {
     tabGeo = tabs.map((b) => ({ left: b.offsetLeft, top: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight }));
@@ -1170,9 +1106,8 @@ initPledge();
 initBudget();
 onLang(renderContact);
 applyLang();
-initZones();
 initMenu();
-initRail();
+initNav();
 initMotion();
 initMarquee();
 initDock();

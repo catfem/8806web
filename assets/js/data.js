@@ -18,8 +18,7 @@ export const SITE = {
   robotModelUrl: '',
   // Link to the sponsorship proposal PDF; empty hides the button.
   proposalUrl: '',
-  // When the results in SEASONS were last checked against FRC Events / TBA data (the title block's
-  // "Checked" cell and the results footnote).
+  // When the results in SEASONS were last checked against FRC Events / TBA data (the results footnote).
   checked: '2026-10',
 };
 
