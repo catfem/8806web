@@ -1,28 +1,42 @@
 /* =========================================================================
-   FRC 8806 — motion ("the plotter") and smooth scrolling
-   Construction lines draw first, content places, annotations land last,
-   and then everything rests. One-shot: nothing re-hides on scroll-up.
-   Every hidden starting state hangs off html.mo (set by the head script
-   unless reduced motion is asked for) inside @media screen, so reduced
-   motion, print, no JavaScript and the 3 s backstop all paint the final
-   state. motion.js adds .is-in once per element. Never animated: the hero
-   headline, sub-copy and buttons, and money in any form. Only transform,
-   opacity and stroke-dashoffset move (plus short hover colour changes).
+   FRC 8806 — motion and smooth scrolling
+   Calm, like a product page. Three drivers:
+   - Arrival. Text arrives once, in 1 s or less, and settles slowly:
+     headlines rise line by line out of their masks, blocks fade up, counts
+     roll on odometer wheels, records place row by row. Nothing re-hides.
+   - Scroll. A little fine linework (the budget's dimensions, the parts
+     list's balloons and column rules) is drawn by the visitor's scroll
+     through CSS scroll-driven animations (html.sda) and un-draws on the way
+     back up; without scroll timelines (or with ?sda=0) it is drawn once.
+     Never text, never a fact.
+   - Touch. Hover and focus light what they touch; clicks answer (the
+     pledge chain, the tab bar, the budget's re-measure).
+   Every hidden starting state and every scroll timeline hangs off html.mo
+   (set by the head script unless reduced motion is asked for) inside
+   @media screen, so reduced motion, print, no JavaScript and the 3 s
+   backstop all paint the final state. Never animated: the hero headline,
+   sub-copy, buttons and partners, and money in any form. Only transform
+   and opacity move (plus state colours).
    ========================================================================= */
 
 :root {
-  /* --ease (main.css) is every arrival, draw, pop and sweep; --ease-io only travels between two rests */
+  /* --ease (main.css) is every arrival, draw, pop, roll and toolpath; --ease-io only travels between two
+     rests (the tab bar, the balloon's flight) */
   --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
-  --t-micro: 160ms;   /* hover and focus grips, press */
-  --t-state: 320ms;   /* pops, tick snaps, indicator slide, label swaps */
-  --t-reveal: 640ms;  /* content fade-up */
-  --t-draw: 800ms;    /* line, dimension and stroke draws, bar plots */
+  --t-micro: 160ms;   /* qty roll, row pick, card light */
+  --t-state: 320ms;   /* pops, rolls, record cells, re-measure, line-in, tab bar, panel-in */
+  --t-reveal: 900ms;  /* content fade-up, headline line rise, row pen line, Send arming */
+  --t-draw: 800ms;    /* line, dimension and stroke draws, bar plots, odometer */
   --t-long: 1200ms;   /* map arcs only */
+  --row-step: 70ms;   /* between the rows of an event record */
   --stagger: 60ms;    /* between the members of a batch or group, at most --stagger-n steps */
   --stagger-n: 6;
-  --rise: 12px;       /* reveal translate */
+  --rise: 18px;       /* reveal translate */
 }
-@media (max-width: 760px) { :root { --stagger: 40ms; --stagger-n: 4; --rise: 8px; } }
+@media (max-width: 760px) { :root { --stagger: 40ms; --stagger-n: 4; --rise: 10px; } }
+/* Print paints the final page at once: the hidden states are screen-only, and no entrance fades in on
+   the switch to print. */
+@media print { .mo *, .mo *::before, .mo *::after { transition: none !important; animation: none !important; } }
 
 /* ------------------------------------------------------------------ smooth scrolling (Lenis) */
 
@@ -60,172 +74,211 @@ html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none
 }
 
 /* Jump mode (html.is-jumping, for the length of an in-page jump): content is simply there on arrival.
-   Geometry still draws; it never hides a fact. */
-.is-jumping :is([data-reveal], [data-stagger] > *, .ln__i, .grid) { transition-duration: 0s !important; transition-delay: 0s !important; }
+   Scroll-linked linework needs nothing (it is mapped to the position, so it lands finished). */
+.is-jumping :is([data-reveal], [data-stagger] > *, .grid, .strip, .ln__i) { transition-duration: 0s !important; transition-delay: 0s !important; }
 
-/* Counters: the box is sized for the final value (motion.js sets --digits), tabular figures, so nothing
-   beside a number moves while it counts. */
-[data-count] { display: inline-block; min-width: calc(var(--digits, 1) * 1ch); font-variant-numeric: tabular-nums; text-align: left; }
+/* ------------------------------------------------------------------ odometer counts (never money) */
 
-/* ------------------------------------------------------------------ headline line masks (the seven h2s) */
+/* The box is sized for the final value (motion.js sets --digits), tabular figures, so nothing beside a
+   number moves. While a count rolls (motion.js roll) its real digits stay in place, transparent, under
+   an aria-hidden overlay of wheels: one 1lh window per digit over a strip of 0–9 twice. The overlay
+   inherits the number's own colour. The rows are a whole number of pixels apart (each still holds a
+   full 1lh line box), so the wheel's last frame lands on exactly the pixels of the real digits. */
+[data-count] { position: relative; display: inline-block; min-width: calc(var(--digits, 1) * 1ch); font-variant-numeric: tabular-nums; text-align: left; }
+.season__stat-num[data-count] { display: block; } /* the 2026 stat panel's count is a block (main.css) */
+.odo { display: none; }
+@media screen {
+  .mo [data-count]:has(> .odo) { -webkit-text-fill-color: transparent; }
+  .mo .odo {
+    display: flex; position: absolute; left: 0; top: 0; white-space: nowrap;
+    -webkit-text-fill-color: currentColor; pointer-events: none;
+  }
+  .odo__c { display: block; height: 1lh; overflow: hidden; }
+  .odo__s, .odo__s > span { display: block; }
+  .odo__s > span { height: round(1lh, 1px); line-height: inherit; }
+}
 
-/* Each authored line rises out of its own mask. The padding / negative margin pairs widen the mask
-   without moving anything, so descenders, the hook of a "j" and the Chinese 900 weight are never clipped
-   at rest. The headline is a flex column so those margins never collapse into each other: every line
-   sits exactly where the <br> put it. Lines wrap as they did before (the <br> headline was never
-   balanced). Never the hero h1. */
+/* ------------------------------------------------------------------ headlines (the seven h2s) */
+
+/* Each authored line sits in its own mask and rises into it, line 2 starting 90 ms after line 1. The
+   padding / negative margin pairs widen the mask without moving anything, so descenders, the hook of a
+   "j" and the Chinese 700 weight are never clipped at rest. The headline is a flex column so those
+   margins never collapse into each other: every line sits exactly where the <br> put it. Never the
+   hero h1. */
 [data-reveal="lines"] { display: flex; flex-direction: column; }
 .ln { display: block; overflow: hidden; padding: 0.08em 0.1em 0.18em; margin: -0.08em -0.1em -0.18em; text-wrap: wrap; }
 .ln__i { display: block; }
-.mo .ln__i { transition: transform var(--t-reveal) var(--ease) calc(var(--d, 0ms) + var(--l, 0) * 80ms); }
-/* 120%, not 110%: the mask reaches .18em below the line for descenders, and at line-height 1 a 110% drop
-   leaves the tips of tall letters showing there */
-@media screen { .mo [data-reveal="lines"]:not(.is-in) .ln__i { transform: translateY(120%); } }
-
-/* ------------------------------------------------------------------ boot: the frame draws itself */
-
-/* ≥761px, no hash, motion on: the head script sets html.is-boot for 1.6 s. Overlay lines sit exactly on
-   the nav rule and the two column rules (which are transparent meanwhile), so when it goes the real
-   rules are already there in the same pixels. The hero text never takes part. */
-.boot { display: none; }
-@media screen {
-  .is-boot .boot { display: block; position: fixed; inset: 0; z-index: 51; pointer-events: none; }
-  .boot i { position: absolute; background: var(--rule); }
-  .boot__n { left: 0; right: 0; top: calc(var(--nav-h) - 1px); height: 1px; animation: boot-x 450ms var(--ease) both; }
-  .boot__l, .boot__r { top: var(--nav-h); bottom: 0; width: 1px; transform-origin: top; animation: boot-y 600ms var(--ease) 60ms both; }
-  .boot__l { left: var(--L); }
-  .boot__r { right: var(--R); }
-  .is-boot .nav { border-bottom-color: transparent; }
-  .is-boot .frame { border-left-color: transparent; border-right-color: transparent; }
-  .is-boot .nav::before, .is-boot .nav::after { animation: tick-in 200ms var(--ease) 450ms both; }
+.mo .cta__title { align-items: center; }
+.mo [data-reveal="lines"] .ln__i {
+  transition: transform 1100ms var(--ease) calc(var(--d, 0ms) + var(--l, 0) * 90ms), opacity 700ms var(--ease) calc(var(--d, 0ms) + var(--l, 0) * 90ms);
 }
-@keyframes boot-x { from { transform: scaleX(0); } }
-@keyframes boot-y { from { transform: scaleY(0); } }
-@keyframes tick-in { from { opacity: 0; transform: scale(0.3) rotate(45deg); } }
+@media screen { .mo [data-reveal="lines"]:not(.is-in) .ln__i { transform: translateY(105%); opacity: 0; } }
 
-/* ------------------------------------------------------------------ hero: Detail A plots in */
+/* A section's chapter label (.strip) rises in with the section. */
+.mo .strip { transition: opacity var(--t-reveal) var(--ease), transform var(--t-reveal) var(--ease); }
+@media screen { .mo .sec:not(.is-in) > .strip { opacity: 0; transform: translateY(var(--rise)); } }
 
-/* The blue sketch circle plots, then fades as the grey ring, stubs, leader and callout land; the
-   column-wide centre line grows from the middle. It runs from the first paint on every load, in step with
-   the boot (the draw observer's .is-in would only arrive once main.js has run), and the fill-mode keeps
-   each piece in its starting state until its turn. */
-@media screen {
-  .mo .hero__mark::before { animation: grow var(--t-draw) var(--ease) both; }
-  .mo .hero__mark .geo-sketch { stroke-dasharray: 1; animation: sketch 1100ms var(--ease) both; }
-  .mo .hero__mark .geo-ring { animation: fade-in var(--t-state) var(--ease) 600ms both; }
-  .mo .hero__mark .geo-cl { transform-box: fill-box; transform-origin: center; animation: stub-in var(--t-state) var(--ease) 600ms both; }
-  .mo .hero__mark .geo-leader { stroke-dasharray: 1; animation: draw-in 300ms var(--ease) 800ms both; }
-  .mo .hero__mark .hero__callout { animation: fade-in 240ms var(--ease) 900ms both; }
-}
-@keyframes sketch {
-  0% { stroke-dashoffset: 1; opacity: 1; }
-  70% { stroke-dashoffset: 0; opacity: 1; }
-  100% { stroke-dashoffset: 0; opacity: 0; }
-}
+@keyframes grow-y { from { transform: scaleY(0); } }
 @keyframes grow { from { transform: scaleX(0); } }
 @keyframes fade-in { from { opacity: 0; } }
-@keyframes stub-in { from { opacity: 0; transform: scale(0.2); } }
-@keyframes draw-in { from { stroke-dashoffset: 1; } }
 
-/* ------------------------------------------------------------------ sheets: strip sweep, "+" ticks, zones */
+/* ------------------------------------------------------------------ hero: the product shot settles */
 
-/* A blue line runs along each strip's bottom rule once and fades: the sheet header regenerating. */
-.strip { position: relative; }
-.strip::after { content: ""; display: none; }
+/* The render eases up and out of a slight zoom as the page opens, and its callouts draw out from their
+   dots one after another. It runs from the first paint (the fill mode keeps each piece in its starting
+   state until its turn). The headline, sub-copy and buttons never move. */
 @media screen {
-  .mo .strip::after {
-    display: block; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
-    background: var(--accent); transform: scaleX(0); transform-origin: left; pointer-events: none;
-  }
-  .mo .strip.is-in::after { animation: sweep 900ms var(--ease) both; }
+  .mo .hero__render { animation: settle 1600ms var(--ease) 120ms both; }
+  .mo .callout { animation: draw-r 900ms var(--ease) calc(1000ms + var(--k, 0) * 120ms) both; }
+  .mo .callout--l { animation-name: draw-l; }
+  .mo .callout::before { animation: fade-in 400ms var(--ease) calc(900ms + var(--k, 0) * 120ms) both; }
 }
-@keyframes sweep {
-  0% { transform: scaleX(0); opacity: 1; }
-  65% { transform: scaleX(1); opacity: 1; }
-  100% { transform: scaleX(1); opacity: 0; }
-}
+@keyframes settle { from { opacity: 0; transform: translateY(24px) scale(0.97); } }
+/* the leader and its label are uncovered from the dot outward (the label sits above the line) */
+@keyframes draw-r { from { clip-path: inset(-80px 100% -20px -20px); } to { clip-path: inset(-80px -20px -20px -20px); } }
+@keyframes draw-l { from { clip-path: inset(-80px -20px -20px 100%); } to { clip-path: inset(-80px -20px -20px -20px); } }
 
-/* "+" ticks snap onto the frame where a sheet starts */
-.mo :is(.sec, .gallery)::before, .mo :is(.sec, .gallery)::after {
+/* ------------------------------------------------------------------ results: records placed row by row */
+
+/* Each season (data-plot) is plotted as it arrives: its photo or stat panel and its head place, then the
+   record table, each event row (.rec__group) as it arrives on its own. A blue pen line draws along each event's top rule and fades into the grey
+   (or dashed) rule; the row's cells place left to right behind it (--r row, --c column, cad.css) and its
+   award balloons land in numbered order. The column headers and rules are the drawing's frame: there
+   first. Every cell is final within 750 ms. A season reached by a jump, by focus, or re-rendered by a
+   language switch after it was plotted is simply there (data-instant). The pen line keeps the row pick
+   (cad.css): its fill mode is backwards, so after the plot the base (opacity 0) applies, and its opacity
+   only transitions into a pick, never out of the plot. */
+.mo .rec__group:is(:hover, :focus-within)::before { transition: opacity var(--t-micro) var(--ease); }
+.mo [data-plot] :is(.season__media, .season__head) { transition: opacity var(--t-reveal) var(--ease), transform var(--t-reveal) var(--ease); }
+.mo .rec__group :is(.rec__ev > *, .rec__note, .rec__offhead th) {
+  transition: opacity var(--t-state) var(--ease) calc(min(var(--r, 0), 5) * var(--row-step) + 80ms + var(--c, 0) * 20ms);
+}
+.mo .rec__group .rec__awards li, .mo .rec__group .rec__awards .balloon {
   transition: opacity var(--t-state) var(--ease), transform var(--t-state) var(--ease);
+  transition-delay: calc(min(var(--r, 0), 5) * var(--row-step) + 200ms + var(--a, 0) * 60ms);
 }
+.mo .rec__group.is-in:not([data-instant])::before {
+  animation: row-pen var(--t-reveal) var(--ease) calc(min(var(--r, 0), 5) * var(--row-step)) backwards;
+}
+.mo [data-plot][data-instant] :is(.season__media, .season__head) { transition: none; }
+.mo .rec__group[data-instant] :is(.rec__ev > *, .rec__note, .rec__offhead th, .rec__awards li, .rec__awards .balloon) { transition: none; }
 @media screen {
-  .mo :is(.sec, .gallery):not(.is-in)::before, .mo :is(.sec, .gallery):not(.is-in)::after { opacity: 0; transform: scale(0.3) rotate(45deg); }
-}
+  .mo [data-plot]:not(.is-in) :is(.season__media, .season__head) { opacity: 0; transform: translateY(var(--rise)); }
+  .mo .rec__group:not(.is-in) :is(.rec__ev > *, .rec__note, .rec__offhead th, .rec__awards li) { opacity: 0; }
+  .mo .rec__group:not(.is-in) .rec__awards .balloon { transform: scale(0.6); }
+  .mo .rec__group:not(.is-in)::before { opacity: 1; transform: scaleX(0); }
 
-/* zone letters (and their boundary ticks) come in down the border */
-.mo .zones i::before, .mo .zones i::after { transition: opacity var(--t-state) var(--ease) calc(min(var(--i, 0), 10) * 30ms); }
-@media screen { .mo .sec:not(.is-in) .zones i::before, .mo .sec:not(.is-in) .zones i::after { opacity: 0; } }
+}
+@keyframes row-pen { 0% { transform: scaleX(0); opacity: 1; } 60% { transform: none; opacity: 1; } 100% { transform: none; opacity: 0; } }
 
 /* ------------------------------------------------------------------ budget: dimensions + plot */
 
-/* Overall dimension: the extension lines rise from the bar, the half-lines grow outward from the
-   figure, the arrowheads land last. Chain: extension lines drop, each line grows from its centre, one
-   span after the other. No text is ever hidden. */
-.mo #budget-stack :is(.dim--total, .dim--chain)::before, .mo #budget-stack :is(.dim--total, .dim--chain)::after {
-  transition: transform 200ms var(--ease) calc(var(--k, 0) * 120ms);
-}
+/* Measured by the scroll: as the full-season bar rises from the bottom of the screen to its middle, the
+   overall dimension's extension lines rise, its half-lines extend outward from the figure and the
+   arrowheads land; then the chain measures "Build & compete", then "Team travel". The figures, labels
+   and percentages are always there. Without scroll timelines the same draw runs once. The scope toggle
+   lights the dimension that matches it (cad.css) and re-measures it (motion.js remeasure). */
 .mo #budget-stack .dim--total::before, .mo #budget-stack .dim--total::after { transform-origin: bottom; }
 .mo #budget-stack .dim--chain::before, .mo #budget-stack .dim--chain::after { transform-origin: top; }
-.mo #budget-stack .dim__ln { transition: transform 600ms var(--ease) calc(150ms + var(--k, 0) * 120ms); }
 .mo #budget-stack .dim__ln--l { transform-origin: right; }
 .mo #budget-stack .dim__ln--r { transform-origin: left; }
-.mo #budget-stack .dim__ln::before, .mo #budget-stack .dim__ln::after { transition: opacity 240ms var(--ease) calc(600ms + var(--k, 0) * 120ms); }
+.mo #budget-stack :is(.dim, .dim__lbl) { transition: color var(--t-state) var(--ease); }
+@media screen {
+  .mo.sda #budget-stack { view-timeline: --stack block; }
+  .mo.sda #budget-stack .dim--total::before, .mo.sda #budget-stack .dim--total::after {
+    animation: grow-y linear both; animation-timeline: --stack; animation-range: entry 0% entry 60%;
+  }
+  .mo.sda #budget-stack .dim--total .dim__ln { animation: grow linear both; animation-timeline: --stack; animation-range: entry 20% cover 50vh; }
+  .mo.sda #budget-stack .dim--total .dim__ln::before, .mo.sda #budget-stack .dim--total .dim__ln::after {
+    animation: fade-in linear both; animation-timeline: --stack; animation-range: cover 44vh cover 50vh;
+  }
+  .mo.sda #budget-stack .dim--chain:nth-child(1)::before, .mo.sda #budget-stack .dim--chain:nth-child(1)::after {
+    animation: grow-y linear both; animation-timeline: --stack; animation-range: cover 30vh cover 42vh;
+  }
+  .mo.sda #budget-stack .dim--chain:nth-child(1) .dim__ln { animation: grow linear both; animation-timeline: --stack; animation-range: cover 30vh cover 42vh; }
+  .mo.sda #budget-stack .dim--chain:nth-child(1) .dim__ln::before, .mo.sda #budget-stack .dim--chain:nth-child(1) .dim__ln::after {
+    animation: fade-in linear both; animation-timeline: --stack; animation-range: cover 38vh cover 42vh;
+  }
+  .mo.sda #budget-stack .dim--chain:nth-child(2)::after { animation: grow-y linear both; animation-timeline: --stack; animation-range: cover 38vh cover 50vh; }
+  .mo.sda #budget-stack .dim--chain:nth-child(2) .dim__ln { animation: grow linear both; animation-timeline: --stack; animation-range: cover 38vh cover 50vh; }
+  .mo.sda #budget-stack .dim--chain:nth-child(2) .dim__ln::before, .mo.sda #budget-stack .dim--chain:nth-child(2) .dim__ln::after {
+    animation: fade-in linear both; animation-timeline: --stack; animation-range: cover 46vh cover 50vh;
+  }
+}
+/* the one-shot draw (no scroll timelines): extension lines, half-lines from the figure, arrowheads last */
+.mo:not(.sda) #budget-stack :is(.dim--total, .dim--chain)::before, .mo:not(.sda) #budget-stack :is(.dim--total, .dim--chain)::after {
+  transition: transform 200ms var(--ease) calc(var(--k, 0) * 120ms);
+}
+.mo:not(.sda) #budget-stack .dim__ln { transition: transform 600ms var(--ease) calc(150ms + var(--k, 0) * 120ms); }
+.mo:not(.sda) #budget-stack .dim__ln::before, .mo:not(.sda) #budget-stack .dim__ln::after { transition: opacity 240ms var(--ease) calc(600ms + var(--k, 0) * 120ms); }
+@media screen {
+  .mo:not(.sda) #budget-stack:not(.is-in) :is(.dim--total, .dim--chain)::before,
+  .mo:not(.sda) #budget-stack:not(.is-in) :is(.dim--total, .dim--chain)::after { transform: scaleY(0); }
+  .mo:not(.sda) #budget-stack:not(.is-in) .dim__ln { transform: scaleX(0); }
+  .mo:not(.sda) #budget-stack:not(.is-in) .dim__ln::before, .mo:not(.sda) #budget-stack:not(.is-in) .dim__ln::after { opacity: 0; }
+}
 
 /* The bars plot under a cover that slides off them (a cover, not a scale, so the travel hatch is never
-   distorted). The scope toggle replots the line items quickly (.is-replot); a language switch doesn't. */
+   distorted), once on both paths: bar lengths encode money, so they are never scroll-scrubbed. The scope
+   toggle replots the line items quickly (.is-replot); a language switch doesn't. */
 .mo :is(.stack__seg, .bar__fill) { position: relative; overflow: hidden; }
 .mo :is(.stack__seg, .bar__fill)::after {
   content: ""; position: absolute; inset: 0; background: var(--bg); pointer-events: none;
   transform: translateX(101%);
 }
-.mo .bar__fill::after { background: var(--bg-2); transition: transform 700ms var(--ease) calc(120ms + min(var(--k, 0), 8) * 45ms); }
+.mo .bar__fill::after { background: var(--bg-3); transition: transform 700ms var(--ease) calc(120ms + min(var(--k, 0), 8) * 45ms); }
 .mo .stack__seg::after { transition: transform 700ms var(--ease) calc(var(--k, 0) * 120ms); }
 .mo #bars.is-replot .bar__fill::after { transition-duration: 360ms; transition-delay: calc(min(var(--k, 0), 8) * 30ms); }
 @media screen {
-  .mo #budget-stack:not(.is-in) :is(.dim--total, .dim--chain)::before,
-  .mo #budget-stack:not(.is-in) :is(.dim--total, .dim--chain)::after { transform: scaleY(0); }
-  .mo #budget-stack:not(.is-in) .dim__ln { transform: scaleX(0); }
-  .mo #budget-stack:not(.is-in) .dim__ln::before, .mo #budget-stack:not(.is-in) .dim__ln::after { opacity: 0; }
   .mo #budget-stack:not(.is-in) .stack__seg::after, .mo #bars:not(.is-in) .bar__fill::after { transform: none; }
 }
 
-/* ------------------------------------------------------------------ bill of materials */
+/* ------------------------------------------------------------------ bill of materials: drawn row by row */
 
-/* the item balloons pop onto their leaders down the list; a flashed part's balloon pings */
-.mo .part__icon .balloon { transition: opacity var(--t-state) var(--ease), transform var(--t-state) var(--ease); transition-delay: calc(min(var(--k, 0), 6) * 50ms); }
-@media screen { .mo #parts:not(.is-in) .part__icon .balloon { opacity: 0; transform: scale(0.6); } }
+/* The parts list is drawn at a line 75% down the screen: as each row rises through it, the two column
+   rules extend down to the line (rows touch, so they read as one line drawn down the table) and the
+   item balloon lands on the icon corner. Scrolling back up un-draws them. The part name, description, price, stepper and cart never move. Without scroll
+   timelines the balloons pop down the list once. A flashed part's balloon pings. */
+@media screen {
+  .mo.sda .part { view-timeline: --row block; view-timeline-inset: auto 25%; }
+  .mo.sda .part__icon .balloon { animation: balloon-in linear both; animation-timeline: --row; animation-range: entry 0% entry 45%; }
+  .mo.sda .part.is-flash .balloon {
+    animation: balloon-in linear both, ping 600ms var(--ease);
+    animation-timeline: --row, auto; animation-range: entry 0% entry 45%, normal;
+  }
+}
+@media screen and (min-width: 561px) {
+  .mo.sda :is(.part, .bom__head)::before, .mo.sda :is(.part, .bom__head)::after { transform-origin: top; animation: grow-y linear both; }
+  .mo.sda .part::before, .mo.sda .part::after { animation-timeline: --row; animation-range: entry 0% entry 100%; }
+  .mo.sda .bom__head::before, .mo.sda .bom__head::after { animation-timeline: view(block auto 25%); animation-range: entry 0% entry 100%; }
+}
+@keyframes balloon-in { from { opacity: 0; scale: 0.6; } }
+.mo:not(.sda) .part__icon .balloon { transition: opacity var(--t-state) var(--ease), transform var(--t-state) var(--ease); transition-delay: calc(min(var(--k, 0), 6) * 50ms); }
+@media screen { .mo:not(.sda) #parts:not(.is-in) .part__icon .balloon { opacity: 0; transform: scale(0.6); } }
 .mo .part.is-flash .balloon { animation: ping 600ms var(--ease); }
 @keyframes ping { 40% { transform: scale(1.25); border-color: var(--accent); } }
 
-/* stepper press, and the totals tick (renderCart in main.js) */
+/* ------------------------------------------------------------------ pledge chain */
+
+/* + rolls the quantity up (− down; motion.js tickDigit), the item balloon flies from the + into its
+   cart line on a right-angled path (fly; the line's balloon pings on landing), a new cart line slides
+   in, the first time the pledge becomes sendable "Send via Instagram" arms (a ring of light passes
+   around it once), and the confirmation note places. Stepper buttons press. */
+.fly { position: fixed; left: 0; top: 0; z-index: 60; border-color: var(--accent); color: var(--accent-text); pointer-events: none; }
+.mo .cart__lines li.is-new { animation: line-in var(--t-state) var(--ease); }
+@keyframes line-in { from { opacity: 0; transform: translateX(-8px); } }
+.mo #cart-send.is-armed { animation: arm 1100ms var(--ease); }
+@keyframes arm { 0% { box-shadow: 0 0 0 0 rgba(122, 170, 255, 0.7); } 100% { box-shadow: 0 0 0 14px rgba(122, 170, 255, 0); } }
 .mo .stepper button { transition: background-color .2s, color .2s, transform 80ms var(--ease); }
 .mo .stepper button:active:not(:disabled) { transform: scale(0.94); }
 
-/* ------------------------------------------------------------------ rail, nav, grips */
+/* ------------------------------------------------------------------ tabs */
 
-/* The current-row bar slides between rows (after its first placement, so it never slides in on load);
-   reduced motion jumps. Row colours fade like any hover. */
-.mo .dlist__bar.is-placed { transition: transform var(--t-state) var(--ease-io); }
-.dlist a { transition: color var(--t-micro), background-color var(--t-micro); }
-
-/* nav: the current section's link is underlined from the left */
-.nav__links a { position: relative; }
-.nav__links a::after {
-  content: ""; position: absolute; left: 15px; right: 15px; bottom: -1px; height: 2px;
-  background: var(--accent); transform: scaleX(0); transform-origin: left; pointer-events: none;
-}
-.nav__links a[aria-current="true"]::after { transform: none; }
-.mo .nav__links a::after { transition: transform var(--t-state) var(--ease); }
-
-/* selection grips (cad.css) snap in from slightly outside; with reduced motion they only fade */
-:is(.btn, .hotspot__tag)::before { transition: opacity var(--t-micro) var(--ease); }
-.mo :is(.btn, .hotspot__tag)::before { transition: opacity var(--t-micro) var(--ease), transform var(--t-micro) var(--ease); }
-/* Full-width buttons (≤760px) reach 18px from the screen edge: a scaled box there would widen the page,
-   so on phones the grips only fade in. */
-@media (min-width: 761px) { .mo :is(.btn, .hotspot__tag)::before { transform: scale(1.06); } }
-@media (hover: hover) { .mo :is(.btn, .hotspot__tag):hover::before { transform: none; } }
-.mo :is(.btn, .hotspot__tag):focus-visible::before { transform: none; }
+/* The robot's tab bar slides between tabs (after its first placement, so it never slides in on load);
+   reduced motion jumps. The chosen tab's panel places. */
+.mo .tabs__bar.is-placed { transition: transform var(--t-state) var(--ease-io), width var(--t-state) var(--ease-io), height var(--t-state) var(--ease-io); }
+.mo .tabpanel.is-active { animation: panel-in var(--t-state) var(--ease); }
+@keyframes panel-in { from { opacity: 0; transform: translateY(8px); } }
 
 /* ------------------------------------------------------------------ ambient: map, season clock, photo strip */
 
@@ -252,13 +305,14 @@ html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none
    hidden until wired up, and with reduced motion the strip is a manual scroller instead). It also rests
    while hovered and while off screen. */
 .gallery__toggle {
-  position: absolute; right: var(--pad); bottom: 22px; z-index: 2;
-  min-width: 32px; height: 32px; padding: 0 10px;
-  border: 1px solid var(--rule-3); border-radius: 0; background: var(--bg); color: var(--text); cursor: pointer;
-  font: 700 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase;
+  position: absolute; right: calc(var(--pad) + 4px); bottom: 14px; z-index: 2;
+  min-width: 34px; height: 34px; padding: 0 14px;
+  border: 1px solid var(--rule-2); border-radius: 999px; color: var(--text); cursor: pointer;
+  background: rgba(14, 16, 20, 0.6); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase;
   transition: border-color var(--t-micro);
 }
-.gallery__toggle:hover { border-color: #fff; }
-@media (max-width: 760px) { .gallery__toggle { bottom: 18px; } }
+.gallery__toggle:hover { border-color: rgba(255, 255, 255, 0.5); }
+@media (max-width: 760px) { .gallery__toggle { bottom: 12px; } }
 @media (prefers-reduced-motion: reduce) { .gallery__toggle { display: none; } }
 .marquee.is-paused .marquee__track, .gallery.is-off .marquee__track { animation-play-state: paused; }

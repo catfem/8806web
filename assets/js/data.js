@@ -1,6 +1,7 @@
 // Site content that changes season to season lives here.
 // Every text field is { en, zh } so the language toggle can swap it.
-// Figures come from the team's 2025 sponsorship proposal.
+// Budget, parts, team size, exchanges, outreach and sponsors come from the team (its 2025 sponsorship
+// proposal and later updates); competition results come from official FRC data (SEASONS).
 
 export const SITE = {
   team: 8806,
@@ -17,6 +18,8 @@ export const SITE = {
   robotModelUrl: '',
   // Link to the sponsorship proposal PDF; empty hides the button.
   proposalUrl: '',
+  // When the results in SEASONS were last checked against FRC Events / TBA data (the results footnote).
+  checked: '2026-10',
 };
 
 // ---------------------------------------------------------------------------
@@ -73,63 +76,144 @@ export const PARTS = [
 ];
 
 // ---------------------------------------------------------------------------
-// Each season's awards. `result: true` marks a placing that is not an award; `star` highlights the
-// biggest results; `at` names the regional when a season had more than one.
-// `regionals` and `places` feed the "N regionals in …" lines.
-// The headline counts ("7 awards in 4 seasons") and place lists are computed from this list.
-// `draft: true` keeps a season off the page (and out of the award counts) until its results are confirmed.
-// `offseason` lists off-season results; they are shown on the card but not counted as FRC awards.
-// Results verified against FRC Events / The Blue Alliance data (Oct 2026).
+// Results, one entry per season, newest last. Every figure is an official one, checked in October 2026
+// against copies of the FRC Events / The Blue Alliance (TBA) data (see README, "Results"):
+// - `events`: the season's official FRC regionals. `code` is the FRC Events event code (it links to
+//   frc-events.firstinspires.org/<year>/<code>); `teams` is the number of teams that played qualification
+//   matches; `rank` is the final qualification rank (null where it isn't confirmed: the cell then shows
+//   "—"); `wlt` is the qualification record; `alliance` is the playoff alliance number and 8806's role in
+//   it (null role where it isn't confirmed); `result` is how the playoffs ended; `awards` use the exact
+//   FRC Events names (AWARD below); `note` is a footnote shown under the event's awards.
+// - `offseason`: off-season events (TBA keys). They are shown in the same table but are not FRC
+//   regionals, and their results never count as FRC awards.
+// - `record`: the season's official win-loss-tie record including playoffs, where it is confirmed.
+// The headline counts (11 awards, 5 seasons, 9 regionals), the place lists, the newest-season scoreboard
+// cell and the map labels are all computed from this list. `draft: true` keeps a season off the page
+// and out of the award counts until its results are confirmed (its regionals and places still count).
 const NEW_TAIPEI = { en: 'New Taipei City', zh: '新北市' };
 const HAWAII = { en: 'Hawaii', zh: '夏威夷' };
 const ISTANBUL = { en: 'Istanbul', zh: '伊斯坦堡' };
 const ARIZONA = { en: 'Arizona', zh: '亞利桑那' };
 const SHANGHAI = { en: 'Shanghai', zh: '上海' };
+
+// Award names as FRC Events lists them; Chinese names as in the official 2026 雙北盃 plan
+// (創意獎 is a translation: no official Chinese name was found). `by` is the sponsor or honouree that is
+// part of the official name ("… sponsored by Littelfuse"). `star` marks the alliance results.
+const AWARD = {
+  winners: { en: 'Regional Winners', zh: '聯盟冠軍', star: true },
+  finalists: { en: 'Regional Finalists', zh: '聯盟亞軍', star: true },
+  rookie: { en: 'Rookie Inspiration Award', zh: '新秀啟發獎' },
+  spirit: { en: 'Team Spirit Award', zh: '團隊精神獎' },
+  control: { en: 'Innovation in Control Award', zh: '控制創新獎' },
+  creativity: { en: 'Creativity Award', zh: '創意獎', by: { en: 'sponsored by Rockwell Automation', zh: 'Rockwell Automation 贊助' } },
+  imagery: { en: 'Imagery Award', zh: '團隊意象獎', by: { en: 'in honor of Jack Kamen', zh: '紀念 Jack Kamen' } },
+  design: { en: 'Industrial Design Award', zh: '工業設計獎' },
+  engineering: { en: 'Excellence in Engineering Award', zh: '卓越工程獎', by: { en: 'sponsored by Littelfuse', zh: 'Littelfuse 贊助' } },
+};
+
+// How the playoffs ended (`sub` is the second, smaller line of the cell).
+const RESULT = {
+  winner: (score) => ({ en: 'Winner', zh: '冠軍', sub: { en: `won the final ${score}`, zh: `決賽 ${score} 獲勝` } }),
+  finalist: (score) => ({ en: 'Finalist', zh: '亞軍', sub: { en: `lost the final ${score}`, zh: `決賽 ${score} 落敗` } }),
+  out: (round) => ({ en: 'Eliminated', zh: `第${round}輪淘汰`, sub: { en: `in round ${round}`, zh: '' } }),
+  third: (score) => ({ en: '3rd place', zh: '季軍', sub: { en: `lost the lower-bracket final ${score}`, zh: `敗部決賽 ${score} 落敗` } }),
+};
+
+// The two New Taipei City regionals and the two 2024 (and two 2026) Istanbul regionals shared a venue.
+const NTC_HALL = { en: 'New Taipei City Exhibition Hall, Wugu', zh: '新北市工商展覽中心（五股）' };
+const VW_ARENA = { en: 'Volkswagen Arena, Istanbul', zh: '伊斯坦堡 Volkswagen Arena' };
+const TAF_HALL = { en: 'Athletics Federation hall, Bakırköy, Istanbul', zh: '土耳其田徑協會田徑館（伊斯坦堡 Bakırköy）' };
+
 export const SEASONS = [
-  { year: 2022, img: 'award-2022.webp', regionals: 1, places: [NEW_TAIPEI],
-    event: { en: 'New Taipei City Regional', zh: '新北市區域賽' },
-    note: { en: 'Rookie season', zh: '新秀球季' },
-    awards: [
-      { en: 'Regional Winner', zh: '聯盟冠軍獎', star: true },
-      { en: 'Rookie Inspiration Award', zh: '新秀啟發獎' },
+  { year: 2022, game: 'RAPID REACT', img: 'award-2022.webp',
+    imgAlt: { en: 'Team 8806 with the Winner sign at the 2022 New Taipei City x Hon Hai Regional', zh: '第 8806 隊於 2022 新北市 x 鴻海區域賽，手持冠軍牌' },
+    note: { en: 'Rookie season', zh: '新秀賽季' },
+    events: [
+      { code: 'TANT', place: NEW_TAIPEI, venue: NTC_HALL,
+        name: { en: 'New Taipei City x Hon Hai Regional', zh: '新北市 x 鴻海區域賽' }, short: { en: 'New Taipei City x Hon Hai', zh: '新北市 x 鴻海' },
+        dates: ['2022-03-03', '2022-03-06'], teams: 35, rank: null, wlt: '5-5-0',
+        alliance: { n: 1, role: null }, result: RESULT.winner('2–0'),
+        awards: [AWARD.winners, AWARD.rookie] },
     ] },
-  { year: 2023, img: 'award-2023.webp', regionals: 1, places: [HAWAII],
-    event: { en: 'Hawaii Regional', zh: '夏威夷區域賽' },
-    note: { en: 'Across the Pacific', zh: '橫越太平洋' },
-    awards: [
-      { en: 'Top 8 alliance', zh: '挺進前八強', result: true },
-      { en: 'Team Spirit Award', zh: '團隊精神獎' },
+  { year: 2023, game: 'CHARGED UP', img: 'award-2023.webp',
+    imgAlt: { en: 'Team 8806 with their 2023 robot', zh: '第 8806 隊與 2023 年的機器人' },
+    note: { en: 'First regional abroad', zh: '首次出國參賽' },
+    events: [
+      { code: 'HIHO', place: HAWAII, venue: { en: 'University of Hawaii at Manoa, Honolulu', zh: '夏威夷大學馬諾阿分校（檀香山）' },
+        name: { en: 'Hawaii Regional', zh: '夏威夷區域賽' }, short: { en: 'Hawaii', zh: '夏威夷' },
+        dates: ['2023-03-22', '2023-03-25'], teams: 37, rank: null, wlt: '5-7-0',
+        alliance: { n: 8, role: null }, result: RESULT.out(2),
+        awards: [AWARD.spirit] },
     ],
-    offseason: [{ en: 'Winner — Taiwan off-season event (July)', zh: '台灣季後賽 聯盟冠軍（7 月）' }] },
-  { year: 2024, img: 'award-2024.webp', regionals: 2, places: [ISTANBUL],
-    event: { en: 'Istanbul & Bosphorus Regionals', zh: '伊斯坦堡 & 博斯普魯斯區域賽' },
-    note: { en: '8–1 in Istanbul qualifications', zh: '伊斯坦堡資格賽 8 勝 1 敗' },
-    awards: [
-      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true, at: ISTANBUL },
-      { en: 'Innovation in Control Award', zh: '創新控制獎', at: ISTANBUL },
-      { en: 'Creativity Award', zh: '創造力獎', at: { en: 'Bosphorus', zh: '博斯普魯斯' } },
+    offseason: [
+      { key: '2023tacy', venue: { en: 'Chiayi County Stadium', zh: '嘉義縣立體育館' },
+        name: { en: 'Taiwan Playoff', zh: '台灣季後賽（Taiwan Playoff）' },
+        dates: ['2023-07-29', '2023-07-30'], teams: 18, rank: null, wlt: '5-3-0',
+        alliance: null, result: RESULT.winner('2–1') },
     ] },
-  { year: 2025, img: 'g-arizona-team.webp', regionals: 2, places: [NEW_TAIPEI, ARIZONA],
-    event: { en: 'New Taipei City & Arizona East Regionals', zh: '新北市 & 亞利桑那東區域賽' },
-    note: { en: 'Two regionals, two continents', zh: '兩場區域賽、橫跨兩大洲' },
-    awards: [
-      { en: 'Top 8 alliance', zh: '挺進前八強', result: true, at: NEW_TAIPEI },
-      { en: 'Imagery Award', zh: '榮譽意象獎', at: NEW_TAIPEI },
+  { year: 2024, game: 'CRESCENDO', img: 'award-2024.webp',
+    imgAlt: { en: 'Team 8806 in the 2024 season', zh: '第 8806 隊 2024 賽季合照' },
+    events: [
+      // Rank 2 and captain: recomputed from the official match data (8806 and 7632 tied on ranking score;
+      // 8806 is ahead on the next tiebreaker, average match points), so the rank-2 team captained Alliance 2.
+      { code: 'TUIS', place: ISTANBUL, venue: VW_ARENA,
+        name: { en: 'İstanbul Regional', zh: '伊斯坦堡區域賽' }, short: { en: 'İstanbul', zh: '伊斯坦堡' },
+        dates: ['2024-03-05', '2024-03-07'], teams: 51, rank: 2, wlt: '8-1-0',
+        alliance: { n: 2, role: 'captain' }, result: RESULT.finalist('0–2'),
+        awards: [AWARD.finalists, AWARD.control] },
+      { code: 'TUIS2', place: ISTANBUL, venue: VW_ARENA,
+        name: { en: 'Bosphorus Regional', zh: '博斯普魯斯區域賽' }, short: { en: 'Bosphorus', zh: '博斯普魯斯' },
+        dates: ['2024-03-08', '2024-03-10'], teams: 51, rank: null, wlt: '6-3-0',
+        alliance: { n: 6, role: null }, result: RESULT.third('75–76'),
+        awards: [AWARD.creativity] },
+    ] },
+  { year: 2025, game: 'REEFSCAPE', img: 'g-arizona-team.webp',
+    imgAlt: { en: 'Team 8806 at the 2025 Arizona East Regional', zh: '第 8806 隊於 2025 亞利桑那東區區域賽' },
+    events: [
+      { code: 'NTWC', place: NEW_TAIPEI, venue: NTC_HALL,
+        name: { en: 'New Taipei City Regional', zh: '新北市區域賽' }, short: { en: 'New Taipei City', zh: '新北市' },
+        dates: ['2025-03-06', '2025-03-09'], teams: 37, rank: null, wlt: '5-6-0',
+        alliance: { n: 8, role: null }, result: RESULT.out(2),
+        awards: [AWARD.imagery] },
+      { code: 'AZGL', place: ARIZONA, venue: { en: 'Corona del Sol High School, Tempe', zh: 'Corona del Sol 高中（坦佩）' },
+        name: { en: 'Arizona East Regional', zh: '亞利桑那東區區域賽' }, short: { en: 'Arizona East', zh: '亞利桑那東區' },
+        dates: ['2025-03-19', '2025-03-22'], teams: 42, rank: null, wlt: '6-5-0',
+        alliance: { n: 4, role: 'pick1' }, result: RESULT.out(2),
+        awards: [] },
+    ],
+    offseason: [
+      { key: '2025tacy', venue: { en: 'Heping Basketball Gymnasium, Taipei', zh: '臺北和平籃球館' },
+        name: { en: 'Taiwan Playoff (雙北盃)', zh: '雙北盃季後賽（Taiwan Playoff）' },
+        dates: ['2025-08-21', '2025-08-23'], teams: 31, rank: null, wlt: '5-1-0',
+        alliance: { n: 6, role: null }, result: RESULT.third('107–109') },
     ] },
   // 2026: no photo yet — the card shows a stat panel until `img` is set.
-  { year: 2026, img: '', regionals: 3, places: [SHANGHAI, ISTANBUL],
-    event: { en: 'Shanghai, Haliç & Marmara Regionals', zh: '上海、伊斯坦堡 Haliç 與 Marmara 區域賽' },
-    note: { en: 'Alliance captain at both Istanbul regionals', zh: '伊斯坦堡兩場區域賽皆擔任聯盟隊長' },
-    awards: [
-      { en: 'Regional Finalist', zh: '聯盟亞軍獎', star: true, at: SHANGHAI },
-      { en: 'Industrial Design Award', zh: '工業設計獎', at: SHANGHAI },
-      { en: 'Excellence in Engineering Award', zh: '卓越工程獎', at: { en: 'Haliç · Istanbul', zh: 'Haliç · 伊斯坦堡' } },
-      { en: 'Industrial Design Award', zh: '工業設計獎', at: { en: 'Marmara · Istanbul', zh: 'Marmara · 伊斯坦堡' } },
+  { year: 2026, game: 'REBUILT', img: '', record: '15-14-1',
+    events: [
+      { code: 'CNSH', place: SHANGHAI, venue: { en: 'East China Normal University, Minhang', zh: '華東師範大學閔行校區' },
+        name: { en: 'Shanghai Regional', zh: '上海區域賽' }, short: { en: 'Shanghai', zh: '上海' },
+        dates: ['2026-03-12', '2026-03-15'], teams: 50, rank: 39, wlt: '2-5-0',
+        alliance: { n: 2, role: 'pick2' },
+        // The award is the alliance's; 8806 itself only played the first playoff match.
+        result: { en: 'Finalist alliance\u00a0†', zh: '亞軍聯盟\u00a0†', sub: { en: '8806 played match 3', zh: '8806 出賽第3場' } },
+        note: { en: '† 8806 played its alliance’s first playoff match (Match 3, won 463–438). Backup team 6304 played every later match, including both finals (lost 300–533 and 173–515).',
+          zh: '† 8806 出賽聯盟的第一場淘汰賽（第 3 場，463–438 獲勝）；之後各場（含兩場決賽，300–533、173–515 落敗）由候補隊伍 6304 上場。' },
+        awards: [AWARD.finalists, AWARD.design] },
+      { code: 'TUHC', place: ISTANBUL, venue: TAF_HALL,
+        name: { en: 'Haliç Regional', zh: 'Haliç 區域賽' }, short: { en: 'Haliç', zh: 'Haliç' },
+        dates: ['2026-03-25', '2026-03-27'], teams: 43, rank: 11, wlt: '4-2-1',
+        alliance: { n: 8, role: 'captain' }, result: RESULT.out(3),
+        awards: [AWARD.engineering] },
+      { code: 'TUIS3', place: ISTANBUL, venue: TAF_HALL,
+        name: { en: 'Marmara Regional', zh: 'Marmara 區域賽' }, short: { en: 'Marmara', zh: 'Marmara' },
+        dates: ['2026-03-28', '2026-03-30'], teams: 43, rank: 8, wlt: '6-3-0',
+        alliance: { n: 5, role: 'captain' }, result: RESULT.out(3),
+        awards: [AWARD.design] },
     ] },
 ];
 
 export const GOALS = [
-  { en: 'Regional Winner', zh: '聯盟冠軍獎' },
+  { en: 'Regional Winners', zh: '聯盟冠軍' },
   { en: 'Impact Award', zh: '影響力獎' },
   { en: 'Engineering Inspiration Award', zh: '工程啟發獎' },
 ];
@@ -148,14 +232,16 @@ export const CALENDAR = [
 ];
 
 // ---------------------------------------------------------------------------
-// Places the team has competed or exchanged with (lat, lon).
+// Places the team has competed or exchanged with (lat, lon). A label's competition lines are computed
+// from SEASONS (the official regionals held at that place, matched by `name.en`); `exch` lists the teams
+// met there (EXCHANGES), `online` when that exchange was online.
 export const PLACES = [
-  { id: 'home', lat: 25.0, lon: 121.47, home: true, name: { en: 'New Taipei City', zh: '新北市' }, what: { en: 'Home', zh: '我們的主場' } },
-  { id: 'shanghai', lat: 31.23, lon: 121.47, name: { en: 'Shanghai', zh: '上海' }, what: { en: '2026 Regional Finalist · #6941', zh: '2026 區域賽聯盟亞軍 · #6941' } },
-  { id: 'hawaii', lat: 21.31, lon: -157.86, name: { en: 'Hawaii', zh: '夏威夷' }, what: { en: '2023 Regional · #4270', zh: '2023 區域賽 · #4270' } },
-  { id: 'arizona', lat: 33.42, lon: -111.83, name: { en: 'Arizona', zh: '亞利桑那' }, what: { en: '2025 Regional · #6413 #6479', zh: '2025 區域賽 · #6413 #6479' } },
-  { id: 'istanbul', lat: 41.01, lon: 28.98, name: { en: 'Istanbul', zh: '伊斯坦堡' }, what: { en: '2024 & 2026 Regionals · #6232 #6436', zh: '2024、2026 區域賽 · #6232 #6436' } },
-  { id: 'poland', lat: 51.25, lon: 22.57, name: { en: 'Poland', zh: '波蘭' }, what: { en: 'Online with #5883', zh: '與 #5883 線上交流' } },
+  { id: 'home', lat: 25.0, lon: 121.47, home: true, name: { en: 'New Taipei City', zh: '新北市' } },
+  { id: 'shanghai', lat: 31.23, lon: 121.47, name: { en: 'Shanghai', zh: '上海' }, exch: '#6941' },
+  { id: 'hawaii', lat: 21.31, lon: -157.86, name: { en: 'Hawaii', zh: '夏威夷' }, exch: '#4270' },
+  { id: 'arizona', lat: 33.42, lon: -111.83, name: { en: 'Arizona', zh: '亞利桑那' }, exch: '#6413 #6479' },
+  { id: 'istanbul', lat: 41.01, lon: 28.98, name: { en: 'Istanbul', zh: '伊斯坦堡' }, exch: '#6232 #6436' },
+  { id: 'poland', lat: 51.25, lon: 22.57, name: { en: 'Poland', zh: '波蘭' }, exch: '#5883', online: true },
 ];
 
 // Exchange log, newest first.

@@ -3,8 +3,8 @@ import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, E
 // Seasons marked `draft` (results not yet confirmed) stay off the page and out of every count.
 const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
-import { initZones, balloon, sheetRef } from './cad.js';
-import { initMotion, initSmoothScroll, goTo, getLenis, REDUCED } from './motion.js';
+import { balloon, sheetRef } from './cad.js';
+import { initMotion, initSmoothScroll, goTo, getLenis, REDUCED, PEN, EASE_CSS, rollIn, remeasure, tickDigit, fly, armSend } from './motion.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -34,12 +34,14 @@ const onLang = (fn) => { listeners.push(fn); fn(); };
 
 // ============================================================ counts from data.js
 
-// Season results: entries flagged `result` (e.g. "Top 8 alliance") are not awards.
-const awardsOf = (season) => season.awards.filter((a) => !a.result);
+// A season's official regionals and their awards. Off-season events (`offseason`) are shown on the
+// season's card but never counted.
+const eventsOf = (season) => season.events || [];
+const awardsOf = (season) => eventsOf(season).flatMap((e) => e.awards || []);
 const N = {
   awards: SEASONS.reduce((n, s) => n + awardsOf(s).length, 0),
   seasons: SEASONS.length,
-  regionals: ALL_SEASONS.reduce((n, s) => n + (s.regionals || 1), 0),
+  regionals: ALL_SEASONS.reduce((n, s) => n + eventsOf(s).length, 0),
   outreach: OUTREACH.length,
   exchanges: EXCHANGES.length,
 };
@@ -47,8 +49,17 @@ const N = {
 // Where we've competed, in season order: "New Taipei City, Hawaii, Istanbul, Arizona and Shanghai".
 // Attendance is a confirmed fact even for a draft season, so places and the regional count read every
 // season; awards and the season cards only read confirmed ones.
-const PLACES_PLAYED = ALL_SEASONS.flatMap((s) => s.places || [])
+const PLACES_PLAYED = ALL_SEASONS.flatMap((s) => eventsOf(s).map((e) => e.place))
   .filter((p, i, all) => all.findIndex((q) => q.en === p.en) === i);
+// Award balloons: the official awards numbered 1, 2, 3… in the order they were won (oldest season
+// first, events in season order), so the headline count is itemized on the cards. Keyed by event.
+const AWARD_NO = new Map();
+[...SEASONS].sort((a, b) => a.year - b.year).reduce((k, s) => eventsOf(s).reduce((k2, e) => {
+  AWARD_NO.set(e, (e.awards || []).map((_, i) => k2 + i + 1));
+  return k2 + (e.awards || []).length;
+}, k), 0);
+// An award's full official name: "Excellence in Engineering Award sponsored by Littelfuse".
+const awardName = (a) => (zh() ? a.zh + (a.by ? `（${a.by.zh}）` : '') : a.en + (a.by ? ` ${a.by.en}` : ''));
 const ABROAD = PLACES_PLAYED.filter((p) => p.en !== 'New Taipei City');
 const joinList = (list, l) => {
   const names = list.map((p) => (l === 'zh' ? p.zh : p.en));
@@ -81,20 +92,19 @@ function fillCounts() {
   $$('.js-abroad-zh').forEach((el) => { el.textContent = joinList(ABROAD, 'zh'); });
   $$('.js-outreach-range').forEach((el) => { el.textContent = OUTREACH_RANGE; });
   $$('.js-season-range').forEach((el) => { el.textContent = SEASON_RANGE; });
-  // Scoreboard cell for the newest season: "2026 — Regional Finalist in Shanghai, + 3 more awards".
+  // Scoreboard cell for the newest season: "2026 — Regional Finalists in Shanghai, plus 3 more awards".
   const latest = [...SEASONS].sort((a, b) => b.year - a.year)[0];
-  const top = awardsOf(latest).find((a) => a.star) || awardsOf(latest)[0];
+  const evs = eventsOf(latest);
+  const topEv = evs.find((e) => (e.awards || []).some((a) => a.star)) || evs.find((e) => e.awards?.length);
+  const top = topEv && (topEv.awards.find((a) => a.star) || topEv.awards[0]);
   const more = awardsOf(latest).length - 1;
   const year = $('#score-latest-year'), label = $('#score-latest');
   if (year && top) {
     year.textContent = latest.year;
-    const where = top.at ? (zh() ? top.at.zh : top.at.en) : '';
     label.textContent = zh()
-      ? `${where}${where && !where.includes('·') ? '區域賽' : ''}${top.zh}${more > 0 ? `，本季再添 ${more} 座獎項` : ''}`
-      : `${top.en}${where ? ` in ${where}` : ''}${more > 0 ? `, plus ${more} more award${more > 1 ? 's' : ''} this season` : ''}`;
+      ? `${topEv.name.zh}${awardName(top)}${more > 0 ? `，本季再添 ${more} 座獎項` : ''}`
+      : `${awardName(top)} in ${topEv.place.en}${more > 0 ? `, plus ${more} more award${more > 1 ? 's' : ''} this season` : ''}`;
   }
-  // Title-block revision: one letter per season (A = the rookie season), so 5 seasons read "E · 2026".
-  $$('.js-rev').forEach((el) => { el.textContent = `${String.fromCharCode(64 + N.seasons)} · ${latest.year}`; });
 }
 
 // ============================================================ i18n
@@ -102,7 +112,7 @@ function fillCounts() {
 const META = {
   en: {
     title: `FRC Team 8806 · ${N.awards} awards in ${N.seasons} seasons · Partner with us`,
-    desc: `45 students from Our Lady of Providence High School, New Taipei City. 2022 Regional Winner, ${N.awards} FRC awards, ${N.regionals} regionals in ${joinList(PLACES_PLAYED, 'en')}. See what sponsors get and where every NT$ goes.`,
+    desc: `45 students from Our Lady of Providence High School, New Taipei City. Regional Winners in our 2022 rookie season, ${N.awards} FRC awards, ${N.regionals} regionals in ${joinList(PLACES_PLAYED, 'en')}. See what sponsors get and where every NT$ goes.`,
   },
   'zh-Hant': {
     title: `FRC 8806 崇光高中機器人隊 · ${zhNum(N.seasons)}個賽季、${zhNum(N.awards)}座獎項 · 成為贊助夥伴`,
@@ -147,7 +157,7 @@ $('#lang-toggle').addEventListener('click', () => {
   applyLang();
 });
 
-// ============================================================ nav + rail
+// ============================================================ nav + menu
 
 // Phone / tablet menu: a button in the nav opens the list of sections.
 function initMenu() {
@@ -164,47 +174,25 @@ function initMenu() {
   addEventListener('resize', () => { if (!menu.hidden && innerWidth > 1180) set(false); });
 }
 
-// Which sheet is being read: it lights its row in the rail's drawing list (the sponsor block's
-// sub-sheets 07.1–07.3 under 07), the ruler tick, the title block's sheet number and the matching
-// nav / menu link. The rail itself only shows on wide screens (CSS).
-const RAIL_SECTIONS = ['top', 'results', 'partner', 'impact', 'team', 'robot', 'sponsor'];
-function initRail() {
-  const ORDER = [...RAIL_SECTIONS, 'pledge', 'budget', 'contact']; // each sub-sheet after its parent
+const NAV_SECTIONS = ['top', 'results', 'partner', 'impact', 'team', 'robot', 'sponsor'];
+// The nav marks the section being read (the reading line, PEN: 35% down the viewport) and a hairline
+// along the pill shows how far down the page you are. Sub-sections (pledge, budget, contact) mark
+// their parent's link when the list has no link of their own; never two links in one list.
+function initNav() {
+  const ORDER = [...NAV_SECTIONS, 'pledge', 'budget', 'contact']; // each sub-section after its parent
   const PARENT = { pledge: 'sponsor', budget: 'sponsor', contact: 'sponsor' };
-  const SHEET = { top: '01', results: '02', partner: '03', impact: '04', team: '05', robot: '06', sponsor: '07', pledge: '07.1', budget: '07.2', contact: '07.3' };
-  const ruler = $('#ruler');
-  const marker = $('#ruler-marker');
-  const sections = RAIL_SECTIONS.map((id) => document.getElementById(id));
-  const rows = $$('.dlist a');
-  const bar = $('.dlist__bar');
-  const sheetNo = $('#tb-sheet');
   const navLists = [$$('.nav__links a'), $$('.menu a')];
+  const bar = $('.nav__progress');
   let current = 'top';
 
-  // One labelled tick per section, at the scroll position where that section reaches the top.
-  ruler.insertAdjacentHTML('beforeend', RAIL_SECTIONS.map((id, i) => `<span class="ruler__tick" data-sec="${id}"><b>${String(i + 1).padStart(2, '0')}</b></span>`).join(''));
-  const ticks = $$('.ruler__tick', ruler);
-  let maxScroll = 1, rulerH = 0;
-  const layout = () => {
-    maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-    rulerH = ruler.clientHeight;
-    sections.forEach((sec, i) => {
-      const y = Math.min(1, Math.max(0, (sec.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(root).scrollPaddingTop || 0)) / maxScroll));
-      ticks[i].style.top = (y * 100).toFixed(2) + '%';
-    });
-    move();
-  };
-  let raf = 0;
-  const move = () => {
-    raf = 0;
-    const p = Math.min(1, Math.max(0, scrollY / maxScroll));
-    marker.style.transform = `translateY(${(p * rulerH).toFixed(1)}px)`;
-  };
+  let maxScroll = 1, raf = 0;
+  const layout = () => { maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight); move(); };
+  const move = () => { raf = 0; bar?.style.setProperty('--p', Math.min(1, Math.max(0, scrollY / maxScroll)).toFixed(4)); };
   addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(move); }, { passive: true });
   addEventListener('resize', layout);
   addEventListener('load', layout);
-  // The page grew or shrank (images, a language switch, the zone letters): Lenis re-measures too, unless
-  // it is gliding (its own resize debounce catches up then).
+  // The page grew or shrank (images, a language switch): Lenis re-measures too, unless it is gliding
+  // (its own resize debounce catches up then).
   new ResizeObserver(() => {
     layout();
     const lenis = getLenis();
@@ -212,39 +200,15 @@ function initRail() {
   }).observe($('#main'));
   layout();
 
-  // The current-row bar only moves by transform, from row geometry cached here (relative to the
-  // list, which is fixed): measured at start, once fonts load, on resize and after a language switch
-  // (Chinese rows are a different height), never on scroll.
-  let geo = {};
-  const placeBar = () => {
-    const g = geo[current];
-    if (g?.h) bar.style.transform = `translateY(${g.top}px) scaleY(${g.h / 28})`;
-  };
-  const layoutRows = () => {
-    geo = Object.fromEntries(rows.map((a) => [a.dataset.sec, { top: a.offsetTop, h: a.offsetHeight }]));
-    placeBar();
-  };
   const paint = () => {
-    const i = ORDER.indexOf(current), parent = PARENT[current];
-    rows.forEach((a) => {
-      const id = a.dataset.sec;
-      a.setAttribute('aria-current', String(id === current));
-      a.classList.toggle('is-parent', id === parent);
-      a.classList.toggle('is-before', id !== parent && ORDER.indexOf(id) < i);
-    });
-    ticks.forEach((tk) => tk.classList.toggle('is-active', tk.dataset.sec === (parent || current)));
-    sheetNo.textContent = SHEET[current];
-    // Nav and menu: the exact link if the list has one, otherwise the parent's; never two in a list.
+    const parent = PARENT[current];
     navLists.forEach((links) => {
       const hit = links.find((a) => a.getAttribute('href') === `#${current}`)
         || (parent && links.find((a) => a.getAttribute('href') === `#${parent}`));
       links.forEach((a) => a.setAttribute('aria-current', String(a === hit)));
     });
-    placeBar();
   };
-  // A sheet is current while it crosses a line 35% down the viewport. Sub-sheets sit inside 07 and
-  // come after it in ORDER, so the deepest one on the line wins; off every sheet (the photo strip)
-  // the last one stays. A fast jump can queue enter + leave in one batch, so apply them in order.
+  // The deepest section on the reading line wins; a fast jump can queue enter + leave in one batch.
   const live = new Set();
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e) => { if (e.isIntersecting) live.add(e.target.id); else live.delete(e.target.id); });
@@ -252,56 +216,110 @@ function initRail() {
     if (next === current) return;
     current = next;
     paint();
-  }, { rootMargin: '-35% 0px -64% 0px' });
+  }, { rootMargin: PEN });
   ORDER.forEach((id) => io.observe(document.getElementById(id)));
   paint();
-  addEventListener('resize', layoutRows);
-  // Once the rows have their final size the bar may slide between them (motion.css); before that it
-  // would slide in from the list head on load.
-  document.fonts?.ready.then(() => { layoutRows(); requestAnimationFrame(() => bar.classList.add('is-placed')); });
-  onLang(layoutRows);
 }
 
 // ============================================================ results
 
-// "Regional Finalist · Istanbul": the venue is shown when a season had more than one regional.
-const withVenue = (a) => esc(t(a)) + (a.at ? `<small>${esc(t(a.at))}</small>` : '');
-
-// The newest season leads as a wide card; earlier seasons follow, newest first.
+// Each season is a card: its photo (the newest season, until it has one: a stat panel), the year and
+// game, and an event record laid out like a drawing's revision table: one row per event (EVENT · DATES ·
+// TEAMS · RANK · W-L-T · ALLIANCE · RESULT), the event's awards under it with their numbered balloons
+// (AWARD_NO; blue for the alliance results), then the off-season events, which are never counted.
+// Narrow cards (cad.css, a container query) restack each row as a small card with the same cells.
+// The newest season leads as a wide card; earlier seasons follow, newest first. Each season is plotted
+// as it arrives (data-plot, keyed by year so a language switch never replays it; motion.js), row group
+// by row group (--r).
 function renderSeasons() {
   const ordered = [...SEASONS].sort((a, b) => b.year - a.year);
-  $('#season-cards').innerHTML = ordered.map((s, i) => {
-    const latest = i === 0;
-    const n = awardsOf(s).length;
-    const media = s.img
-      ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(alt(s))}" loading="lazy" width="640" height="480">`
-      : latest
-        ? `<div class="season__img season__stat"><span class="season__stat-year">${UI(`${s.year} season`, `${s.year} 賽季`)}</span><span><span class="season__stat-num">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${UI(`${s.regionals || 1} regionals`, `${s.regionals || 1} 場區域賽`)}</span></span></div>`
-        : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>';
-    return renderSeason(s, media, latest);
-  }).join('');
+  $('#season-cards').innerHTML = ordered.map((s, i) => renderSeason(s, i === 0)).join('');
   renderGoalsAndLinks();
+  renderResultsNote();
 }
 
-const alt = (s) => (s.img === 'g-arizona-team.webp'
-  ? UI('Team 8806 at the 2025 Arizona East Regional', '第 8806 隊於 2025 亞利桑那東區域賽')
-  : `${t(s.event)} ${s.year}`);
+const ROLE = { captain: { en: 'captain', zh: '隊長' }, pick1: { en: '1st pick', zh: '第一指名' }, pick2: { en: '2nd pick', zh: '第二指名' } };
+const monShort = (m) => new Date(2000, m - 1, 1).toLocaleString('en-US', { month: 'short' });
+// "Mar 12–15" / "3/12–15" (the year is the card's).
+const fmtRange = ([a, b]) => {
+  const [, m1, d1] = a.split('-').map(Number), [, m2, d2] = b.split('-').map(Number);
+  if (zh()) return m1 === m2 ? `${m1}/${d1}–${d2}` : `${m1}/${d1}–${m2}/${d2}`;
+  return m1 === m2 ? `${monShort(m1)} ${d1}–${d2}` : `${monShort(m1)} ${d1} – ${monShort(m2)} ${d2}`;
+};
+const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+// A score ("463–438") never breaks at its dash.
+const scores = (str) => str.replace(/(\d)–(\d)/g, '$1\u2060–\u2060$2');
 
-function renderSeason(s, media, latest) {
-  const result = s.awards.find((a) => a.result);
+function recordTable(s) {
+  const head = [UI('Event', '賽事'), UI('Dates', '日期'), UI('Teams', '隊數'), UI('Rank', '排名'), UI('W-L-T<span class="sr-only"> (qualification matches)</span>', '勝敗和<span class="sr-only">（資格賽）</span>'), UI('Alliance', '聯盟'), UI('Result', '成績')];
+  // Each cell repeats its column name for the narrow layout, where the header row is hidden.
+  const k = (i) => `<span class="rec__k" aria-hidden="true">${head[i]}</span>`;
+  const v = (main, sub) => `<span class="rec__v">${main}</span>${sub ? `<span class="rec__s">${sub}</span>` : ''}`;
+  const none = `<span aria-hidden="true">—</span><span class="sr-only">${UI('not confirmed', '未確認')}</span>`;
+  const row = (e, off) => {
+    const href = off ? `https://www.thebluealliance.com/event/${e.key}` : `https://frc-events.firstinspires.org/${s.year}/${e.code}`;
+    const al = e.alliance;
+    return `<tr class="rec__ev" role="row">
+      <th class="rec__name" scope="row" role="rowheader"><span class="rec__title">${zh() ? esc(t(e.name)) : esc(t(e.name)).replace(/[\u3400-\u9fff]+/g, '<span lang="zh-Hant">$&</span>')}</span><span class="rec__meta"><a class="rec__code" href="${href}" target="_blank" rel="noopener">${esc(off ? e.key : e.code)}<span class="sr-only"> – ${off ? 'The Blue Alliance' : 'FRC Events'}</span></a><span class="rec__venue">${esc(t(e.venue))}</span></span></th>
+      <td class="rec__dt" role="cell">${k(1)}${v(esc(fmtRange(e.dates)))}</td>
+      <td class="rec__tm${e.rank ? ' is-dup' : ''}" role="cell">${k(2)}${v(e.teams)}</td>
+      <td class="rec__rk${e.rank ? '' : ' is-na'}" role="cell">${k(3)}${v(e.rank ? UI(`${e.rank} of ${e.teams}`, `${e.rank}／${e.teams}`) : none)}</td>
+      <td class="rec__wl" role="cell">${k(4)}${v(e.wlt)}</td>
+      <td class="rec__al" role="cell">${k(5)}${v(al ? UI(`Alliance ${al.n}`, `第${al.n}聯盟`) : none, al?.role ? esc(t(ROLE[al.role])) : '')}</td>
+      <td class="rec__rs" role="cell">${k(6)}${v(esc(t(e.result)), esc(scores(t(e.result.sub))))}</td>
+    </tr>`;
+  };
+  const awards = (e) => {
+    const list = e.awards || [], nos = AWARD_NO.get(e) || [];
+    if (!list.length && !e.note) return '';
+    return `<tr class="rec__aw" role="row"><td colspan="7" role="cell">
+      ${list.length ? `<ul class="rec__awards" aria-label="${esc(UI(`Awards at the ${e.name.en}`, `${e.name.zh}獎項`))}">${list.map((a, i) => `<li class="${a.star ? 'is-star' : ''}">${balloon(nos[i])}<span>${esc(t(a))}${a.by ? ` <small>${esc(t(a.by))}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+      ${e.note ? `<p class="rec__note">${esc(scores(t(e.note)))}</p>` : ''}
+    </td></tr>`;
+  };
+  const off = s.offseason || [];
+  return `<table class="rec" role="table">
+    <caption class="sr-only">${UI(`${s.year} event record`, `${s.year} 賽季賽事紀錄`)}</caption>
+    <colgroup><col class="rec__c-ev"><col class="rec__c-dt"><col class="rec__c-tm"><col class="rec__c-rk"><col class="rec__c-wl"><col class="rec__c-al"><col class="rec__c-rs"></colgroup>
+    <thead role="rowgroup"><tr role="row">${head.map((h) => `<th scope="col" role="columnheader">${h}</th>`).join('')}</tr></thead>
+    ${eventsOf(s).map((e, i) => `<tbody class="rec__group" role="rowgroup">${row(e)}${awards(e)}</tbody>`).join('')}
+    ${off.length ? `<tbody class="rec__group rec__group--off" role="rowgroup">
+      <tr class="rec__offhead" role="row"><th colspan="7" scope="colgroup" role="columnheader">${UI(`Off-season event${off.length > 1 ? 's' : ''} · not counted in the FRC awards`, '季後賽 · 不計入 FRC 獎項')}</th></tr>
+      ${off.map((e) => row(e, true)).join('')}
+    </tbody>` : ''}
+  </table>`;
+}
+
+function renderSeason(s, latest) {
+  const n = awardsOf(s).length, r = eventsOf(s).length;
+  const regionals = UI(`${r} regional${r === 1 ? '' : 's'}`, `${r} 場區域賽`);
+  const media = s.img
+    ? `<img class="season__img" src="assets/img/${s.img}" alt="${esc(t(s.imgAlt) || `${s.year}`)}" loading="lazy" width="640" height="480">`
+    : latest
+      ? `<div class="season__img season__stat"><span class="season__stat-year">${UI(`${s.year} season`, `${s.year} 賽季`)}</span><span><span class="season__stat-num" data-count="${n}">${n}</span><span class="season__stat-label">${UI(n === 1 ? 'FRC award' : 'FRC awards', '座 FRC 獎項')}</span><span class="season__stat-sub">${regionals}</span>${s.record ? `<span class="season__stat-sub">${UI(`Record ${s.record} incl. playoffs`, `戰績 ${s.record}（含淘汰賽）`)}</span>` : ''}</span></div>`
+      : '<div class="season__img season__img--empty" aria-hidden="true"><img src="assets/img/mark-white.webp" alt="" width="512" height="512" loading="lazy"></div>';
+  const sum = [s.note && t(s.note), regionals, UI(`${n} FRC award${n === 1 ? '' : 's'}`, `${n} 座 FRC 獎項`)].filter(Boolean).join(' · ');
   return `
-    <article class="season${latest ? ' season--latest' : ''}">
-      ${media}
-      <div class="season__body">
+    <article class="season${latest ? ' season--latest' : ''}" aria-labelledby="season-${s.year}" data-plot data-key="${s.year}">
+      <div class="season__media">${media}</div>
+      <div class="season__head">
         ${latest ? `<p class="badge season__badge">${UI('Latest season', '最新賽季')}</p>` : ''}
-        <h3 class="season__year">${s.year}</h3>
-        <p class="season__event">${esc(t(s.event))}</p>
-        ${result ? `<p class="season__result">${esc(t(result))}${result.at ? ` · ${esc(t(result.at))}` : ''}</p>` : ''}
-        <ul class="season__awards">${awardsOf(s).map((a) => `<li class="${a.star ? 'star' : ''}">${withVenue(a)}</li>`).join('')}</ul>
-        ${(s.offseason || []).map((o) => `<p class="season__off"><span>${UI('Off-season', '季後賽')}</span>${esc(t(o))}</p>`).join('')}
-        ${s.note ? `<p class="season__note">${esc(t(s.note))}</p>` : ''}
+        <div class="season__title"><h3 class="season__year" id="season-${s.year}">${s.year}</h3><p class="season__game"><span>${UI('Game', '賽題')}</span> ${esc(s.game)}</p></div>
+        ${latest ? '' : `<p class="season__sum">${esc(sum)}</p>`}
       </div>
+      <div class="season__rec">${recordTable(s)}</div>
     </article>`;
+}
+
+// The results footnote: the best confirmed qualification run (the best rank for the field size), and
+// when the results were checked.
+function renderResultsNote() {
+  const best = SEASONS.flatMap((s) => eventsOf(s).filter((e) => e.rank).map((e) => ({ e, year: s.year })))
+    .sort((a, b) => a.e.rank / a.e.teams - b.e.rank / b.e.teams)[0];
+  const checked = UI(`W-L-T and rank are from qualification matches. Results checked against FRC Events / The Blue Alliance data, ${fmtDate(SITE.checked)}.`, `勝敗和與排名為資格賽成績。戰績已依 FRC Events／The Blue Alliance 資料核對（${fmtDate(SITE.checked)}）。`);
+  $('#results-note').innerHTML = (best
+    ? `<span class="cite__best">${esc(UI(`Best qualification run: ${best.e.wlt}, ranked ${ord(best.e.rank)} of ${best.e.teams} at the ${best.year} ${best.e.name.en}.`, `最佳資格賽表現：${best.year} ${best.e.name.zh}，${best.e.teams} 隊中排名第 ${best.e.rank}（${best.e.wlt}）。`))}</span>${UI(' ', '')}`
+    : '') + `<span>${esc(checked)}</span>`;
 }
 
 function renderGoalsAndLinks() {
@@ -370,6 +388,27 @@ function renderImpact() {
 
 // ============================================================ world map
 
+// A place's label lines: the official regionals played there (from SEASONS, matched by name), then the
+// teams met there. One regional: "2023 Hawaii Regional". Several named after the place: "2 regionals ·
+// 2022, 2025". Several with their own names: "4 regionals", then "İstanbul & Bosphorus 2024" per year.
+function placeLines(p) {
+  const evs = ALL_SEASONS.flatMap((s) => eventsOf(s).map((e) => ({ e, year: s.year }))).filter(({ e }) => e.place.en === p.name.en);
+  const years = [...new Set(evs.map((x) => x.year))];
+  const out = p.home ? [UI('Home', '我們的主場')] : [];
+  if (evs.length === 1) out.push(`${evs[0].year} ${t(evs[0].e.name)}`);
+  else if (evs.length > 1 && evs.every(({ e }) => t(e.short).startsWith(t(p.name)))) {
+    out.push(UI(`${evs.length} regionals · ${years.join(', ')}`, `${evs.length} 場區域賽 · ${years.join('、')}`));
+  } else if (evs.length > 1) {
+    out.push(UI(`${evs.length} regionals`, `${evs.length} 場區域賽`));
+    years.forEach((y) => {
+      const names = evs.filter((x) => x.year === y).map((x) => t(x.e.short));
+      out.push(UI(`${names.join(' & ')} ${y}`, `${y} ${names.join('、')}`));
+    });
+  }
+  if (p.exch) out.push(p.online ? UI(`Online exchange ${p.exch}`, `與 ${p.exch} 線上交流`) : UI(`Exchange ${p.exch}`, `與 ${p.exch} 交流`));
+  return out;
+}
+
 function renderMap() {
   const svg = $('#world-map');
   const { step, lon0, lat0, data } = WORLD;
@@ -407,13 +446,14 @@ function renderMap() {
   inner.appendChild(labels);
   const pos = { home: 'below', istanbul: 'below', hawaii: 'below', shanghai: '', poland: '', arizona: '' };
   onLang(() => {
+    const lines = (p) => placeLines(p).map((l) => `<span>${esc(l)}</span>`).join('');
     labels.innerHTML = PLACES.map((p) => {
       const [x, y] = proj(p);
       const cls = (pos[p.id] ? ' map__label--' + pos[p.id] : '') + (p.home ? ' map__label--home' : '');
-      return `<div class="map__label${cls}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%${p.home ? '' : `;--k:${K[p.id]}`}"><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></div>`;
+      return `<div class="map__label${cls}" style="left:${(x / 360 * 100).toFixed(2)}%;top:${(y / 140 * 100).toFixed(2)}%${p.home ? '' : `;--k:${K[p.id]}`}"><b>${esc(t(p.name))}</b>${lines(p)}</div>`;
     }).join('');
     // Narrow screens hide the map labels (except home) and list the places instead.
-    $('#place-list').innerHTML = PLACES.map((p) => `<li><b>${esc(t(p.name))}</b><span>${esc(t(p.what))}</span></li>`).join('');
+    $('#place-list').innerHTML = PLACES.map((p) => `<li><b>${esc(t(p.name))}</b>${lines(p)}</li>`).join('');
   });
   // The map also fades in (data-reveal, .is-in), which is too early for the flight: it waits for a third
   // of the map to be on screen.
@@ -491,7 +531,7 @@ function renderParts() {
           : `<p class="part__price">${money(p.price)}</p>
              <div class="stepper" role="group" aria-label="${esc(t(p.name))}">
                <button type="button" data-step="-1" aria-label="${UI('Remove one', '減少一個')}">−</button>
-               <output aria-live="polite">${cart.get(p.id) || 0}</output>
+               <output aria-live="polite"><span class="stepper__q">${cart.get(p.id) || 0}</span></output>
                <button type="button" data-step="1" aria-label="${UI('Add one', '增加一個')}">+</button>
              </div>`}
       </div>
@@ -504,7 +544,7 @@ function syncParts() {
     const p = ALL_PARTS.find((x) => x.id === li.dataset.id);
     const q = cart.get(p.id) || 0;
     li.classList.toggle('is-picked', q > 0);
-    const out = li.querySelector('output');
+    const out = li.querySelector('output .stepper__q');
     if (out) {
       out.textContent = q;
       li.querySelector('[data-step="-1"]').disabled = q === 0;
@@ -524,13 +564,22 @@ function pledgeLines() {
 }
 
 let shownTotal = null;
+let shownIds = new Set(); // the items in the cart at the last render: a line for a new item slides in (.is-new)
+let probeId = null; // the BOM row under the pointer or focus: its cart line's balloon is lit (cross-probe)
 function renderCart() {
   const lines = pledgeLines();
   const total = lines.reduce((s, l) => s + l.amount, 0);
   $('#cart-total').textContent = money(total);
-  $('#cart-lines').innerHTML = lines.map((l) => `<li><span class="cart__item">${balloon(ITEM[l.p.id], true)}<span>${esc(l.text)}</span></span><b>${money(l.amount)}</b></li>`).join('');
+  $('#cart-lines').innerHTML = lines.map((l) => {
+    const cls = [shownTotal !== null && !shownIds.has(l.p.id) ? 'is-new' : '', l.p.id === probeId ? 'is-probe' : ''].filter(Boolean).join(' ');
+    return `<li data-id="${l.p.id}"${cls ? ` class="${cls}"` : ''}><span class="cart__item">${balloon(ITEM[l.p.id], true)}<span>${esc(l.text)}</span></span><b>${money(l.amount)}</b></li>`;
+  }).join('');
+  shownIds = new Set(lines.map((l) => l.p.id));
   $('#cart-empty').hidden = lines.length > 0;
-  $('#cart-send').disabled = !lines.length;
+  // The first time the pledge becomes sendable (and again after a Clear), Send arms (motion.js).
+  const send = $('#cart-send'), wasOff = send.disabled;
+  send.disabled = !lines.length;
+  if (wasOff && !send.disabled) armSend(send);
   $('#cart-clear').hidden = !lines.length;
   const mail = $('#cart-mail');
   mail.hidden = !SITE.email || !lines.length;
@@ -540,7 +589,7 @@ function renderCart() {
   if (shownTotal !== null && total !== shownTotal && root.classList.contains('mo')) {
     ['#cart-total', '#dock-total'].forEach((sel) => $(sel).animate?.(
       [{ transform: 'translateY(-6px)', opacity: 0.4 }, { transform: 'none', opacity: 1 }],
-      { duration: 240, easing: 'cubic-bezier(.22,1,.36,1)' }));
+      { duration: 240, easing: EASE_CSS }));
   }
   shownTotal = total;
 }
@@ -577,13 +626,36 @@ function addPart(id, n = 1) {
   syncParts();
 }
 
+// Where the + button's item balloon flies (motion.js fly): its cart line (fly() skips it when it is off
+// screen, as it usually is at 900px and below, where the cart is stacked under the list); on phones the
+// dock's total while the dock is showing, otherwise nowhere.
+function flyTarget(id) {
+  if (!matchMedia('(max-width: 760px)').matches) return $(`#cart-lines li[data-id="${id}"] .balloon`);
+  const dock = $('#dock');
+  return dock && !dock.classList.contains('is-hidden') && !$('#dock-cart').hidden ? $('#dock-total') : null;
+}
+
 function initPledge() {
   const list = $('#parts');
+  // + / −: the quantity is written first, then it rolls in; a + also sends the item's balloon to the cart.
   list.addEventListener('click', (e) => {
     const b = e.target.closest('[data-step]');
     if (!b) return;
-    addPart(b.closest('.part').dataset.id, +b.dataset.step);
+    const row = b.closest('.part'), id = row.dataset.id, dir = +b.dataset.step, was = cart.get(id) || 0;
+    addPart(id, dir);
+    if ((cart.get(id) || 0) === was) return;
+    tickDigit(row.querySelector('output .stepper__q'), dir);
+    if (dir > 0) fly(b, flyTarget(id), ITEM[id]);
   });
+  // Cross-probing: the BOM row under the pointer (or holding focus) lights its cart line's balloon.
+  const probe = (id) => {
+    probeId = id;
+    $$('#cart-lines li').forEach((li) => li.classList.toggle('is-probe', li.dataset.id === id));
+  };
+  list.addEventListener('pointerenter', (e) => { if (e.target.matches?.('.part')) probe(e.target.dataset.id); }, true);
+  list.addEventListener('pointerleave', (e) => { if (e.target.matches?.('.part') && probeId === e.target.dataset.id) probe(null); }, true);
+  list.addEventListener('focusin', (e) => { const p = e.target.closest('.part'); if (p) probe(p.dataset.id); });
+  list.addEventListener('focusout', (e) => { const p = e.target.closest('.part'); if (p && !p.contains(e.relatedTarget) && probeId === p.dataset.id) probe(null); });
   list.addEventListener('input', (e) => {
     if (!e.target.matches('.part__custom input')) return;
     const v = Math.max(0, Math.floor(+e.target.value || 0));
@@ -604,6 +676,7 @@ async function sendPledge() {
     ? UI('Copied! Paste it into the Instagram chat that just opened.', '已複製！請貼到剛開啟的 Instagram 對話中。')
     : UI('Open the chat and tell us what you\'d like to sponsor.', '請在對話中告訴我們你想認養的項目。');
   note.classList.add('is-done');
+  if (root.classList.contains('mo')) note.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: EASE_CSS });
   window.open(`https://ig.me/m/${SITE.instagram}`, '_blank', 'noopener');
 }
 
@@ -688,8 +761,10 @@ function renderStack() {
 }
 
 let scope = 'build';
-function renderBudget() {
-  renderStack();
+// The stack (the dimensioned bar) does not depend on the scope: a scope change keeps it, so its lit
+// dimension can change colour and re-measure in place.
+function renderBudget({ stack = true } = {}) {
+  if (stack) renderStack();
   const rows = BUDGET.filter((b) => scope === 'all' || b.group === 'build').sort((a, b) => b.amount - a.amount);
   const total = sum(rows);
   const max = rows[0].amount;
@@ -711,17 +786,25 @@ function renderBudget() {
 }
 
 function initBudget() {
-  const toggles = $$('[data-scope]');
+  const toggles = $$('button[data-scope]');
   const bars = $('#bars');
+  const stack = $('#budget-stack');
+  // The dimension that measures the pressed scope is lit (cad.css): the build span of the chain, or the
+  // overall dimension for the full season.
+  stack.dataset.scope = scope;
   toggles.forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.scope === scope) return;
     scope = b.dataset.scope;
+    stack.dataset.scope = scope;
     toggles.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     // A new scope replots the line items (quickly, motion.css .is-replot): the new bars are born under
     // their covers, then uncovered. A language switch re-renders in place and replots nothing.
     const replot = root.classList.contains('mo') && bars.classList.contains('is-in');
     if (replot) bars.classList.remove('is-in', 'is-replot');
-    renderBudget();
+    renderBudget({ stack: false });
     if (replot) requestAnimationFrame(() => requestAnimationFrame(() => bars.classList.add('is-in', 'is-replot')));
+    // ...and the lit dimension re-measures (motion.js; only the parts that are drawn at this width).
+    remeasure($$(scope === 'all' ? '.dim--total .dim__ln' : '.dim--chain:first-child .dim__ln', stack).filter((el) => el.getClientRects().length));
   }));
   const tip = $('#bars-tip');
   const box = $('#budget');
@@ -765,7 +848,7 @@ function renderContact() {
   ];
   $('#contact-buttons').innerHTML = btns.join('');
   const names = SPONSORS.map((s) => t(s));
-  $('#hero-sponsors').innerHTML = `<li class="cells__label">${UI('Partners', '合作夥伴')}</li>` + names.map((n) => `<li>${esc(n)}</li>`).join('');
+  $('#hero-sponsors').innerHTML = names.map((n) => `<li>${esc(n)}</li>`).join('');
   // Chinese names have no spaces to break at, so each one is kept whole.
   const nw = (n) => `<span class="nowrap">${esc(n)}</span>`;
   $('#contact-sponsors').innerHTML = zh()
@@ -881,6 +964,31 @@ function initShowcase() {
   let view = 'build';
   let engine = null;
 
+  // The selection pill slides between the tabs (motion.css; reduced motion jumps), sized to the selected
+  // tab, from tab geometry cached at start, once fonts load, on resize and after a language switch, never
+  // on scroll.
+  const tablist = $('#robot-tabs');
+  const tabBar = document.createElement('i');
+  tabBar.className = 'tabs__bar';
+  tabBar.setAttribute('aria-hidden', 'true');
+  tablist.append(tabBar);
+  tablist.classList.add('has-bar');
+  let tabGeo = [];
+  const placeTabBar = () => {
+    const g = tabGeo[tabs.findIndex((b) => b.getAttribute('aria-selected') === 'true')];
+    if (!g?.w) return;
+    tabBar.style.width = g.w + 'px';
+    tabBar.style.height = g.h + 'px';
+    tabBar.style.transform = `translate(${g.left}px, ${g.top}px)`;
+  };
+  const layoutTabs = () => {
+    tabGeo = tabs.map((b) => ({ left: b.offsetLeft, top: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight }));
+    placeTabBar();
+  };
+  layoutTabs();
+  addEventListener('resize', layoutTabs);
+  document.fonts?.ready.then(() => { layoutTabs(); requestAnimationFrame(() => tabBar.classList.add('is-placed')); });
+
   // Status line: idle → working ("Regenerating · 3/7 · Electronics": the stage in progress) → done
   // ("Regenerated", 1.2s) → rest. Each finished stage writes the text and the bar once.
   let order = SITE.robotModelUrl ? ['model'] : BUILD_STAGES, built = 0, state = 'idle';
@@ -908,6 +1016,7 @@ function initShowcase() {
   const onCamera = (az, el) => { azOut.textContent = deg(az); elOut.textContent = deg(el); };
 
   const select = (btn, focus) => {
+    const changed = btn.dataset.view !== view;
     view = btn.dataset.view;
     tabs.forEach((b) => {
       const on = b === btn;
@@ -916,7 +1025,9 @@ function initShowcase() {
     });
     panels.forEach((p) => p.classList.toggle('is-active', p.dataset.view === view));
     view3d.dataset.view = view;
+    placeTabBar();
     viewLabel.textContent = t(VIEW_LABELS[view]);
+    if (changed) rollIn(viewLabel);
     if (focus) btn.focus();
     engine?.setView(view);
   };
@@ -930,7 +1041,7 @@ function initShowcase() {
     });
   });
   view3d.dataset.view = view;
-  onLang(() => { viewLabel.textContent = t(VIEW_LABELS[view]); paintStatus(); });
+  onLang(() => { viewLabel.textContent = t(VIEW_LABELS[view]); paintStatus(); layoutTabs(); });
 
   const input = $('#namer-input');
   view3d.addEventListener('pointerdown', () => view3d.classList.add('is-dragged'), { once: true });
@@ -995,9 +1106,8 @@ initPledge();
 initBudget();
 onLang(renderContact);
 applyLang();
-initZones();
 initMenu();
-initRail();
+initNav();
 initMotion();
 initMarquee();
 initDock();
