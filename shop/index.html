@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>8806 Supply · The FRC Team 8806 shop</title>
+  <meta name="description" content="Tees, a hoodie, a cap, trading pins and more, designed around our robot and our crest. Made to order for FRC Team 8806 from New Taipei City.">
+  <meta name="theme-color" content="#08090b">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="8806 Supply · The FRC Team 8806 shop">
+  <meta property="og:description" content="Tees, a hoodie, a cap, trading pins and more, designed around our robot and our crest. Made to order for FRC Team 8806 from New Taipei City.">
+  <meta property="og:image" content="../assets/img/shop/collection-1000.webp">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon-64.png">
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Web fonts never block the first paint; Noto Sans TC loads only for Chinese (as on the home page). -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&amp;display=swap"></noscript>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cad.css">
+  <link rel="stylesheet" href="../assets/css/motion.css">
+  <link rel="stylesheet" href="../assets/css/shop.css">
+
+  <script>
+    // Language and motion before first paint, as on the home page (index.html explains each line).
+    (function () {
+      var d = document.documentElement, l;
+      var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      d.className = d.className.replace('no-js', 'js') + (rm ? '' : ' mo');
+      if (!rm) {
+        if (window.CSS && CSS.supports('animation-timeline: view()') && CSS.supports('animation-range: entry 0% cover 50%')
+            && !/[?&]sda=0/.test(location.search)) d.classList.add('sda');
+        setTimeout(function () { if (!window.__motionReady) d.classList.remove('mo'); }, 3000);
+      }
+      var q = /[?&]lang=(zh|en)/i.exec(location.search);
+      if (q) l = q[1].toLowerCase() === 'zh' ? 'zh-Hant' : 'en';
+      if (!l) try { l = localStorage.getItem('lang'); } catch (e) {}
+      if (!l) l = /^zh/i.test(navigator.language || '') ? 'zh-Hant' : 'en';
+      d.setAttribute('data-lang', l);
+      window.loadCJKFont = function () {
+        if (document.getElementById('font-tc')) return;
+        var f = document.createElement('link');
+        f.id = 'font-tc'; f.rel = 'stylesheet'; f.media = 'print';
+        f.onload = function () { this.media = 'all'; };
+        f.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&display=swap';
+        document.head.appendChild(f);
+      };
+      if (l === 'zh-Hant') window.loadCJKFont();
+    })();
+  </script>
+  <script type="importmap">
+    { "imports": { "lenis": "../assets/vendor/lenis/lenis.mjs" } }
+  </script>
+  <link rel="modulepreload" href="../assets/vendor/lenis/lenis.mjs" media="(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)">
+  <script type="module" src="../assets/js/shop.js" data-page="shop"></script>
+</head><body data-page="shop">
+  <a class="skip" href="#main" data-zh="跳至主要內容">Skip to content</a>
+
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="../" aria-label="FRC 8806 home" data-zh-aria="FRC 8806 首頁">
+      <img src="../assets/img/mark-white.webp" width="34" height="34" alt="">
+    </a>
+    <nav class="nav__links" aria-label="Site" data-zh-aria="網站">
+      <a href="../#results" data-zh="戰績">Results</a>
+      <a href="../#partner" data-zh="贊助效益">Benefits</a>
+      <a href="../#impact" data-zh="影響力">Impact</a>
+      <a href="../#team" data-zh="團隊">Team</a>
+      <a href="../#robot" data-zh="機器人">Robot</a>
+      <a href="./" aria-current="page" data-zh="商店">Shop</a>
+    </nav>
+    <div class="nav__end">
+      <button class="nav__cell nav__menu" id="menu-toggle" type="button" aria-expanded="false" aria-controls="menu">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4.5h12M2 8h12M2 11.5h12"/></svg>
+        <span data-zh="選單">Menu</span>
+      </button>
+      <button class="nav__cell nav__lang" id="lang-toggle" type="button" aria-label="Switch language">中文</button>
+      <a class="nav__cell nav__ig" href="https://www.instagram.com/frc_team_8806/" target="_blank" rel="noopener" aria-label="Instagram @frc_team_8806">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3.4"/><circle cx="8" cy="8" r="2.8"/><circle cx="11.6" cy="4.4" r=".5" fill="currentColor" stroke="none"/></svg>
+      </a>
+      <a class="nav__cta nav__bag" id="nav-bag" href="bag.html">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5h10l-.8 8H3.8z"/><path d="M5.8 5.5V4.4a2.2 2.2 0 0 1 4.4 0v1.1"/></svg>
+        <span data-zh="購物袋">Bag</span><span class="nav__count" id="bag-count" hidden>0</span>
+      </a>
+    </div>
+    <i class="nav__progress" aria-hidden="true"></i>
+  </header>
+
+  <nav class="menu" id="menu" aria-label="Site" data-zh-aria="網站" data-lenis-prevent hidden>
+    <ol>
+      <li><a href="../"><span class="menu__n">01</span><span data-zh="總覽">Overview</span></a></li>
+      <li><a href="../#results"><span class="menu__n">02</span><span data-zh="戰績">Results</span></a></li>
+      <li><a href="../#partner"><span class="menu__n">03</span><span data-zh="贊助效益">Partner</span></a></li>
+      <li><a href="../#impact"><span class="menu__n">04</span><span data-zh="影響力">Impact</span></a></li>
+      <li><a href="../#team"><span class="menu__n">05</span><span data-zh="團隊">Team</span></a></li>
+      <li><a href="../#robot"><span class="menu__n">06</span><span data-zh="機器人">Robot</span></a></li>
+      <li><a href="../#sponsor"><span class="menu__n">07</span><span data-zh="支持我們">Sponsor</span></a></li>
+      <li><a href="./" aria-current="page"><span class="menu__n">08</span><span data-zh="商店">Shop</span></a></li>
+      <li><a href="bag.html"><span class="menu__n">08.1</span><span data-zh="購物袋">Bag</span></a></li>
+    </ol>
+  </nav>
+
+  <div class="frame">
+  <main id="main">
+
+    <!-- ============================== HERO ============================== -->
+    <section class="sec hero shophero" id="top" aria-labelledby="shop-title">
+      <div class="hero__body">
+        <p class="hero__eyebrow" data-reveal><span class="badge">8806</span><span data-zh="8806 Supply · 2026 賽季批次">8806 Supply · Season 2026 batch</span></p>
+        <h1 class="h1 shophero__title" id="shop-title"><span data-zh="穿上這支隊伍。">Wear the team.</span></h1>
+        <p class="lead shophero__sub" data-zh="T 恤、連帽衫、棒球帽和交換徽章，圍繞著我們的機器人與隊徽設計。全部接單後製作，每一筆訂單都在支持我們的賽季。">Tees, a hoodie, a cap and trading pins, designed around our robot and our crest. Everything is made to order, and every order helps fund our season.</p>
+        <div class="btns hero__actions">
+          <a class="btn btn--primary" href="#collection"><span data-zh="選購商品">Shop the collection</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"/></svg></a>
+          <a class="btn btn--ghost" href="#how" data-zh="訂購方式">How ordering works</a>
+        </div>
+      </div>
+      <figure class="shophero__shot" data-reveal>
+        <img src="../assets/img/shop/collection-2000.webp" srcset="../assets/img/shop/collection-1000.webp 1000w, ../assets/img/shop/collection-2000.webp 2000w" sizes="(max-width: 1240px) 100vw, 1200px" width="2000" height="1014" fetchpriority="high"
+             alt="The collection: a navy Blueprint tee, the black Pit Crew hoodie with a cobalt hood lining, the black Scorpion tee, a canvas tote, the trading pin, the Alliance cap and the team bottle"
+             data-zh-alt="商品系列：深藍藍圖 T 恤、鈷藍帽裡的黑色 Pit Crew 連帽衫、黑色蠍子 T 恤、帆布袋、交換徽章、Alliance 棒球帽與隊伍保溫瓶">
+      </figure>
+    </section>
+
+    <!-- ============================== COLLECTION ============================== -->
+    <section class="sec" id="collection" aria-labelledby="collection-title">
+      <div class="strip">
+        <p class="strip__id"><span class="strip__n">01</span> / <b data-zh="商品">Collection</b></p>
+        <p class="strip__meta" id="collection-meta"></p>
+      </div>
+      <div class="sec__head shop__head">
+        <h2 class="h2" id="collection-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="為 Pit 區設計，">Designed for the pit.</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="也適合<em class='accent'>每一天</em>。">Worn <em class="accent">everywhere</em>.</span></span></h2>
+        <div class="cells cells--seg shop__filter" id="shop-filter" role="group" aria-label="Show" data-zh-aria="顯示"></div>
+      </div>
+      <ul class="products" id="products" data-reveal data-stagger></ul>
+      <noscript><p class="shop__nojs" data-zh="商店需要 JavaScript 才能運作。想訂購的話，請直接在 Instagram 私訊 @frc_team_8806。">The shop needs JavaScript. To order, message <a href="https://ig.me/m/frc_team_8806">@frc_team_8806 on Instagram</a>.</p></noscript>
+    </section>
+
+    <!-- ============================== DESIGN NOTES ============================== -->
+    <section class="sec" id="design" aria-labelledby="design-title">
+      <div class="strip">
+        <p class="strip__id"><span class="strip__n">02</span> / <b data-zh="設計筆記">Design notes</b></p>
+        <p class="strip__meta" data-zh="由隊伍設計 · 新北市">Designed by the team · New Taipei City</p>
+      </div>
+      <div class="sec__head">
+        <h2 class="h2" id="design-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="用設計機器人的方式，">Designed the way</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="設計每一件商品。">we design the robot.</span></span></h2>
+        <p class="lead" data-reveal data-zh="每一件印花都來自隊伍自己的東西：隊徽、隊訓、隊服上的警告標誌，還有網站上那台 3D 機器人。">Every print comes from something of the team's own: the crest, the motto, the warning sign from our shirts, and the 3D robot on this site.</p>
+      </div>
+      <div class="notes">
+        <article class="note note--wide" data-reveal>
+          <div class="note__stage"><img src="../assets/img/shop/tee-blueprint-front-1200.webp" width="1200" height="1200" loading="lazy" alt="The Blueprint tee's front print: the robot as a line drawing in a drawing frame" data-zh-alt="藍圖 T 恤正面印花：放在工程圖圖框裡的機器人線稿"></div>
+          <div class="note__body">
+            <p class="cell__n">01</p>
+            <h3 class="h3" data-zh="從 CAD 算出來的線稿">Drawn from the CAD</h3>
+            <p data-zh="藍圖 T 恤上的機器人不是插畫：它是用網站上的 3D 模型算出的消隱線稿，每一條線都是模型真實的邊，再配上圖框、分區編號與標題欄。">The robot on the Blueprint tee isn't an illustration: it's a hidden-line drawing rendered from the 3D model on this site, so every line is a real edge, set in a frame with zone letters and a title block.</p>
+            <a class="more" href="product.html?item=blueprint-tee"><span data-zh="查看藍圖 T 恤">See the Blueprint tee</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </div>
+        </article>
+        <article class="note" data-reveal>
+          <div class="note__stage"><img src="../assets/img/shop/pin-card-1200.webp" width="1200" height="1200" loading="lazy" alt="The trading pin on its backing card" data-zh-alt="附背卡的交換徽章"></div>
+          <div class="note__body">
+            <p class="cell__n">02</p>
+            <h3 class="h3" data-zh="為交換而做">Made to be traded</h3>
+            <p data-zh="在 FRC，徽章是用來交換的。帶一把去區域賽，回家時識別證帶上就是一整季認識的隊伍。">In FRC, pins are for trading. Take a handful to a regional and come home with a lanyard full of the teams you met.</p>
+            <a class="more" href="product.html?item=trading-pin"><span data-zh="查看交換徽章">See the trading pin</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </div>
+        </article>
+        <article class="note" data-reveal>
+          <div class="note__stage"><img src="../assets/img/shop/hoodie-front-1200.webp" width="1200" height="1200" loading="lazy" alt="The Pit Crew hoodie with its cobalt hood lining" data-zh-alt="鈷藍帽裡的 Pit Crew 連帽衫"></div>
+          <div class="note__body">
+            <p class="cell__n">03</p>
+            <h3 class="h3" data-zh="一點聯盟藍">A flash of alliance blue</h3>
+            <p data-zh="整個系列以黑色為主，只在帽裡、帽側和尺寸線上用一點聯盟藍——和網站一樣。">The collection is mostly black, with alliance blue only where it counts: the hood lining, the cap's side and the dimension lines — like this site.</p>
+            <a class="more" href="product.html?item=pit-crew-hoodie"><span data-zh="查看連帽衫">See the hoodie</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================== HOW ORDERING WORKS ============================== -->
+    <section class="sec" id="how" aria-labelledby="how-title">
+      <div class="strip">
+        <p class="strip__id"><span class="strip__n">03</span> / <b data-zh="訂購方式">How ordering works</b></p>
+        <p class="strip__meta" data-zh="接單後製作 · 網站不收款">Made to order · no payment on this site</p>
+      </div>
+      <div class="sec__head">
+        <h2 class="h2" id="how-title" data-reveal="lines"><span class="ln" style="--l:0"><span class="ln__i" data-zh="三個步驟，">Three steps,</span></span><span class="ln" style="--l:1"><span class="ln__i" data-zh="一則訊息。">one message.</span></span></h2>
+        <p class="lead" data-reveal data-zh="我們是學生隊伍，不是網路商店：商品分批製作，訂單透過 Instagram 確認。網站上不會收取任何款項。">We're a student team, not a web store: we print in batches and confirm every order in a chat. No payment is taken on this site.</p>
+      </div>
+      <ol class="grid grid--3 steps" data-reveal data-stagger>
+        <li class="cell step"><span class="cell__n">01</span><h3 class="h4" data-zh="裝滿購物袋">Fill your bag</h3><p data-zh="選好顏色、尺寸與數量。購物袋會保存在這台裝置上。">Pick colours, sizes and quantities. Your bag is kept on this device.</p></li>
+        <li class="cell step"><span class="cell__n">02</span><h3 class="h4" data-zh="用 Instagram 傳給我們">Send it on Instagram</h3><p data-zh="我們會幫你複製訂單，並開啟與 @frc_team_8806 的對話，貼上送出即可。">We copy your order and open a chat with @frc_team_8806 — paste it and send.</p></li>
+        <li class="cell step"><span class="cell__n">03</span><h3 class="h4" data-zh="付款與取貨">Pay and pick up</h3><p data-zh="我們會在對話中確認總額、付款方式，以及到校取貨或台灣宅配。">We confirm the total, how to pay, and pickup at school or delivery in Taiwan, in the chat.</p></li>
+      </ol>
+      <div class="split shop__sponsor" data-reveal>
+        <img src="../assets/img/robot-studio-900.webp" width="900" height="658" loading="lazy" alt="Studio render of the team's robot model" data-zh-alt="隊伍機器人模型的棚拍渲染">
+        <div class="split__body">
+          <p class="label" data-zh="代表公司？">Here for a company?</p>
+          <p class="h3" data-zh="把你的品牌放上機器人。">Put your logo on the robot instead.</p>
+          <p data-zh="企業贊助可以認養零件、資助出國比賽，品牌會出現在機器人、隊服與比賽影片中。">Company sponsors can fund parts and travel, and ride on the robot, the team shirts and our competition videos.</p>
+          <div class="btns"><a class="btn btn--ghost" href="../#sponsor"><span data-zh="成為贊助夥伴">Become a partner</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <img src="../assets/img/logo-160.webp" width="40" height="40" alt="" loading="lazy">
+        <div>
+          <b>8806 Supply · FRC Team 8806</b>
+          <span data-zh="天主教崇光高級中學 · 新北市">Our Lady of Providence High School · New Taipei City, Taiwan</span>
+        </div>
+      </div>
+      <ul class="cells footer__links" id="footer-links"></ul>
+    </div>
+    <div class="footer__legal">
+      <p data-zh="FIRST® 與 FIRST® Robotics Competition 為 FIRST® 之註冊商標。本網站與 FIRST® 無隸屬關係。">FIRST® and FIRST® Robotics Competition are registered trademarks of FIRST®, which is not affiliated with this site.</p>
+      <p id="concept-notice" hidden data-zh="本網站為提供給 FRC 8806 的概念設計範例，並非官方網站；商品、價格與材質皆為提案，尚待隊伍確認。">Concept site prepared for FRC Team 8806 — not an official team page. Products, prices and materials are proposals until the team confirms them.</p>
+    </div>
+  </footer>
+  </div>
+
+  <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+</body>
+</html>

@@ -4,20 +4,15 @@ import { SITE, BUDGET, PARTS, SEASONS as ALL_SEASONS, GOALS, CALENDAR, PLACES, E
 const SEASONS = ALL_SEASONS.filter((s) => !s.draft);
 import { WORLD } from './worldmap-data.js';
 import { balloon, sheetRef } from './cad.js';
-import { initMotion, initSmoothScroll, goTo, getLenis, REDUCED, PEN, EASE_CSS, rollIn, remeasure, tickDigit, fly, armSend } from './motion.js';
+import { initMotion, initSmoothScroll, goTo, REDUCED, PEN, EASE_CSS, rollIn, remeasure, tickDigit, fly, armSend } from './motion.js';
+import { getLang, zh, t, UI, onLang, esc, money, initLang, applyLang, copyText } from './i18n.js';
+import { initMenu, initProgress } from './nav.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const root = document.documentElement;
 const reducedMotion = REDUCED.matches;
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-let lang = root.getAttribute('data-lang') === 'zh-Hant' ? 'zh-Hant' : 'en';
-const zh = () => lang === 'zh-Hant';
-const t = (o) => (o == null ? '' : typeof o === 'string' ? o : (zh() ? o.zh : o.en) ?? o.en);
-const UI = (en, zhText) => (zh() ? zhText : en);
-
-const money = (n) => 'NT$' + Math.round(n).toLocaleString('en-US');
 const moneyShort = (n) => (zh()
   ? 'NT$' + (n / 10000).toLocaleString('zh-TW', { maximumFractionDigits: 1 }) + ' 萬'
   : 'NT$' + (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M' : Math.round(n / 1000) + 'K'));
@@ -29,8 +24,6 @@ const fmtDate = (iso) => {
 };
 const monthName = (m, long) => (zh() ? `${m} 月` : new Date(2000, m - 1, 1).toLocaleString('en-US', { month: long ? 'long' : 'short' }));
 
-const listeners = [];
-const onLang = (fn) => { listeners.push(fn); fn(); };
 
 // ============================================================ counts from data.js
 
@@ -120,92 +113,26 @@ const META = {
   },
 };
 
-function applyLang() {
-  root.setAttribute('data-lang', lang);
-  if (zh()) window.loadCJKFont?.();
-  root.lang = zh() ? 'zh-Hant' : 'en';
-  $$('[data-zh]').forEach((el) => {
-    if (el._en == null) el._en = el.innerHTML;
-    el.innerHTML = zh() ? el.getAttribute('data-zh') : el._en;
-  });
-  $$('[data-zh-placeholder]').forEach((el) => {
-    if (el._enPh == null) el._enPh = el.placeholder;
-    el.placeholder = zh() ? el.getAttribute('data-zh-placeholder') : el._enPh;
-  });
-  // The English originals are kept as attributes, so copies made with innerHTML (the marquee) still swap.
-  $$('[data-zh-aria]').forEach((el) => {
-    if (el.dataset.enAria == null) el.dataset.enAria = el.getAttribute('aria-label') || '';
-    el.setAttribute('aria-label', zh() ? el.dataset.zhAria : el.dataset.enAria);
-  });
-  $$('[data-zh-alt]').forEach((el) => {
-    if (el.dataset.enAlt == null) el.dataset.enAlt = el.alt;
-    el.alt = zh() ? el.dataset.zhAlt : el.dataset.enAlt;
-  });
-  const toggle = $('#lang-toggle');
-  // The name starts with the visible label (speech input), in the language it is written in.
-  toggle.textContent = zh() ? 'EN' : '中文';
-  toggle.lang = zh() ? 'en' : 'zh-Hant';
-  toggle.setAttribute('aria-label', zh() ? 'EN – Switch to English' : '中文 – 切換為中文');
-  document.title = META[lang].title;
-  $('meta[name="description"]').content = META[lang].desc;
-  listeners.forEach((fn) => fn());
-}
-
-$('#lang-toggle').addEventListener('click', () => {
-  lang = zh() ? 'en' : 'zh-Hant';
-  try { localStorage.setItem('lang', lang); } catch (e) { /* storage unavailable */ }
-  applyLang();
-});
+initLang(META);
 
 // ============================================================ nav + menu
 
-// Phone / tablet menu: a button in the nav opens the list of sections.
-function initMenu() {
-  const btn = $('#menu-toggle');
-  const menu = $('#menu');
-  const set = (open) => {
-    btn.setAttribute('aria-expanded', String(open));
-    menu.hidden = !open;
-  };
-  btn.addEventListener('click', () => set(menu.hidden));
-  menu.addEventListener('click', (e) => { if (e.target.closest('a')) set(false); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { set(false); btn.focus(); } });
-  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target) && !btn.contains(e.target)) set(false); });
-  addEventListener('resize', () => { if (!menu.hidden && innerWidth > 1180) set(false); });
-}
-
 const NAV_SECTIONS = ['top', 'results', 'partner', 'impact', 'team', 'robot', 'sponsor'];
-// The nav marks the section being read (the reading line, PEN: 35% down the viewport) and a hairline
-// along the pill shows how far down the page you are. Sub-sections (pledge, budget, contact) mark
-// their parent's link when the list has no link of their own; never two links in one list.
+// The nav marks the section being read (the reading line, PEN: 35% down the viewport). Sub-sections
+// (pledge, budget, shop, contact) mark their parent's link when the list has no link of their own; never
+// two links in one list. (The menu and the reading hairline are nav.js.)
 function initNav() {
-  const ORDER = [...NAV_SECTIONS, 'pledge', 'budget', 'contact']; // each sub-section after its parent
-  const PARENT = { pledge: 'sponsor', budget: 'sponsor', contact: 'sponsor' };
+  const ORDER = [...NAV_SECTIONS, 'pledge', 'budget', 'shop', 'contact']; // each sub-section after its parent
+  const PARENT = { pledge: 'sponsor', budget: 'sponsor', shop: 'sponsor', contact: 'sponsor' };
   const navLists = [$$('.nav__links a'), $$('.menu a')];
-  const bar = $('.nav__progress');
   let current = 'top';
-
-  let maxScroll = 1, raf = 0;
-  const layout = () => { maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight); move(); };
-  const move = () => { raf = 0; bar?.style.setProperty('--p', Math.min(1, Math.max(0, scrollY / maxScroll)).toFixed(4)); };
-  addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(move); }, { passive: true });
-  addEventListener('resize', layout);
-  addEventListener('load', layout);
-  // The page grew or shrank (images, a language switch): Lenis re-measures too, unless it is gliding
-  // (its own resize debounce catches up then).
-  new ResizeObserver(() => {
-    layout();
-    const lenis = getLenis();
-    if (lenis && !lenis.isScrolling) lenis.resize();
-  }).observe($('#main'));
-  layout();
 
   const paint = () => {
     const parent = PARENT[current];
     navLists.forEach((links) => {
       const hit = links.find((a) => a.getAttribute('href') === `#${current}`)
         || (parent && links.find((a) => a.getAttribute('href') === `#${parent}`));
-      links.forEach((a) => a.setAttribute('aria-current', String(a === hit)));
+      links.forEach((a) => { if (a.getAttribute('href').startsWith('#')) a.setAttribute('aria-current', String(a === hit)); });
     });
   };
   // The deepest section on the reading line wins; a fast jump can queue enter + leave in one batch.
@@ -604,18 +531,6 @@ function pledgeMessage() {
     UI(`Total: ${money(total)}`, `合計：${money(total)}`),
     name ? UI(`Name on the robot: ${name}`, `機器人上的名稱：${name}`) : '',
   ].filter(Boolean).join('\n');
-}
-
-async function copyText(text) {
-  try { await navigator.clipboard.writeText(text); return true; } catch (e) {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    let ok = false;
-    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
-    ta.remove();
-    return ok;
-  }
 }
 
 function addPart(id, n = 1) {
@@ -1062,7 +977,7 @@ function initShowcase() {
         sponsors: SPONSORS.map((s) => s.en.replace(' Technologies', '')),
         modelUrl: SITE.robotModelUrl,
         reducedMotion,
-        lang,
+        lang: getLang(),
         view,
         onHotspot,
         onStage,
@@ -1074,7 +989,7 @@ function initShowcase() {
       engine.setName(input.value.trim());
       input.addEventListener('input', () => engine.setName(input.value.trim()));
       // onLang runs once now too: the language may have changed while the engine was loading.
-      onLang(() => { engine.setLang(lang); engine.redrawText(); });
+      onLang(() => { engine.setLang(getLang()); engine.redrawText(); });
       document.fonts?.ready.then(() => engine.redrawText());
     } catch (e) {
       console.error(e);
@@ -1107,6 +1022,7 @@ initBudget();
 onLang(renderContact);
 applyLang();
 initMenu();
+initProgress();
 initNav();
 initMotion();
 initMarquee();

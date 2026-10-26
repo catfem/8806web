@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Product · 8806 Supply</title>
+  <meta name="description" content="Merch for FRC Team 8806, designed around our robot and our crest. Made to order.">
+  <meta name="theme-color" content="#08090b">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Product · 8806 Supply">
+  <meta property="og:description" content="Merch for FRC Team 8806, designed around our robot and our crest. Made to order.">
+  <meta property="og:image" content="../assets/img/shop/collection-1000.webp">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon-64.png">
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Web fonts never block the first paint; Noto Sans TC loads only for Chinese (as on the home page). -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&amp;family=Geist+Mono:wght@400..600&amp;display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&amp;display=swap"></noscript>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/cad.css">
+  <link rel="stylesheet" href="../assets/css/motion.css">
+  <link rel="stylesheet" href="../assets/css/shop.css">
+
+  <script>
+    // Language and motion before first paint, as on the home page (index.html explains each line).
+    (function () {
+      var d = document.documentElement, l;
+      var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      d.className = d.className.replace('no-js', 'js') + (rm ? '' : ' mo');
+      if (!rm) {
+        if (window.CSS && CSS.supports('animation-timeline: view()') && CSS.supports('animation-range: entry 0% cover 50%')
+            && !/[?&]sda=0/.test(location.search)) d.classList.add('sda');
+        setTimeout(function () { if (!window.__motionReady) d.classList.remove('mo'); }, 3000);
+      }
+      var q = /[?&]lang=(zh|en)/i.exec(location.search);
+      if (q) l = q[1].toLowerCase() === 'zh' ? 'zh-Hant' : 'en';
+      if (!l) try { l = localStorage.getItem('lang'); } catch (e) {}
+      if (!l) l = /^zh/i.test(navigator.language || '') ? 'zh-Hant' : 'en';
+      d.setAttribute('data-lang', l);
+      window.loadCJKFont = function () {
+        if (document.getElementById('font-tc')) return;
+        var f = document.createElement('link');
+        f.id = 'font-tc'; f.rel = 'stylesheet'; f.media = 'print';
+        f.onload = function () { this.media = 'all'; };
+        f.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..900&display=swap';
+        document.head.appendChild(f);
+      };
+      if (l === 'zh-Hant') window.loadCJKFont();
+    })();
+  </script>
+  <script type="importmap">
+    { "imports": { "lenis": "../assets/vendor/lenis/lenis.mjs" } }
+  </script>
+  <link rel="modulepreload" href="../assets/vendor/lenis/lenis.mjs" media="(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)">
+  <script type="module" src="../assets/js/shop.js" data-page="product"></script>
+</head><body data-page="product">
+  <a class="skip" href="#main" data-zh="跳至主要內容">Skip to content</a>
+
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="../" aria-label="FRC 8806 home" data-zh-aria="FRC 8806 首頁">
+      <img src="../assets/img/mark-white.webp" width="34" height="34" alt="">
+    </a>
+    <nav class="nav__links" aria-label="Site" data-zh-aria="網站">
+      <a href="../#results" data-zh="戰績">Results</a>
+      <a href="../#partner" data-zh="贊助效益">Benefits</a>
+      <a href="../#impact" data-zh="影響力">Impact</a>
+      <a href="../#team" data-zh="團隊">Team</a>
+      <a href="../#robot" data-zh="機器人">Robot</a>
+      <a href="./" aria-current="page" data-zh="商店">Shop</a>
+    </nav>
+    <div class="nav__end">
+      <button class="nav__cell nav__menu" id="menu-toggle" type="button" aria-expanded="false" aria-controls="menu">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4.5h12M2 8h12M2 11.5h12"/></svg>
+        <span data-zh="選單">Menu</span>
+      </button>
+      <button class="nav__cell nav__lang" id="lang-toggle" type="button" aria-label="Switch language">中文</button>
+      <a class="nav__cell nav__ig" href="https://www.instagram.com/frc_team_8806/" target="_blank" rel="noopener" aria-label="Instagram @frc_team_8806">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3.4"/><circle cx="8" cy="8" r="2.8"/><circle cx="11.6" cy="4.4" r=".5" fill="currentColor" stroke="none"/></svg>
+      </a>
+      <a class="nav__cta nav__bag" id="nav-bag" href="bag.html">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5h10l-.8 8H3.8z"/><path d="M5.8 5.5V4.4a2.2 2.2 0 0 1 4.4 0v1.1"/></svg>
+        <span data-zh="購物袋">Bag</span><span class="nav__count" id="bag-count" hidden>0</span>
+      </a>
+    </div>
+    <i class="nav__progress" aria-hidden="true"></i>
+  </header>
+
+  <nav class="menu" id="menu" aria-label="Site" data-zh-aria="網站" data-lenis-prevent hidden>
+    <ol>
+      <li><a href="../"><span class="menu__n">01</span><span data-zh="總覽">Overview</span></a></li>
+      <li><a href="../#results"><span class="menu__n">02</span><span data-zh="戰績">Results</span></a></li>
+      <li><a href="../#partner"><span class="menu__n">03</span><span data-zh="贊助效益">Partner</span></a></li>
+      <li><a href="../#impact"><span class="menu__n">04</span><span data-zh="影響力">Impact</span></a></li>
+      <li><a href="../#team"><span class="menu__n">05</span><span data-zh="團隊">Team</span></a></li>
+      <li><a href="../#robot"><span class="menu__n">06</span><span data-zh="機器人">Robot</span></a></li>
+      <li><a href="../#sponsor"><span class="menu__n">07</span><span data-zh="支持我們">Sponsor</span></a></li>
+      <li><a href="./" aria-current="page"><span class="menu__n">08</span><span data-zh="商店">Shop</span></a></li>
+      <li><a href="bag.html"><span class="menu__n">08.1</span><span data-zh="購物袋">Bag</span></a></li>
+    </ol>
+  </nav>
+
+  <div class="frame">
+  <main id="main">
+    <article class="sec pdp" id="top" aria-labelledby="pdp-name">
+      <nav class="crumbs" aria-label="Breadcrumb" data-zh-aria="導覽路徑">
+        <ol><li><a href="./" data-zh="商店">Shop</a></li><li><a id="crumb-cat" href="./#collection"></a></li><li><span id="crumb-name" aria-current="page"></span></li></ol>
+      </nav>
+      <div class="pdp__grid" id="pdp" hidden>
+        <div class="pdp__gallery">
+          <div class="pdp__stage" id="pdp-stage"><img id="pdp-img" alt="" width="1200" height="1200" fetchpriority="high"></div>
+          <div class="pdp__thumbs" id="pdp-thumbs" role="group" aria-label="Views" data-zh-aria="視角"></div>
+        </div>
+        <div class="pdp__info">
+          <p class="pdp__badge" id="pdp-badge" hidden></p>
+          <h1 class="pdp__name" id="pdp-name"></h1>
+          <p class="pdp__price" id="pdp-price"></p>
+          <p class="pdp__tagline" id="pdp-tagline"></p>
+          <form class="pdp__form" id="pdp-form" novalidate>
+            <fieldset class="opt" id="opt-color"><legend class="opt__legend"><span data-zh="顏色">Colour</span> <b id="color-name"></b></legend><div class="swatches" id="swatches"></div></fieldset>
+            <fieldset class="opt" id="opt-size" aria-describedby="size-error"><legend class="opt__legend"><span data-zh="尺寸">Size</span> <b id="size-name"></b></legend><div class="sizes" id="sizes"></div>
+              <p class="opt__error" id="size-error" hidden data-zh="請選擇尺寸。">Choose a size.</p>
+            </fieldset>
+            <div class="opt opt--row">
+              <span class="opt__legend" id="qty-label" data-zh="數量">Quantity</span>
+              <div class="stepper" role="group" aria-labelledby="qty-label">
+                <button type="button" id="qty-minus" aria-label="One fewer" data-zh-aria="減少一件">−</button><output id="qty" aria-live="polite">1</output><button type="button" id="qty-plus" aria-label="One more" data-zh-aria="增加一件">+</button>
+              </div>
+            </div>
+            <button class="btn btn--primary btn--block pdp__add" id="pdp-add" type="submit"></button>
+            <p class="pdp__made" data-zh="接單後製作 · 透過 Instagram 確認訂單 · 網站不收款">Made to order · confirmed on Instagram · no payment on this site</p>
+          </form>
+          <div class="pdp__more">
+            <details class="disclosure" open><summary data-zh="商品細節">Details</summary><ul class="pdp__details" id="pdp-details"></ul></details>
+            <details class="disclosure" id="pdp-fit"><summary data-zh="尺寸表">Size &amp; fit</summary><div id="pdp-sizes"></div></details>
+            <details class="disclosure"><summary data-zh="訂購方式">Ordering</summary><p class="pdp__p" data-zh="把商品加入購物袋，再從購物袋透過 Instagram 傳給我們。我們會在對話中確認總額、付款方式，以及到校取貨或台灣宅配。">Add it to your bag, then send the bag to us on Instagram. We confirm the total, how to pay, and pickup at school or delivery in Taiwan, in the chat.</p></details>
+          </div>
+        </div>
+      </div>
+      <div class="pdp__missing" id="pdp-missing" hidden>
+        <h1 class="h2" data-zh="找不到這件商品。">We couldn't find that item.</h1>
+        <p class="lead" data-zh="它可能已經下架了。回到商店看看其他商品。">It may have sold out of this batch. Have a look at the rest of the collection.</p>
+        <div class="btns"><a class="btn btn--primary" href="./" data-zh="回到商店">Back to the shop</a></div>
+      </div>
+      <noscript><p class="shop__nojs" data-zh="商店需要 JavaScript 才能運作。想訂購的話，請直接在 Instagram 私訊 @frc_team_8806。">The shop needs JavaScript. To order, message <a href="https://ig.me/m/frc_team_8806">@frc_team_8806 on Instagram</a>.</p></noscript>
+    </article>
+
+    <section class="sec pdp-story" id="story" aria-labelledby="story-title" hidden>
+      <div class="pdp-story__panel" data-reveal>
+        <p class="label" id="story-title" data-zh="設計筆記">Design notes</p>
+        <p class="pdp-story__text" id="pdp-story"></p>
+      </div>
+    </section>
+
+    <section class="sec" id="more" aria-labelledby="more-title" hidden>
+      <div class="strip">
+        <p class="strip__id"><span class="strip__n">+</span> / <b data-zh="你可能也喜歡">You may also like</b></p>
+        <p class="strip__meta"><a href="./" data-zh="全部商品">All products</a></p>
+      </div>
+      <h2 class="sr-only" id="more-title" data-zh="你可能也喜歡">You may also like</h2>
+      <ul class="products products--row" id="more-products" data-reveal data-stagger></ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <img src="../assets/img/logo-160.webp" width="40" height="40" alt="" loading="lazy">
+        <div>
+          <b>8806 Supply · FRC Team 8806</b>
+          <span data-zh="天主教崇光高級中學 · 新北市">Our Lady of Providence High School · New Taipei City, Taiwan</span>
+        </div>
+      </div>
+      <ul class="cells footer__links" id="footer-links"></ul>
+    </div>
+    <div class="footer__legal">
+      <p data-zh="FIRST® 與 FIRST® Robotics Competition 為 FIRST® 之註冊商標。本網站與 FIRST® 無隸屬關係。">FIRST® and FIRST® Robotics Competition are registered trademarks of FIRST®, which is not affiliated with this site.</p>
+      <p id="concept-notice" hidden data-zh="本網站為提供給 FRC 8806 的概念設計範例，並非官方網站；商品、價格與材質皆為提案，尚待隊伍確認。">Concept site prepared for FRC Team 8806 — not an official team page. Products, prices and materials are proposals until the team confirms them.</p>
+    </div>
+  </footer>
+  </div>
+
+  <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+</body>
+</html>

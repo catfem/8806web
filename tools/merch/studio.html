@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- One product mockup (items.js) on a 1600×1600 transparent canvas: studio.html?item=…&view=…&color=…
+     Add &bg=1 for a dark backdrop while designing. render.cjs screenshots it for every catalog image. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400..700&display=block">
+<style>html,body{margin:0;background:transparent}svg{display:block}body.dark{background:#0b0c10}</style></head>
+<body><div id="out"></div>
+<script type="module">
+import { render } from './items.js';
+const q = new URLSearchParams(location.search);
+if (q.get('bg')) document.body.classList.add('dark');
+const assets = ['../../assets/img/logo-640.webp', '../../assets/img/mark-white.webp', 'robot-lines.webp'];
+await Promise.all(assets.map((src) => new Promise((res) => { const i = new Image(); i.onload = i.onerror = res; i.src = src; })));
+await Promise.all(['800 40px Geist', '500 20px "Geist Mono"', '700 20px "Geist Mono"'].map((f) => document.fonts.load(f)));
+document.getElementById('out').innerHTML = render(q.get('item'), q.get('view') || 'front', q.get('color') || '');
+await Promise.all([...document.querySelectorAll('image')].map((im) => new Promise((res) => { im.addEventListener('load', res); im.addEventListener('error', res); setTimeout(res, 3000); })));
+await document.fonts.ready;
+await new Promise((r) => setTimeout(r, 400));
+window.__done = true;
+</script></body></html>

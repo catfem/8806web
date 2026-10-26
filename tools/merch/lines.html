@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- The robot as a hidden-line drawing (render.cjs --lines): the site's own 3D model (robot-model.js), every
+     mesh drawn as depth only and its edges (EdgesGeometry, creases over `thr` degrees) on top, so only the
+     visible edges show. Query: w, h, az, el, d (camera distance), fov, thr, color. -->
+<script type="importmap">{ "imports": { "three": "../../assets/vendor/three/three.module.min.js", "three/addons/": "../../assets/vendor/three/addons/" } }</script>
+<style>html,body{margin:0;background:transparent}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { buildRobot, poseRobot } from '../../assets/js/robot-model.js';
+const q = new URLSearchParams(location.search);
+const W = +(q.get('w') || 2000), H = +(q.get('h') || 2000);
+const color = q.get('color') || '#ffffff';
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H, false); renderer.setClearColor(0x000000, 0);
+const scene = new THREE.Scene();
+const robot = buildRobot({ sponsors: [], detail: 'high' });
+scene.add(robot.root);
+poseRobot(robot, { elevator: +(q.get('elev') || 0.15), cycle: 0, intake: 1, explode: 0, xray: 0, lift: 0, hot: 0, yaw: 0, spin: 0 }, 0);
+robot.root.updateMatrixWorld(true);
+// hidden-line drawing: meshes write depth only (black-out), edges drawn on top with depth test
+const lineMat = new THREE.LineBasicMaterial({ color });
+const occl = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+const meshes = [];
+robot.root.traverse((o) => { if (o.isMesh || o.isInstancedMesh) meshes.push(o); if (o.isSprite || o.isPoints) o.visible = false; });
+for (const m of meshes) {
+  if (m.isInstancedMesh) {
+    const eg = new THREE.EdgesGeometry(m.geometry, +(q.get('thr') || 28));
+    for (let i = 0; i < m.count; i++) {
+      const mat = new THREE.Matrix4(); m.getMatrixAt(i, mat);
+      const ls = new THREE.LineSegments(eg, lineMat); ls.matrixAutoUpdate = false; ls.matrix.copy(mat); ls.renderOrder = 1; m.add(ls);
+    }
+  } else {
+    const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, +(q.get('thr') || 28)), lineMat);
+    ls.renderOrder = 1; m.add(ls);
+  }
+  m.material = occl; m.renderOrder = 0;
+}
+const box = new THREE.Box3().setFromObject(robot.root);
+const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+const az = +(q.get('az') || 0.75), el = +(q.get('el') || 0.18), d = +(q.get('d') || 6);
+const cam = new THREE.PerspectiveCamera(+(q.get('fov') || 18), W / H, 0.1, 100);
+cam.position.set(c.x + Math.sin(az) * Math.cos(el) * d, c.y + Math.sin(el) * d, c.z + Math.cos(az) * Math.cos(el) * d);
+cam.lookAt(c.x, c.y + +(q.get('ty') || 0), c.z);
+renderer.render(scene, cam);
+window.__done = true;
+</script></body></html>
