@@ -102,14 +102,14 @@ html[data-lang="zh-Hant"] .rec__awards li { letter-spacing: 0.02em; }
   .rec__awards { flex-direction: column; gap: 9px; }
 }
 
-/* ------------------------------------------------------------------ cards: soft-lit on touch */
+/* ------------------------------------------------------------------ cards: picked on touch */
 
-/* A card under the pointer (or holding focus) lifts its border into the light and its index number
-   turns blue. Nothing moves: a hover changes colour only. */
-:is(.reason, .benefit, .subteam, .kpis .cell) { transition: border-color var(--t-micro, 160ms) ease, box-shadow var(--t-micro, 160ms) ease; }
-:is(.reason, .benefit, .subteam, .kpis .cell):focus-within { border-color: rgba(122, 170, 255, 0.4); box-shadow: 0 30px 80px -50px rgba(42, 109, 244, 0.7); }
+/* A card under the pointer (or holding focus) firms up its border and its index number turns blue.
+   Nothing moves and nothing glows: a hover changes colour only. */
+:is(.reason, .benefit, .subteam, .kpis .cell) { transition: border-color var(--t-micro, 160ms) ease; }
+:is(.reason, .benefit, .subteam, .kpis .cell):focus-within { border-color: var(--rule-3); }
 @media (hover: hover) {
-  :is(.reason, .benefit, .subteam, .kpis .cell):hover { border-color: rgba(122, 170, 255, 0.32); box-shadow: 0 30px 80px -50px rgba(42, 109, 244, 0.7); }
+  :is(.reason, .benefit, .subteam, .kpis .cell):hover { border-color: var(--rule-3); }
 }
 .cell__n { width: fit-content; transition: color var(--t-micro, 160ms) ease; }
 :is(.reason, .benefit, .subteam):focus-within .cell__n { color: var(--accent-text); }
@@ -181,7 +181,7 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
   font: 700 11px/1 var(--f-mono); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums;
 }
 .balloon--sm { width: 18px; height: 18px; margin-right: 6px; }
-.balloon--sheet { width: auto; height: 18px; padding: 0 6px; border-radius: 999px; }
+.balloon--sheet { width: auto; height: 18px; padding: 0 6px; border-radius: 4px; }
 .part.is-picked .balloon { border-color: var(--accent); color: var(--accent-text); }
 
 /* In the list the balloon sits on the icon box's top-left corner, like a badge. */
@@ -253,9 +253,9 @@ html[data-lang="zh-Hant"] .dim--total .dim__val { font-weight: 900; }
 .cells--tabs.has-bar { position: relative; }
 .tabs__bar {
   position: absolute; z-index: 0; left: 0; top: 0; width: 0; height: 0;
-  border-radius: calc(var(--r-lg) - 5px); pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.06));
-  box-shadow: inset 0 0 0 1px var(--rule-2), 0 10px 30px -12px rgba(42, 109, 244, 0.6);
+  border-radius: 5px; pointer-events: none;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 0 0 1px var(--rule-2);
 }
 
 /* a custom model in the price tab lists its tags in this corner (main.css) */

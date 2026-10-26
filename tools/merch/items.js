@@ -46,7 +46,7 @@ function fabric({ path, base, folds = '', seams = '', stitches = '', print = '',
     <g fill="none" stroke="${st}" stroke-width="2.2" stroke-dasharray="7 6">${stitches}</g>
     <rect x="-200" y="-200" width="1600" height="1600" filter="url(#${noise})" opacity="${dark ? 0.16 : 0.12}" style="mix-blend-mode:overlay"/>
     <path d="${path}" fill="none" stroke="#000" stroke-opacity="${dark ? 0.55 : 0.16}" stroke-width="22" filter="url(#${soft})"/>
-    ${rim ? `<path d="${path}" fill="none" stroke="${BLUE_T}" stroke-opacity="${dark ? 0.26 : 0.1}" stroke-width="5" filter="url(#${soft})"/>` : ''}
+    ${rim ? `<path d="${path}" fill="none" stroke="#fff" stroke-opacity="${dark ? 0.07 : 0}" stroke-width="4" filter="url(#${soft})"/>` : ''}
   </g>`;
 }
 
@@ -202,7 +202,7 @@ function hoodie(view) {
       <path d="M340,700 L660,700 C676,780 690,860 700,930 M300,930 C310,860 324,780 340,700" fill="none" stroke="rgba(0,0,0,.7)" stroke-width="3"/>
       <path d="M343,704 L657,704" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2"/>`;
   }
-  const defs = `<linearGradient id="lining" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f1e46"/><stop offset=".55" stop-color="#1e47b0"/><stop offset="1" stop-color="#2a6df4"/></linearGradient>
+  const defs = `<linearGradient id="lining" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1736"/><stop offset=".6" stop-color="#18357f"/><stop offset="1" stop-color="#1f45a3"/></linearGradient>
     <radialGradient id="hoodShade" cx=".45" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient>`;
   return { defs, body: `<g transform="translate(240 230) scale(1.12)">${fabric({ path: HOOD_BODY, base, folds, seams: seams + rib(300, 966, 700, 966, 82) + rib(106, 878, 212, 892, 70) + rib(788, 892, 896, 878, 70), stitches, print, dark: true })}</g>` };
 }
@@ -237,7 +237,7 @@ function cap() {
         <ellipse cx="360" cy="300" rx="9" ry="6" fill="#050506" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
         <ellipse cx="692" cy="284" rx="9" ry="6" fill="#050506" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
         <rect width="1000" height="800" filter="url(#capNoise)" opacity=".14" style="mix-blend-mode:overlay"/>
-        <path d="${crown}" fill="none" stroke="${BLUE_T}" stroke-opacity=".22" stroke-width="6" filter="url(#dropS)"/>
+        <path d="${crown}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width="5" filter="url(#dropS)"/>
       </g>
       <ellipse cx="515" cy="132" rx="30" ry="13" fill="${base}" stroke="rgba(255,255,255,.12)" stroke-width="2"/>
       <path d="${brim}" fill="#16171b"/>
@@ -365,7 +365,7 @@ function bottle() {
       <text transform="translate(905 1380) rotate(-90)" font-family="${F}" font-weight="800" font-size="96" letter-spacing="-4" fill="url(#engrave)" opacity=".85">8806</text>
       <text transform="translate(700 1380) rotate(-90)" font-family="${M}" font-weight="600" font-size="18" letter-spacing="6" fill="url(#engrave)" opacity=".75">OLPDL · 750 ML</text>
       <rect x="742" y="380" width="20" height="1100" fill="#fff" opacity=".06" filter="url(#bBlur)"/>
-      <path d="${body}" fill="none" stroke="${BLUE_T}" stroke-opacity=".3" stroke-width="5" filter="url(#dropS)"/>
+      <path d="${body}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width="4" filter="url(#dropS)"/>
     </g>`;
 }
 

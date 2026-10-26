@@ -262,13 +262,13 @@ html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none
 
 /* + rolls the quantity up (− down; motion.js tickDigit), the item balloon flies from the + into its
    cart line on a right-angled path (fly; the line's balloon pings on landing), a new cart line slides
-   in, the first time the pledge becomes sendable "Send via Instagram" arms (a ring of light passes
-   around it once), and the confirmation note places. Stepper buttons press. */
+   in, the first time the pledge becomes sendable "Send via Instagram" arms (an outline steps out from
+   it once), and the confirmation note places. Stepper buttons press. */
 .fly { position: fixed; left: 0; top: 0; z-index: 60; border-color: var(--accent); color: var(--accent-text); pointer-events: none; }
 .mo .cart__lines li.is-new { animation: line-in var(--t-state) var(--ease); }
 @keyframes line-in { from { opacity: 0; transform: translateX(-8px); } }
-.mo #cart-send.is-armed { animation: arm 1100ms var(--ease); }
-@keyframes arm { 0% { box-shadow: 0 0 0 0 rgba(122, 170, 255, 0.7); } 100% { box-shadow: 0 0 0 14px rgba(122, 170, 255, 0); } }
+.mo #cart-send.is-armed { animation: arm 700ms var(--ease); }
+@keyframes arm { 0% { outline: 2px solid var(--accent-text); outline-offset: 0; } 100% { outline: 2px solid transparent; outline-offset: 6px; } }
 .mo .stepper button { transition: background-color .2s, color .2s, transform 80ms var(--ease); }
 .mo .stepper button:active:not(:disabled) { transform: scale(0.94); }
 
@@ -307,8 +307,8 @@ html.mo [data-stagger]:not(.is-in) > :focus-within { opacity: 1; transform: none
 .gallery__toggle {
   position: absolute; right: calc(var(--pad) + 4px); bottom: 14px; z-index: 2;
   min-width: 34px; height: 34px; padding: 0 14px;
-  border: 1px solid var(--rule-2); border-radius: 999px; color: var(--text); cursor: pointer;
-  background: rgba(14, 16, 20, 0.6); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border: 1px solid var(--rule-2); border-radius: var(--r-sm); color: var(--text); cursor: pointer;
+  background: var(--bg-2);
   font: 500 11px/1 var(--f-mono); letter-spacing: var(--ls-mono); text-transform: uppercase;
   transition: border-color var(--t-micro);
 }

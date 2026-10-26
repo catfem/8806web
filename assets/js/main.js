@@ -879,7 +879,7 @@ function initShowcase() {
   let view = 'build';
   let engine = null;
 
-  // The selection pill slides between the tabs (motion.css; reduced motion jumps), sized to the selected
+  // The selection slides between the tabs (motion.css; reduced motion jumps), sized to the selected
   // tab, from tab geometry cached at start, once fonts load, on resize and after a language switch, never
   // on scroll.
   const tablist = $('#robot-tabs');

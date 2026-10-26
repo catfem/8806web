@@ -55,7 +55,7 @@ const total = (lines = bag.read()) => lines.reduce((s, l) => s + byId.get(l.id).
 const colorOf = (p, id) => p.colors.find((c) => c.id === id) || p.colors[0];
 const variant = (p, l) => [p.colors.length > 1 ? t(colorOf(p, l.color).label) : '', l.size || ''].filter(Boolean).join(' · ');
 
-// The nav's bag pill: the count, and a name that says it ("Bag, 3 items").
+// The nav's Bag button: the count, and a name that says it ("Bag, 3 items").
 function paintCount() {
   const n = count();
   const el = $('#bag-count');
