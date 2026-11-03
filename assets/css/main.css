@@ -15,6 +15,10 @@
   --bg-2: #111317;        /* panel */
   --bg-3: #181a1f;        /* hover, chart tracks, insets */
   --card: none;           /* panels are flat */
+  /* the page's drafting grid: a fine line every --grid, a firmer one every 5th (body, below) */
+  --grid: 24px;
+  --grid-line: rgba(255, 255, 255, 0.022);
+  --grid-major: rgba(255, 255, 255, 0.045);
   --rule: rgba(255, 255, 255, 0.09);   /* hairline */
   --rule-2: rgba(255, 255, 255, 0.14); /* panel edge, inputs */
   --rule-3: rgba(255, 255, 255, 0.26); /* secondary button edge */
@@ -69,13 +73,24 @@ body {
   font-size: 17px;
   line-height: 1.6;
   color: var(--muted);
-  background: var(--bg);
+  /* Engineering paper behind everything: hairlines every --grid and every 5th, centred so the page is
+     symmetric. Panels are solid, so the grid only shows in the open space between them. It scrolls with
+     the page (no fixed attachment: cheap to draw, and it works on iOS). */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: calc(var(--grid) * 5) calc(var(--grid) * 5), calc(var(--grid) * 5) calc(var(--grid) * 5), var(--grid) var(--grid), var(--grid) var(--grid);
+  background-position: 50% -1px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 html[data-lang="zh-Hant"] body { letter-spacing: 0.02em; }
+@media print { body { background-image: none; } }
 
 img { display: block; max-width: 100%; height: auto; }
 svg { display: block; }
